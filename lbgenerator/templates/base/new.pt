@@ -1,0 +1,85 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Criar base</title>
+
+<LINK href="/static/base/new_base.css" type="text/css" rel="stylesheet">
+<script type="text/javascript" src="/static/base/new_base.js"></script>
+
+</head>
+<body>
+<div>
+    <form id="form" name="dados" method="POST">
+    <input id="contador" value="0" type="hidden">
+    <fieldset class="main">
+        <legend>Criar base de dados</legend>
+        <fieldset class="nested">
+            <legend>Identificação</legend>
+            <dl>
+                <dt>
+		<label for="base.nome"><font><b>Nome: </b></font></label>
+		    <input id="base.nome" name="base.nome" type="text" style="width: 15em;"/>
+		    <font id="base.nome.error" color="red" style="display:none">Preencha este campo!</font>
+                </dt>
+                <dt>
+		<label for="base.descricao" ><font><b>Descrição: </b></font></label>
+                    <input id="base.descricao" name="base.descricao" type="text" style="width: 15em;"/>
+		    <font id="base.descricao.error" color="red" style="display:none">Preencha este campo!</font>
+                </dt>
+                <dt>
+		<label for="base.senha"><font><b>Senha: </b></font></label>
+                    <input id="base.senha" name="base.senha" type="password" style="width: 15em;"/>
+		    <font id="base.senha.error" color="red" style="display:none">Preencha este campo!</font>
+                </dt>
+
+		<label for="base.exportar_indice"><font><b>Exportar índice</b></font></label>
+                    Sim
+                    <input id="base.exportar_indice" type="radio" name="base.exportar_indice" value="True" checked>
+                    Não
+                    <input id="base.exportar_indice" type="radio" name="base.exportar_indice" value="False">
+                    <br>
+        <label for="base.url_indice"><font><b>Url do indexador: </b></font></label>
+                    <input id="base.url_indice" name="base.url_indice" type="text" style="width: 15em;"/>
+                    <br>
+        <label for="base.tempo_indice"><font><b>Tempo de espera da indexação: </b></font></label>
+                    <input id="base.tempo_indice" name="base.tempo_indice" type="number" style="width: 15em;"/>
+                    <br>
+        <label for="base.extrair_doc"><font><b>Extrair texto do documento: </b></font></label>
+                    Sim
+                    <input id="base.extrair_doc" type="radio" name="base.extrair_doc" value="True" checked>
+                    Não
+                    <input id="base.extrair_doc" type="radio" name="base.extrair_doc" value="False">
+                    <br>
+        <label for="base.tempo_extrator"><font><b>Tempo de espera da extração: </b></font></label>
+                    <input id="base.tempo_extrator" name="base.tempo_extrator" type="number" style="width: 15em;"/>
+
+            </dl>
+        </fieldset>
+
+        <fieldset class="nested">
+
+            <div id="base.objeto">
+	        <button id="criarcampo" type="button" style="display:none" onclick="addCampo(this)">+</button>
+            </div>
+	        <button type="button" onclick="document.getElementById('criarcampo').click();">+</button>
+                <a>Criar novo campo</a>
+
+    	</fieldset>
+
+        <div class="buttonsContainer">
+            <input class="button" type="button" onclick="validarDados()" value="OK" />
+            <input class="button" type="reset" value="Cancel" />
+        </div>
+	<font id="alert1" color="red" style="display:none">A base precisa ter pelo menos um campo!</font>
+	<br/>
+	<font id="alert2" color="red" style="display:none">Os caracteres "]]>" não são válidos!</font>
+	<font id="alert3" color="red" style="display:none">O caractere "%" não é válido!</font>
+    </fieldset>
+   </form>
+   </div>
+</body>
+
+</html>
