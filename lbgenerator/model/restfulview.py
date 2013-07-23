@@ -10,6 +10,10 @@ from lbgenerator.model import base_context
 
 exception = RestException()
 
+def response_callback(request, response):
+    if 'callback' in request.params:
+        response.text = request.params['callback'] + '(' + response.text + ')'
+
 class CustomView(RESTfulView):
 
     """ General Customized Views for REST app.
@@ -17,6 +21,7 @@ class CustomView(RESTfulView):
     def __init__(self, *args):
         self.context = args[0]
         self.request = args[1]
+        self.request.add_response_callback(response_callback)
         md = self.request.matchdict
         self.base_name = md.get('basename')
         if md.get('id'):
