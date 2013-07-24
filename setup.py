@@ -14,7 +14,8 @@ requires = [
     'sqlalchemy',
     'xmltodict',
     'psycopg2',
-    'requests'
+    'requests',
+    'voluptuous'
     ]
 
 

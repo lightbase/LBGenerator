@@ -47,7 +47,7 @@ class CustomView(RESTfulView):
             This feature helps on mapping tables or creating tables with additional columns.
             Can be used to extract relational-fields values within json_reg too.
         """
-        return base_context.get_base(self.base_name)['cc']
+        return base_context.get_base(self.base_name)
 
     def get_collection(self):
         kwargs = self.request.params.get('$$', {})
@@ -114,7 +114,7 @@ class RegCustomView(CustomView):
     def get_cc_data(self, json_reg):
         """ Extracts field values from json_reg if they are relational fields 
         """
-        base_cc = self._base_context()
+        base_cc = self._base_context()['cc']
         cc = dict()
         for j in json_reg:
             if j in base_cc['unique_cols']:
@@ -164,7 +164,7 @@ class DocCustomView(CustomView):
                 nome_doc = doc['nome_doc'],
                 mimetype = doc['mimetype'],
                 )
-            if fn in self._base_context()['SemIndice']:
+            if fn in self._base_context()['cc']['SemIndice']:
                 doc['dt_ext_texto'] = str(datetime.datetime.now())
             return doc, json.dumps(json_reg, ensure_ascii=False)
         return doc, json_reg

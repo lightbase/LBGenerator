@@ -1,4 +1,8 @@
 pyramid
-pyramid_debugtoolbar
 waitress
 liblightbase
+pyramid_restler
+sqlalchemy
+xmltodict
+psycopg2
+requests

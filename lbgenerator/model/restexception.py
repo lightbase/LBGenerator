@@ -8,7 +8,7 @@ from liblightbase.lbbase.xml import xml_to_base
 from pyramid.exceptions import NotFound
 import traceback
 from pyramid.view import forbidden_view_config
-#import voluptuous
+import voluptuous
 
 def json_msg(status=None, err_msg=None, request=None):
     try: req = str(request)
@@ -66,14 +66,12 @@ class RestException(Exception):
         except Exception as e:
             self.throw('Malformed JSON data: %s' %(str(e)))
 
-    def sincronize(self, base_name, js):
-        """
-        schema = base_context.schema(base_name)
+    def sincronize(self, schema, js):
         try:
-            voluptuous.Schema(schema)
-        except:
-            self.throw('json_reg data is not according to base definition')
-        """
+            schema = voluptuous.Schema(schema)
+            return schema(js)
+        except Exception as e:
+            self.throw('json_reg data is not according to base definition, details: %s' %str(e))
 
     def is_integer(self, i):
         try: int(i) ;return True
@@ -139,14 +137,7 @@ class RestException(Exception):
             data['dt_reg'] = datetime.datetime.now()
             data['id_reg'] = cls.context._execute(cls.seq)
             json_reg = self.validate_json(data.get('json_reg'))
-
-
-            """
-            base_name = request.matchdict['basename']
-            json_reg = self.sincronize(base_name, json_reg)
-            """
-
-
+            json_reg = self.sincronize(cls._base_context()['schema'], json_reg)
             data['json_reg'] = json.dumps(cls.set_id_up(json_reg, data['id_reg']), ensure_ascii=False)
             data.update(cls.get_cc_data(json_reg))
 
@@ -154,6 +145,7 @@ class RestException(Exception):
 
             if 'json_reg' in data:
                 json_reg = self.validate_json(data['json_reg'])
+                json_reg = self.sincronize(cls._base_context()['schema'], json_reg)
 
                 data['json_reg'] = json.dumps(
                     cls.set_id_up(json_reg, int(request.matchdict['id'])),
