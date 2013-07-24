@@ -41,11 +41,24 @@ class BaseContextObject():
     def set_base_up(self, base_name, base_xml):
         base_obj = self.set_base_obj(base_xml)
         base_cc = self.set_base_cc(base_name, base_obj)
+        base_schema = self.set_base_schema(base_obj)
         self.bases[base_name] = dict(
             obj = base_obj,
-            cc = base_cc
+            cc = base_cc,
+            schema = base_schema
         )
+        #print(self.bases[base_name]['schema'])
         return self.bases[base_name]
+
+    def set_base_schema(self, base_obj):
+        obj_schema = dict()
+        for obj in base_obj.objeto.objeto:
+            if hasattr(obj, 'multivalued'):
+                if len(obj.objeto.objeto) == 1:
+                    obj_schema[obj.nome] = [str]
+            else:
+                obj_schema[obj.nome] = str
+        return obj_schema
 
     def set_base_obj(self, base_xml):
         try:
@@ -78,6 +91,7 @@ class BaseContextObject():
                 if obj.tipo._tipo == 'Data':
                     base_cc['date_types'].append(fname)
         return base_cc
+
 
 class LBGenerator():
 
