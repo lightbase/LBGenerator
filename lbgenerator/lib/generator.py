@@ -19,14 +19,6 @@ class BaseContextObject():
         self.entity = entity
         self.bases = dict()
 
-    def schema(self, base_name):
-        schema = dict()
-        obj = self.get_base(self.base_name)['obj']
-        for i in obj.objeto.objeto:
-            if hasattr(i, 'objeto'): schema.update({i.nome: [str]})
-            else: schema.update({i.nome: str})
-        return schema
-
     def get_base(self, base_name):
         base = self.bases.get(base_name)
         session = self.session()
@@ -47,17 +39,18 @@ class BaseContextObject():
             cc = base_cc,
             schema = base_schema
         )
-        #print(self.bases[base_name]['schema'])
         return self.bases[base_name]
 
     def set_base_schema(self, base_obj):
         obj_schema = dict()
+        def generic_type():
+            return lambda v: v
         for obj in base_obj.objeto.objeto:
             if hasattr(obj, 'multivalued'):
                 if len(obj.objeto.objeto) == 1:
-                    obj_schema[obj.nome] = [str]
+                    obj_schema[obj.nome] = [generic_type()]
             else:
-                obj_schema[obj.nome] = str
+                obj_schema[obj.nome] = generic_type()
         return obj_schema
 
     def set_base_obj(self, base_xml):
