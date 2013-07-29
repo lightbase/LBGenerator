@@ -51,6 +51,7 @@ class BaseContextObject():
                     obj_schema[obj.nome] = [generic_type()]
             else:
                 obj_schema[obj.nome] = generic_type()
+        obj_schema['id_reg'] = generic_type()
         return obj_schema
 
     def set_base_obj(self, base_xml):
