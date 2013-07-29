@@ -107,10 +107,10 @@ class CustomContextFactory(SQLAlchemyORMContext):
         if member is None:
             return None
         if is_reg:
-            if self.index.delete(id):
-                self.session.delete(member)
-            else:
+            if self.index.is_indexable and not self.index.delete(id):
                 member = self.clear_del_data(id, member)
+            else:
+                self.session.delete(member)
         self.session.commit()
         self.session.close()
         return member
