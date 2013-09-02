@@ -1,23 +1,23 @@
+
 from lbgenerator.model.entities import *
 from lbgenerator.model import consistence
-import json, inspect, requests, datetime
+import json 
+import inspect 
+import requests 
+import datetime
 import sqlalchemy
 from sqlalchemy import asc, desc
 from sqlalchemy.orm.state import InstanceState
-from lbgenerator.model.restexception import RestException
 from pyramid_restler.model import SQLAlchemyORMContext
+from lbgenerator.lib import utils
 from lbgenerator.model.index import Index
-from lbgenerator.model import (
-      begin_session,
-      engine,
-      metadata,
-      base_context,
-      get_bases,
-      reg_hyper_class,
-      doc_hyper_class
-      )
-
-exception = RestException()
+from lbgenerator.model import begin_session
+from lbgenerator.model import engine
+from lbgenerator.model import metadata
+from lbgenerator.model import base_context
+from lbgenerator.model import get_bases
+from lbgenerator.model import reg_hyper_class
+from lbgenerator.model import doc_hyper_class
 
 class CustomContextFactory(SQLAlchemyORMContext):
 
@@ -107,10 +107,10 @@ class CustomContextFactory(SQLAlchemyORMContext):
         if member is None:
             return None
         if is_reg:
-            if self.index.is_indexable and not self.index.delete(id):
-                member = self.clear_del_data(id, member)
-            else:
+            if self.index.delete(id):
                 self.session.delete(member)
+            else:
+                member = self.clear_del_data(id, member)
         self.session.commit()
         self.session.close()
         return member
@@ -141,8 +141,7 @@ class CustomContextFactory(SQLAlchemyORMContext):
             if type(filters) is not list: raise Exception('filters must be list')
             for f in filters: q = filter_query(q, f)
         if literal:
-            exc = RestException()
-            exc.is_sqlinject(str(literal))
+            utils.is_sqlinject(str(literal))
             q = q.filter(literal)
         if type(select) is list and len(select) == 0:
             self.default_fields = list()
@@ -207,99 +206,3 @@ class CustomContextFactory(SQLAlchemyORMContext):
             limit = limit,
             offset = offset
         )
-
-class BaseContextFactory(CustomContextFactory):
-
-    entity = LB_Base
-
-    def create_member(self, data):
-
-        # Create reg and doc tables
-        base_name, base_xml = data['nome_base'], data['xml_base']
-        custom_cols = base_context.set_base_up(base_name, base_xml)['cc']
-        reg_hyper_class(base_name, **custom_cols)
-        doc_hyper_class(base_name)
-        metadata.create_all(bind=engine)
-
-        member = self.entity(**data)
-        self.session.add(member)
-        self.session.commit()
-        self.session.close()
-        return member
-
-    def delete_member(self, id):
-        member = self.get_member(id, force=True)
-        if member is None:
-            return None
-
-        custom_columns = base_context.get_base(member.nome_base)['cc']
-        if base_context.bases.get(member.nome_base) is not None:
-            del base_context.bases[member.nome_base]
-
-        # Delete parallel tables
-        doc_table = get_doc_table(member.nome_base, metadata)
-        reg_table = get_reg_table(member.nome_base, metadata, **custom_columns)
-        metadata.drop_all(bind=engine, tables=[reg_table])
-        metadata.drop_all(bind=engine, tables=[doc_table])
-
-        # Delete base
-        self.session.delete(member)
-        self.session.commit()
-        self.session.close()
-        return member
-
-class FormContextFactory(CustomContextFactory):
-
-    entity = LB_Form
-
-class RegContextFactory(CustomContextFactory):
-
-    def __init__(self, request):
-        super(RegContextFactory, self).__init__(request)
-        custom_columns = base_context.get_base(self.base_name)['cc']
-        self.entity = reg_hyper_class(self.base_name, **custom_columns)
-
-    def member_to_dict(self, member, fields=None):
-        if fields is None:
-            fields = self.default_fields
-        d = dict()
-        for name in fields:
-            attr = getattr(member, name)
-            if name == 'json_reg' and attr is not None:
-                jdec = json.JSONDecoder()
-                try: attr = jdec.raw_decode(attr)[0]
-                except Exception as e: raise Exception(e)
-            d[name] = attr
-        return d
-
-    def delete_member(self, id):
-        return super(RegContextFactory, self).delete_member(id, is_reg=True)
-
-    def delete_referenced_docs(self, id_reg):
-        """ All docs are relationated with a reg.
-            This method deletes all docs referenced by this id_reg
-        """
-        DocHyperClass = doc_hyper_class(self.base_name)
-        ref_docs = self.session.query(DocHyperClass).filter_by(id_reg = id_reg)
-        if ref_docs is None: return None
-        ref_docs.delete()
-
-class DocContextFactory(CustomContextFactory):
-
-    def __init__(self, request):
-        super(DocContextFactory, self).__init__(request)
-        if not self.base_name in get_bases():
-            raise Exception('Base "%s" does not exist' %(self.base_name))
-        self.entity = doc_hyper_class(self.base_name)
-
-    def member_to_dict(self, member, fields=None):
-        if fields is None:
-            fields = self.default_fields
-        host = self.request._host__get()
-        obj = dict((name, getattr(member, name)) for name in fields if name != 'blob_doc')
-        if 'blob_doc' in self.default_fields:
-            id_doc = getattr(member, 'id_doc')
-            url_list = ['http:/', host, 'api', 'doc', self.base_name, str(id_doc), 'download']
-            url = '/'.join(url_list)
-            obj['blob_doc'] = url
-        return obj

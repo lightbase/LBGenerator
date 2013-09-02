@@ -11,7 +11,7 @@ class LB_Base(Base):
 
     id_base = Column(Integer, primary_key=True)
     nome_base = Column(String, nullable=False)
-    xml_base = Column(String)
+    json_base = Column(String)
     dt_base = Column(DateTime)
 
 class LB_Form(Base):

@@ -1,6 +1,5 @@
 import requests, datetime, json
-from lbgenerator.model.restexception import RestException
-from lbgenerator.views.doc import full_reg
+from lbgenerator.views.special import full_reg
 from lbgenerator.model import base_context
 
 class FakeRequest:

@@ -19,12 +19,6 @@ def get_bases():
     session.close()
     return [base[0] for base in bases.all()]
 
-def root_view(context, request):
-    session = begin_session()
-    things = session.query(LB_Base).all()
-    session.close()
-    return dict(things=things, Thing=LB_Base)
-
 def make_restful_app(**settings):
     """ Initialize Restfull App
     """
