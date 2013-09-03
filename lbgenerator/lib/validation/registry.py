@@ -37,6 +37,9 @@ def validate_reg_data(cls, request):
         if 'json_reg' in data:
             json_reg = utils.to_json(data['json_reg'])
 
+            base = cls.get_base()
+            utils.sincronize(json_reg, base.schema)
+
             data['json_reg'] = json.dumps(
                 cls.set_id_up(json_reg, int(request.matchdict['id'])),
                 ensure_ascii=False

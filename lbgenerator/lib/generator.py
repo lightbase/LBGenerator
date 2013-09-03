@@ -38,15 +38,19 @@ class BaseContextObject():
         )
         for element in base.content:
             fname = element.name
-            for index in element.indices:
-                if index.index in ['Ordenado', 'Vazio']:
-                    base_cc['normal_cols'].append(fname)
-                if index.index in ['Unico']:
-                    base_cc['unique_cols'].append(fname)
-                if index.index in ['Textual']:
-                    base_cc['Textual'].append(fname)
-            if element.datatype.datatype == 'Data':
-                base_cc['date_types'].append(fname)
+            indices = getattr(element, 'indices', None)
+            datatype = getattr(element, 'datatype', None)
+            if indices:
+                for index in element.indices:
+                    if index.index in ['Ordenado', 'Vazio']:
+                        base_cc['normal_cols'].append(fname)
+                    if index.index in ['Unico']:
+                        base_cc['unique_cols'].append(fname)
+                    if index.index in ['Textual']:
+                        base_cc['Textual'].append(fname)
+            if datatype:
+                if datatype.datatype == 'Data':
+                    base_cc['date_types'].append(fname)
 
         base.custom_columns = base_cc
 

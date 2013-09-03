@@ -31,6 +31,40 @@ class BaseContextFactory(CustomContextFactory):
         self.session.close()
         return member
 
+    def update_member(self, id, data):
+        member = self.get_member(id)
+        if member is None:
+            return None
+        
+        base_json = utils.to_json(data['json_base'])
+        base = base_context.set_base_up(base_json)
+
+        data['nome_base'] = base.name
+        data['reg_model'] = base.reg_model
+    
+        if member.nome_base != base.name:
+
+            old_name = 'lb_reg_%s' % member.nome_base
+            new_name = 'lb_reg_%s' % base.name
+            self.session.execute('ALTER TABLE %s RENAME TO %s' % (old_name, new_name))
+
+            old_name = 'lb_reg_%s_id_reg_seq' % member.nome_base
+            new_name = 'lb_reg_%s_id_reg_seq' % base.name
+            self.session.execute('ALTER SEQUENCE %s RENAME TO %s' % (old_name, new_name))
+
+            old_name = 'lb_doc_%s' % member.nome_base
+            new_name = 'lb_doc_%s' % base.name
+            self.session.execute('ALTER TABLE %s RENAME TO %s' % (old_name, new_name))
+
+            old_name = 'lb_doc_%s_id_doc_seq' % member.nome_base
+            new_name = 'lb_doc_%s_id_doc_seq' % base.name
+            self.session.execute('ALTER SEQUENCE %s RENAME TO %s' % (old_name, new_name))
+
+        for name in data:
+            setattr(member, name, data[name])
+        self.session.commit()
+        return member
+
     def delete_member(self, id):
         member = self.get_member(id, force=True)
         if member is None:

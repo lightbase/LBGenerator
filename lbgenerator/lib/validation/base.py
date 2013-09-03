@@ -14,11 +14,21 @@ def validate_base_data(cls, request):
     data = utils.filter_params(params, valid_fields)
 
     if method == 'POST':
+        #TODO: verify if base already exists
         if not 'json_base' in data:
             raise Exception('Required: json_base')
         data['dt_base'] = str(datetime.datetime.now())
-    return data
+        return data
 
     if method == 'PUT':
-        raise Exception('Not implemented')
-        if data.get('dt_base'): del data['dt_base']
+        if not 'json_base' in data:
+            raise Exception('Required: json_base')
+        if data.get('dt_base'):
+            del data['dt_base']
+        return data
+        
+
+
+
+
+
