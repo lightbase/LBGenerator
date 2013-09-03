@@ -1,4 +1,5 @@
 
+from liblightbase.lbbase import genesis
 from lbgenerator.lib import utils
 import datetime
 
@@ -12,20 +13,31 @@ def validate_base_data(cls, request):
         )
 
     data = utils.filter_params(params, valid_fields)
-
     if method == 'POST':
-        #TODO: verify if base already exists
         if not 'json_base' in data:
             raise Exception('Required: json_base')
-        data['dt_base'] = str(datetime.datetime.now())
-        return data
+        json_base = utils.to_json(data['json_base'])
+        base = genesis.json_to_base(json_base)
+        data = dict(
+            nome_base = base.name,
+            json_base = base.json,
+            reg_model = str(base.schema.schema),
+            dt_base = str(datetime.datetime.now())
+        )
 
     if method == 'PUT':
         if not 'json_base' in data:
             raise Exception('Required: json_base')
-        if data.get('dt_base'):
-            del data['dt_base']
-        return data
+        json_base = utils.to_json(data['json_base'])
+        base = genesis.json_to_base(json_base)
+        data = dict(
+            nome_base = base.name,
+            json_base = base.json,
+            reg_model = str(base.schema.schema),
+        )
+
+    return data
+
         
 
 

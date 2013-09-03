@@ -16,15 +16,12 @@ class BaseContextFactory(CustomContextFactory):
 
     def create_member(self, data):
 
-        # Create reg and doc tables
+         # Create reg and doc tables
+        base_name = data['nome_base']
         base_json = utils.to_json(data['json_base'])
-        base = BASES.set_base_up(base_json)
-
-        data['nome_base'] = base.name
-        data['reg_model'] = base.reg_model
-
-        reg_hyper_class(base.name, **base.custom_columns)
-        doc_hyper_class(base.name)
+        custom_cols = BASES.set_base_up(base_json).custom_columns
+        reg_hyper_class(base_name, **custom_cols)
+        doc_hyper_class(base_name)
         metadata.create_all(bind=engine)
 
         member = self.entity(**data)
@@ -38,29 +35,22 @@ class BaseContextFactory(CustomContextFactory):
         if member is None:
             return None
         
-        base_json = utils.to_json(data['json_base'])
-        base = BASES.set_base_up(base_json)
+        if member.nome_base != data['nome_base']:
+            old_name = 'lb_reg_%s' %(member.nome_base)
+            new_name = 'lb_reg_%s' %(data['nome_base'])
+            self.session.execute('ALTER TABLE %s RENAME TO %s' %(old_name, new_name))
 
-        data['nome_base'] = base.name
-        data['reg_model'] = base.reg_model
-    
-        if member.nome_base != base.name:
+            old_name = 'lb_doc_%s' %(member.nome_base)
+            new_name = 'lb_doc_%s' %(data['nome_base'])
+            self.session.execute('ALTER TABLE %s RENAME TO %s' %(old_name, new_name))
 
-            old_name = 'lb_reg_%s' % member.nome_base
-            new_name = 'lb_reg_%s' % base.name
-            self.session.execute('ALTER TABLE %s RENAME TO %s' % (old_name, new_name))
+            old_name = 'lb_reg_%s_id_reg_seq' %(member.nome_base)
+            new_name = 'lb_reg_%s_id_reg_seq' %(data['nome_base'])
+            self.session.execute('ALTER SEQUENCE %s RENAME TO %s' %(old_name, new_name))
 
-            old_name = 'lb_reg_%s_id_reg_seq' % member.nome_base
-            new_name = 'lb_reg_%s_id_reg_seq' % base.name
-            self.session.execute('ALTER SEQUENCE %s RENAME TO %s' % (old_name, new_name))
-
-            old_name = 'lb_doc_%s' % member.nome_base
-            new_name = 'lb_doc_%s' % base.name
-            self.session.execute('ALTER TABLE %s RENAME TO %s' % (old_name, new_name))
-
-            old_name = 'lb_doc_%s_id_doc_seq' % member.nome_base
-            new_name = 'lb_doc_%s_id_doc_seq' % base.name
-            self.session.execute('ALTER SEQUENCE %s RENAME TO %s' % (old_name, new_name))
+            old_name = 'lb_doc_%s_id_doc_seq' %(member.nome_base)
+            new_name = 'lb_doc_%s_id_doc_seq' %(data['nome_base'])
+            self.session.execute('ALTER SEQUENCE %s RENAME TO %s' %(old_name, new_name))
 
         _history.create_member(**{
             'id_base': member.id_base,
@@ -90,6 +80,15 @@ class BaseContextFactory(CustomContextFactory):
         reg_table = get_reg_table(member.nome_base, metadata, **custom_columns)
         metadata.drop_all(bind=engine, tables=[reg_table])
         metadata.drop_all(bind=engine, tables=[doc_table])
+
+        _history.create_member(**{
+            'id_base': member.id_base,
+            'author': 'Author',
+            'date': str(datetime.datetime.now()),
+            'name': member.nome_base,
+            'structure': member.json_base,
+            'status': 'DELETED'
+        })
 
         # Delete base
         self.session.delete(member)
