@@ -21,7 +21,7 @@ class RegCustomView(CustomView):
     def get_cc_data(self, json_reg):
         """ Extracts field values from json_reg if they are relational fields 
         """
-        base_cc = self._base_context()
+        base_cc = self.get_base().custom_columns
         cc = dict()
         for j in json_reg:
             if j in base_cc['unique_cols']:

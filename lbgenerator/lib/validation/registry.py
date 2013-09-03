@@ -26,12 +26,8 @@ def validate_reg_data(cls, request):
         data['id_reg'] = cls.context._execute(cls.seq)
         json_reg = utils.to_json(data.get('json_reg'))
 
-
-        """
-        base_name = request.matchdict['basename']
-        json_reg = self.sincronize(base_name, json_reg)
-        """
-
+        base = cls.get_base()
+        utils.sincronize(json_reg, base.schema)
 
         data['json_reg'] = json.dumps(cls.set_id_up(json_reg, data['id_reg']), ensure_ascii=False)
         data.update(cls.get_cc_data(json_reg))

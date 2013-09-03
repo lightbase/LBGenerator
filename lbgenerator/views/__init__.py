@@ -33,12 +33,15 @@ class CustomView(RESTfulView):
         """
         return self.data
 
+    def get_base(self):
+        return base_context.get_base(self.base_name)
+
     def _base_context(self):
         """ Get relational fields from base_xml defition.
             This feature helps on mapping tables or creating tables with additional columns.
             Can be used to extract relational-fields values within json_reg too.
         """
-        return base_context.get_base(self.base_name)['cc']
+        return base_context.get_base(self.base_name).custom_columns
 
     def get_collection(self):
         kwargs = self.request.params.get('$$', {})

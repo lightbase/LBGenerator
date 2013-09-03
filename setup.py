@@ -12,9 +12,7 @@ requires = [
     'liblightbase',
     'pyramid_restler',
     'sqlalchemy',
-    'xmltodict',
     'psycopg2',
-    'requests',
     'voluptuous'
     ]
 

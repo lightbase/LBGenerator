@@ -29,15 +29,15 @@ class Index:
     def __init__(self, base_name):
         self.base_name = base_name
 
-        base_obj = base_context.get_base(self.base_name)['obj']
+        base_obj = base_context.get_base(self.base_name)
 
-        if base_obj.exportar_indice == 'True':
+        if base_obj.index_export == 'True':
             self.is_indexable = True
         else:
             self.is_indexable = False
 
         self.host = self.url_encode(
-             base_obj.url_indice,
+             base_obj.index_url,
              base_name,
              base_name
              )

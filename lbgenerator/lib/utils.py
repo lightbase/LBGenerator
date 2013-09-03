@@ -9,11 +9,11 @@ def to_json(string):
     except Exception as e:
         raise Exception('Malformed JSON data. Details: %s' % str(e))
 
-def sincronize(schema, js):
+def sincronize(js, schema):
     try:
         return schema(js)
-    except:
-        self.throw('JSON data is not according to base definition. Details: %s' %s )
+    except Exception as e:
+        raise Exception('JSON data is not according to base definition. Details: %s' % str(e))
 
 def is_integer(i):
     try: 
