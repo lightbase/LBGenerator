@@ -35,6 +35,7 @@ class BaseMemory():
             unique_cols = list(),
             date_types = list(),
             Textual = list(),
+            Nenhum = list()
         )
         for element in base.content:
             fname = element.name
@@ -48,6 +49,8 @@ class BaseMemory():
                         base_cc['unique_cols'].append(fname)
                     if index.index in ['Textual']:
                         base_cc['Textual'].append(fname)
+                    if index.index in ['Nenhum']:
+                        base_cc['Nenhum'].append(fname)
             if datatype:
                 if datatype.datatype == 'Data':
                     base_cc['date_types'].append(fname)

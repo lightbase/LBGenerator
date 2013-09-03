@@ -1,10 +1,12 @@
 import json, datetime
 from lbgenerator.views import CustomView
+from lbgenerator.views.registry import RegCustomView
 from sqlalchemy.schema import Sequence
 from pyramid.response import Response
 from pyramid.exceptions import HTTPNotFound
 from lbgenerator.model.context.registry import RegContextFactory
 from lbgenerator.lib.validation.document import validate_doc_data
+from lbgenerator.lib import utils 
 
 class DocCustomView(CustomView):
 
@@ -47,7 +49,7 @@ class DocCustomView(CustomView):
                 nome_doc = doc['nome_doc'],
                 mimetype = doc['mimetype'],
                 )
-            if fn in self._base_context()['Nenhum']:
+            if fn in self.get_base().custom_columns['Nenhum']:
                 doc['dt_ext_texto'] = str(datetime.datetime.now())
             return doc, json.dumps(json_reg, ensure_ascii=False)
         return doc, json_reg

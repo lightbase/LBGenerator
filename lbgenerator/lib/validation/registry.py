@@ -43,7 +43,7 @@ def validate_reg_data(cls, request):
             data['json_reg'] = json.dumps(
                 cls.set_id_up(json_reg, int(request.matchdict['id'])),
                 ensure_ascii=False
-                )
+            )
 
             data.update(cls.get_cc_data(json_reg))
             if not 'dt_index_tex' in data:

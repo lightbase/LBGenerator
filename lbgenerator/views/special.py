@@ -3,8 +3,10 @@ from pyramid.view import view_defaults
 from pyramid.exceptions import HTTPNotFound
 from pyramid.response import Response
 from lbgenerator.model import begin_session
+from lbgenerator.model import base_exists
 from lbgenerator.model import reg_hyper_class 
 from lbgenerator.model import doc_hyper_class
+from lbgenerator.lib import utils
 import json
 import datetime
 
@@ -14,8 +16,6 @@ def download(request):
 
     # Route: api/doc/{base_name}/{id_doc}/download
     base_name = request.matchdict.get('base_name')
-    if not utils.base_exists(base_name):
-        raise Exception('Base does not exist!')
     id_doc = request.matchdict.get('id_doc')
 
     # Get hyper class
@@ -37,9 +37,11 @@ def download(request):
             cd = 'inline;' + cd
 
     # make the response object
-    kwargs = dict(content_type=doc.mimetype, content_disposition=cd)
-    response = Response(**kwargs)
-    response.app_iter = doc.blob_doc
+    return Response(
+        content_type=doc.mimetype, 
+        content_disposition=cd, 
+        app_iter=[doc.blob_doc]
+    )
 
     return response
 
@@ -48,7 +50,7 @@ def full_reg(request, json_reg=None):
 
     session = begin_session()
     base_name = request.matchdict.get('base_name')
-    if not utils.base_exists(base_name):
+    if not base_exists(base_name):
         raise Exception('Base does not exist!')
     id_reg = request.matchdict.get('id_reg')
 
@@ -98,7 +100,7 @@ class DocText(object):
         self.request = request
         self.base_name = request.matchdict.get('base_name')
         self.id_doc = request.matchdict.get('id_doc')
-        if not utils.base_exists(self.base_name):
+        if not base_exists(self.base_name):
             raise Exception('Base does not exist!')
         self.doc_entity = doc_hyper_class(self.base_name)
         self.reg_entity = reg_hyper_class(self.base_name)

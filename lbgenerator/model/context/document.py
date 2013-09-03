@@ -22,3 +22,12 @@ class DocContextFactory(CustomContextFactory):
             url = '/'.join(url_list)
             obj['blob_doc'] = url
         return obj
+
+    def delete_member(self, id):
+        member = self.get_member(id, force=True)
+        if member is None:
+            return None
+        self.session.delete(member)
+        self.session.commit()
+        self.session.close()
+        return member
