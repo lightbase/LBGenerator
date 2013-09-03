@@ -33,6 +33,7 @@ def make_restful_app(**settings):
     global metadata
     global BASES
     global index_url
+    global _history
 
     db_url = settings['sqlalchemy.url']
     index_url = settings['index.url']
@@ -43,6 +44,10 @@ def make_restful_app(**settings):
 
     lb_base = LB_Base.__table__
     metadata.create_all(bind=engine, tables=[lb_base])
+
+    from lbgenerator.model.metabase import HistoryMetaBase
+    _history = HistoryMetaBase()
+    _history.create_base(begin_session)
 
 def reg_hyper_class(base_name, **custom_cols):
     """ Sqla's dynamic mapp (reg table)

@@ -1,10 +1,12 @@
 
+import datetime
 from lbgenerator.model.entities import *
 from lbgenerator.model.context import CustomContextFactory
 from lbgenerator.lib import utils
 from lbgenerator.model import engine
 from lbgenerator.model import metadata
 from lbgenerator.model import BASES
+from lbgenerator.model import _history
 from lbgenerator.model import reg_hyper_class
 from lbgenerator.model import doc_hyper_class
 
@@ -59,6 +61,15 @@ class BaseContextFactory(CustomContextFactory):
             old_name = 'lb_doc_%s_id_doc_seq' % member.nome_base
             new_name = 'lb_doc_%s_id_doc_seq' % base.name
             self.session.execute('ALTER SEQUENCE %s RENAME TO %s' % (old_name, new_name))
+
+        _history.create_member(**{
+            'id_base': member.id_base,
+            'author': 'Author',
+            'date': str(datetime.datetime.now()),
+            'name': member.nome_base,
+            'structure': member.json_base,
+            'status': 'UPDATED'
+        })
 
         for name in data:
             setattr(member, name, data[name])

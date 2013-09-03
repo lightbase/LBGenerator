@@ -1,17 +1,27 @@
 
 import json
-import traceback
 
-def to_json(string):
+class FakeRequest(object):
+
+    def __init__(self, params={}, matchdict={}, method='GET'):
+        self.params = params, 
+        self.matchdict = matchdict
+        self.method = method
+
+def to_json(obj):
+    if not obj:
+        raise Exception('No JSON data supplied.')
+    if isinstance(obj, str):
+        obj = obj.encode('utf-8')
     try:
-        string.encode('utf-8')
-        return json.loads(string)
+        obj = json.loads(obj.decode('utf-8'))
+        return obj
     except Exception as e:
-        raise Exception('Malformed JSON data. Details: %s' % str(e))
+        raise Exception('Could not parse JSON data. Details: %s' % str(e.args[0]))
 
-def sincronize(js, schema):
+def sincronize(registry, schema):
     try:
-        return schema(js)
+        return schema(registry)
     except Exception as e:
         raise Exception('JSON data is not according to base definition. Details: %s' % str(e))
 
