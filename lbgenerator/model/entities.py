@@ -11,8 +11,9 @@ class LB_Base(Base):
 
     id_base = Column(Integer, primary_key=True)
     nome_base = Column(String, nullable=False)
-    json_base = Column(String)
-    dt_base = Column(DateTime)
+    json_base = Column(String, nullable=False)
+    reg_model = Column(String, nullable=False)
+    dt_base = Column(DateTime, nullable=False)
 
 class LB_Form(Base):
 

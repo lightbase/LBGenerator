@@ -10,10 +10,10 @@ class DocCustomView(CustomView):
 
     """ Customized view for doc REST app.
     """
-    def __init__(self, *args):
-        super(DocCustomView, self).__init__(*args)
+    def __init__(self, context, request):
+        super(DocCustomView, self).__init__(context, request)
         self.seq = Sequence('lb_doc_%s_id_doc_seq' %(self.base_name))
-        self.data = validate_doc_data(self, args[1])
+        self.data = validate_doc_data(self, request)
 
     def set_json_reg(self):
         """ Set up objects (reg_view, json_reg)

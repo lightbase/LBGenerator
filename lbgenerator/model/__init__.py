@@ -11,6 +11,13 @@ def begin_session():
     session.execute('SET datestyle = "ISO, DMY";')
     return session
 
+def base_exists(base_name):
+    if not base_name: 
+        raise Exception('Missing param "nome_base"!')
+    if base_name in get_bases(): 
+        return True
+    return False
+
 def get_bases():
     """ Get all 'base_name' from LB_base
     """
@@ -30,7 +37,8 @@ def make_restful_app(**settings):
     db_url = settings['sqlalchemy.url']
     index_url = settings['index.url']
 
-    engine = create_engine(db_url, poolclass=sqlalchemy.pool.NullPool)
+    #engine = create_engine(db_url, poolclass=sqlalchemy.pool.NullPool)
+    engine = create_engine(db_url)
     metadata = MetaData(engine)
     base_context = BaseContextObject(begin_session, LB_Base)
 

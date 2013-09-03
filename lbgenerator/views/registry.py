@@ -7,10 +7,10 @@ class RegCustomView(CustomView):
 
     """ Customized views for reg REST app.
     """
-    def __init__(self, *args):
-        super(RegCustomView, self).__init__(*args)
+    def __init__(self, context, request):
+        super(RegCustomView, self).__init__(context, request)
         self.seq = Sequence('lb_reg_%s_id_reg_seq' %(self.base_name))
-        self.data = validate_reg_data(self, args[1])
+        self.data = validate_reg_data(self, request)
 
     def set_id_up(self, json_reg, id):
         """ Puts id_reg on it's place.

@@ -6,6 +6,6 @@ class BaseCustomView(CustomView):
 
     """ Customized views for base REST app.
     """
-    def __init__(self, *args):
-        super(BaseCustomView, self).__init__(*args)
-        self.data = validate_base_data(self, args[1])
+    def __init__(self, context, request):
+        super(BaseCustomView, self).__init__(context, request)
+        self.data = validate_base_data(self, request)

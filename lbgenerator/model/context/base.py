@@ -1,6 +1,7 @@
 
 from lbgenerator.model.entities import *
 from lbgenerator.model.context import CustomContextFactory
+from lbgenerator.lib import utils
 from lbgenerator.model import engine
 from lbgenerator.model import metadata
 from lbgenerator.model import base_context
@@ -14,10 +15,14 @@ class BaseContextFactory(CustomContextFactory):
     def create_member(self, data):
 
         # Create reg and doc tables
-        base_name, base_xml = data['nome_base'], data['xml_base']
-        custom_cols = base_context.set_base_up(base_name, base_xml)['cc']
-        reg_hyper_class(base_name, **custom_cols)
-        doc_hyper_class(base_name)
+        base_json = utils.to_json(data['json_base'])
+        base = base_context.set_base_up(base_json)
+
+        data['nome_base'] = base.name
+        data['reg_model'] = base.reg_model
+
+        reg_hyper_class(base.name, **base.custom_columns)
+        doc_hyper_class(base.name)
         metadata.create_all(bind=engine)
 
         member = self.entity(**data)
@@ -31,7 +36,7 @@ class BaseContextFactory(CustomContextFactory):
         if member is None:
             return None
 
-        custom_columns = base_context.get_base(member.nome_base)['cc']
+        custom_columns = base_context.get_base(member.nome_base).custom_columns
         if base_context.bases.get(member.nome_base) is not None:
             del base_context.bases[member.nome_base]
 
@@ -46,3 +51,14 @@ class BaseContextFactory(CustomContextFactory):
         self.session.commit()
         self.session.close()
         return member
+        
+    def member_to_dict(self, member, fields=None):
+        if fields is None:
+            fields = self.default_fields
+        dic = dict()
+        for name in fields:
+            attr = getattr(member, name)
+            if name == 'json_base':
+                attr = utils.to_json(attr)
+            dic[name] = attr
+        return dic

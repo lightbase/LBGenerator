@@ -1,12 +1,11 @@
 
-from lbgenerator.model import get_bases
 import json
 import traceback
 
 def to_json(string):
     try:
         string.encode('utf-8')
-        return json.loads(string.decode('utf-8'))
+        return json.loads(string)
     except Exception as e:
         raise Exception('Malformed JSON data. Details: %s' % str(e))
 
@@ -22,13 +21,6 @@ def is_integer(i):
         return True
     except ValueError: 
         return False
-
-def base_exists(base_name):
-    if not base_name: 
-        raise Exception('Missing param "nome_base"!')
-    if base_name in get_bases(): 
-        return True
-    return False
 
 def split_request(request):
     return dict(request.params), request.method
