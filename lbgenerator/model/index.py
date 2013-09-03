@@ -1,6 +1,6 @@
 import requests, datetime, json
 from lbgenerator.views.special import full_reg
-from lbgenerator.model import base_context
+from lbgenerator.model import BASES
 
 class FakeRequest:
 
@@ -29,7 +29,7 @@ class Index:
     def __init__(self, base_name):
         self.base_name = base_name
 
-        base_obj = base_context.get_base(self.base_name)
+        base_obj = BASES.get_base(self.base_name)
 
         if base_obj.index_export == 'True':
             self.is_indexable = True

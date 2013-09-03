@@ -3,7 +3,7 @@ from pyramid_restler.view import RESTfulView
 from pyramid.response import Response
 from pyramid.exceptions import HTTPNotFound
 from lbgenerator.model.entities import *
-from lbgenerator.model import base_context
+from lbgenerator.model import BASES
 from lbgenerator.lib import utils
 
 class CustomView(RESTfulView):
@@ -34,14 +34,14 @@ class CustomView(RESTfulView):
         return self.data
 
     def get_base(self):
-        return base_context.get_base(self.base_name)
+        return BASES.get_base(self.base_name)
 
     def _base_context(self):
         """ Get relational fields from base_xml defition.
             This feature helps on mapping tables or creating tables with additional columns.
             Can be used to extract relational-fields values within json_reg too.
         """
-        return base_context.get_base(self.base_name).custom_columns
+        return BASES.get_base(self.base_name).custom_columns
 
     def get_collection(self):
         kwargs = self.request.params.get('$$', {})

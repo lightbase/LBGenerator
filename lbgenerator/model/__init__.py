@@ -3,7 +3,7 @@ from sqlalchemy.engine import create_engine
 from sqlalchemy.schema import MetaData
 from sqlalchemy.orm import sessionmaker, mapper
 from lbgenerator.model.entities import *
-from lbgenerator.lib.generator import BaseContextObject
+from lbgenerator.lib.generator import BaseMemory
 
 def begin_session():
     session = sessionmaker(bind=engine, autocommit=True)()
@@ -31,16 +31,15 @@ def make_restful_app(**settings):
     """
     global engine
     global metadata
-    global base_context
+    global BASES
     global index_url
 
     db_url = settings['sqlalchemy.url']
     index_url = settings['index.url']
 
-    #engine = create_engine(db_url, poolclass=sqlalchemy.pool.NullPool)
     engine = create_engine(db_url)
     metadata = MetaData(engine)
-    base_context = BaseContextObject(begin_session, LB_Base)
+    BASES = BaseMemory(begin_session, LB_Base)
 
     lb_base = LB_Base.__table__
     metadata.create_all(bind=engine, tables=[lb_base])

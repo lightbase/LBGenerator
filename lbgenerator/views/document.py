@@ -47,7 +47,7 @@ class DocCustomView(CustomView):
                 nome_doc = doc['nome_doc'],
                 mimetype = doc['mimetype'],
                 )
-            if fn in self._base_context()['SemIndice']:
+            if fn in self._base_context()['Nenhum']:
                 doc['dt_ext_texto'] = str(datetime.datetime.now())
             return doc, json.dumps(json_reg, ensure_ascii=False)
         return doc, json_reg

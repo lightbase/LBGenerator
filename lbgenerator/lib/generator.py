@@ -3,7 +3,7 @@ from liblightbase.lbbase import Base
 from liblightbase.lbbase.genesis import json_to_base
 from lbgenerator.lib import utils
 
-class BaseContextObject():
+class BaseMemory():
 
     """ Provides lbbase.Base Objects 
     """

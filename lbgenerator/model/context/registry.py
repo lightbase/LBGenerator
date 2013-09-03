@@ -2,7 +2,7 @@
 from lbgenerator.model.context import CustomContextFactory
 from lbgenerator.model.entities import *
 import json, inspect, requests, datetime
-from lbgenerator.model import base_context
+from lbgenerator.model import BASES
 from lbgenerator.model import reg_hyper_class
 from lbgenerator.model import doc_hyper_class
 
@@ -10,7 +10,7 @@ class RegContextFactory(CustomContextFactory):
 
     def __init__(self, request):
         super(RegContextFactory, self).__init__(request)
-        custom_columns = base_context.get_base(self.base_name).custom_columns
+        custom_columns = BASES.get_base(self.base_name).custom_columns
         self.entity = reg_hyper_class(self.base_name, **custom_columns)
 
     def member_to_dict(self, member, fields=None):

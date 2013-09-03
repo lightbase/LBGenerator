@@ -14,7 +14,6 @@ from lbgenerator.model.index import Index
 from lbgenerator.model import begin_session
 from lbgenerator.model import engine
 from lbgenerator.model import metadata
-from lbgenerator.model import base_context
 from lbgenerator.model import get_bases
 from lbgenerator.model import reg_hyper_class
 from lbgenerator.model import doc_hyper_class
