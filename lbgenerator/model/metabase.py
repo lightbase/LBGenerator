@@ -105,7 +105,7 @@ class HistoryMetaBase(object):
         data = dict(
             nome_base = self.structure['metadata']['name'],
             json_base = json.dumps(self.structure),
-            reg_model = str(base.schema.schema).replace("'", '"'),
+            reg_model = str(base.schema.schema),
             dt_base = str(datetime.datetime.now())
         )
         request = utils.FakeRequest(method = 'POST')

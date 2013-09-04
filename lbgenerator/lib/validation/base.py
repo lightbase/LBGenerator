@@ -22,7 +22,7 @@ def validate_base_data(cls, request):
         data = dict(
             nome_base = base.name,
             json_base = base.json,
-            reg_model = str(base.schema.schema).replace("'", '"'),
+            reg_model = str(base.schema.schema),
             dt_base = str(datetime.datetime.now())
         )
 
