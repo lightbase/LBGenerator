@@ -2,6 +2,7 @@
 from liblightbase.lbbase import genesis
 from lbgenerator.lib import utils
 import datetime
+import json
 
 def validate_base_data(cls, request):
     params, method = utils.split_request(request)
@@ -21,7 +22,7 @@ def validate_base_data(cls, request):
         data = dict(
             nome_base = base.name,
             json_base = base.json,
-            reg_model = str(base.schema.schema),
+            reg_model = str(base.schema.schema).replace("'", '"'),
             dt_base = str(datetime.datetime.now())
         )
 
