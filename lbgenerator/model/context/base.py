@@ -64,6 +64,7 @@ class BaseContextFactory(CustomContextFactory):
         for name in data:
             setattr(member, name, data[name])
         self.session.commit()
+        self.session.close()
         return member
 
     def delete_member(self, id):
