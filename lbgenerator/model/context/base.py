@@ -57,7 +57,7 @@ class BaseContextFactory(CustomContextFactory):
             'author': 'Author',
             'date': str(datetime.datetime.now()),
             'name': member.nome_base,
-            'structure': member.json_base,
+            'structure': utils.to_json(member.json_base),
             'status': 'UPDATED'
         })
 
@@ -87,7 +87,7 @@ class BaseContextFactory(CustomContextFactory):
             'author': 'Author',
             'date': str(datetime.datetime.now()),
             'name': member.nome_base,
-            'structure': member.json_base,
+            'structure': utils.to_json(member.json_base),
             'status': 'DELETED'
         })
 
