@@ -123,6 +123,7 @@ class CustomContextFactory(SQLAlchemyORMContext):
 
         cols = self.get_cols()
         q = self.session.query(*cols)
+        self.session.close()
 
         def filter_query(q, f, expr='None'):
             field, operation, term = getattr(self.entity, f['field']), f['operation'], f['term']
