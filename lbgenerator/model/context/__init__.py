@@ -1,6 +1,7 @@
 
 from lbgenerator.model.entities import *
 from lbgenerator.model import consistence
+from pyramid.compat import string_types
 import json 
 import inspect 
 import requests 
@@ -206,3 +207,10 @@ class CustomContextFactory(SQLAlchemyORMContext):
             limit = limit,
             offset = offset
         )
+
+    def get_member_id_as_string(self, member):
+        id = self.get_member_id(member)
+        if isinstance(id, string_types):
+            return id
+        else:
+            return json.dumps(id, cls=self.json_encoder)
