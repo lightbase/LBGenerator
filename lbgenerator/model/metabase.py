@@ -122,8 +122,10 @@ class HistoryMetaBase(object):
                 
         request = utils.FakeRequest(matchdict = {'basename': '_history'})
         reg_context = RegContextFactory(request)
+        id_reg = reg_context._execute(self.seq)
+        registry['id_reg'] = id_reg
         reg_context.create_member({
-            'id_reg': reg_context._execute(self.seq),
+            'id_reg': id_reg,
             'json_reg': json.dumps(registry, ensure_ascii=False),
             'dt_reg': datetime.datetime.now()
         })
