@@ -10,11 +10,32 @@ from lbgenerator.lib import utils
 import json
 import datetime
 
+# Route: api/doc/{base_name}/{id_reg}/sharp
+@view_config(route_name='json-sharp')
+def json_sharp(request):
+
+    base_name = request.matchdict['base_name']
+    id_reg = request.matchdict['id_reg']
+
+    if request.params:
+        RegHyperClass = reg_hyper_class(base_name)
+        session = begin_session()
+        reg = session.query(RegHyperClass.json_reg).filter_by(id_reg = id_reg).first()
+        json_reg = utils.to_json(reg[0])
+        session.close()
+        path = request.params.get('path')
+        value = request.params.get('value')
+        print(path, value)
+
+    return Response('wow')
+
+
+
+# Route: api/doc/{base_name}/{id_doc}/download
 @view_config(route_name='download')
 def download(request):
     session = begin_session()
 
-    # Route: api/doc/{base_name}/{id_doc}/download
     base_name = request.matchdict.get('base_name')
     id_doc = request.matchdict.get('id_doc')
 

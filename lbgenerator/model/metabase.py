@@ -25,6 +25,7 @@ class HistoryMetaBase(object):
               {
                  "field":{
                     "name":"id_base",
+                    "alias":"id_base",
                     "description":"Base old ID.",
                     "datatype":"Inteiro",
                     "required":True,
@@ -37,6 +38,7 @@ class HistoryMetaBase(object):
               {
                  "field":{
                     "name":"author",
+                    "alias":"author",
                     "description":"Event Author.",
                     "datatype":"Texto",
                     "required":True,
@@ -49,6 +51,7 @@ class HistoryMetaBase(object):
               {
                  "field":{
                     "name":"date",
+                    "alias":"date",
                     "description":"Event Date.",
                     "datatype":"Data",
                     "required":True,
@@ -61,6 +64,7 @@ class HistoryMetaBase(object):
               {
                  "field":{
                     "name":"name",
+                    "alias":"name",
                     "description":"Base old name.",
                     "datatype":"Texto",
                     "required":True,
@@ -73,6 +77,7 @@ class HistoryMetaBase(object):
               {
                  "field":{
                     "name":"structure",
+                    "alias":"structure",
                     "description":"Base old structure",
                     "datatype":"JSON",
                     "required":True,
@@ -85,6 +90,7 @@ class HistoryMetaBase(object):
               {
                  "field":{
                     "name":"status",
+                    "alias":"status",
                     "description":"Base status",
                     "datatype":"Texto",
                     "required":True,

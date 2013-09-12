@@ -12,11 +12,9 @@ def make_routes(config):
     Cria rotas para aplicação do gerador de bases
     """
 
-    #   ***REST API***
-    #   ***Home***
     config.add_static_view('static', 'static', cache_max_age=3600)
 
-    # restful routes
+    #   ***REST API***
     config.add_restful_routes('base', BaseContextFactory, view=BaseCustomView)
     config.add_restful_routes('reg/{basename}', RegContextFactory, view=RegCustomView)
     config.add_restful_routes('doc/{basename}', DocContextFactory, view=DocCustomView)
@@ -25,6 +23,7 @@ def make_routes(config):
 
     #   ***Métodos especiais***
 
+    config.add_route('json-sharp', 'reg/{base_name}/{id_reg}/sharp')
     config.add_route('full_reg', 'reg/{base_name}/{id_reg}/full')
     config.add_route('download', 'doc/{base_name}/{id_doc}/download')
     config.add_route('text', 'doc/{base_name}/{id_doc}/text')
