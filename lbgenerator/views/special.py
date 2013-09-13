@@ -7,12 +7,15 @@ from lbgenerator.model import base_exists
 from lbgenerator.model import reg_hyper_class 
 from lbgenerator.model import doc_hyper_class
 from lbgenerator.lib import utils
+from lbgenerator.lib.sharp import SharpJSON
 import json
 import datetime
 
 # Route: api/doc/{base_name}/{id_reg}/sharp
 @view_config(route_name='json-sharp')
 def json_sharp(request):
+    from lbgenerator.model.context.registry import RegContextFactory
+    from lbgenerator.views.registry import RegCustomView
 
     base_name = request.matchdict['base_name']
     id_reg = request.matchdict['id_reg']
@@ -20,14 +23,34 @@ def json_sharp(request):
     if request.params:
         RegHyperClass = reg_hyper_class(base_name)
         session = begin_session()
-        reg = session.query(RegHyperClass.json_reg).filter_by(id_reg = id_reg).first()
-        json_reg = utils.to_json(reg[0])
+        member = session.query(RegHyperClass).get(id_reg)
         session.close()
-        path = request.params.get('path')
-        value = request.params.get('value')
-        print(path, value)
 
-    return Response('wow')
+        json_reg = utils.to_json(member.json_reg)
+        sharp = SharpJSON(json_reg)
+
+        path, value = request.params.get('path'), request.params.get('value')
+        sharped = sharp.set(path, value)
+
+        if sharped:
+            config = {
+                'matchdict': {'basename': base_name, 'id': id_reg},
+                'params': {'json_reg': sharped},
+                'method': 'PUT'
+            }
+            request = utils.FakeRequest(**config)
+            context = RegContextFactory(request)
+            view = RegCustomView(context, request)
+
+            response = view.update_member()
+            response.content_type='text/html'
+            response.charset='utf-8'
+            if response.text == 'UPDATED':
+                return Response('UPDATED', status=200)
+
+        return Response('Could not sharp json', status=500)
+
+    return Response('No params supplied.', status=500)
 
 
 

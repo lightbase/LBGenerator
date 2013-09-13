@@ -1,18 +1,8 @@
 
 import json
-from lbgenerator.model import (
-      begin_session,
-      doc_hyper_class
-      )
-
-def to_object(js):
-    if not js:
-        return False
-    try:
-        jdec = json.JSONDecoder()
-        return jdec.raw_decode(js)[0]
-    except:
-        return False
+from lbgenerator.model import begin_session
+from lbgenerator.model import doc_hyper_class
+from lbgenerator.lib import utils
 
 def is_doc(dic, id=None):
     response = False
@@ -35,9 +25,7 @@ def normalize(base_name, session, data):
 
     DocHyperClass = doc_hyper_class(base_name)
 
-    json_reg = to_object(data['json_reg'])
-    if not json_reg:
-        raise Exception('Could not normalize data')
+    json_reg = utils.to_json(data['json_reg'])
     id_reg = int(json_reg['id_reg'])
 
     docs = session.query(DocHyperClass.id_doc).filter_by(id_reg=id_reg).all()

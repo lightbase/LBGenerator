@@ -4,13 +4,15 @@ import json
 class FakeRequest(object):
 
     def __init__(self, params={}, matchdict={}, method='GET'):
-        self.params = params, 
+        self.params = params 
         self.matchdict = matchdict
         self.method = method
 
 def to_json(obj):
     if not obj:
         raise Exception('No JSON data supplied.')
+    if type(obj) is dict:
+        return obj
     if isinstance(obj, str):
         obj = obj.encode('utf-8')
     try:
