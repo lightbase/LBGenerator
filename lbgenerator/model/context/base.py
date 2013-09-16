@@ -19,7 +19,7 @@ class BaseContextFactory(CustomContextFactory):
          # Create reg and doc tables
         base_name = data['nome_base']
         base_json = utils.to_json(data['json_base'])
-        custom_cols = BASES.set_base_up(base_json).custom_columns
+        custom_cols = BASES.set_base(base_json).custom_columns
         reg_hyper_class(base_name, **custom_cols)
         doc_hyper_class(base_name)
         metadata.create_all(bind=engine)

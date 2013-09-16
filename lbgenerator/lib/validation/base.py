@@ -30,7 +30,7 @@ def validate_base_data(cls, request):
         if not 'json_base' in data:
             raise Exception('Required: json_base')
         json_base = utils.to_json(data['json_base'])
-        base = genesis.json_to_base(json_base)
+        base = cls.set_base(json_base)
         data = dict(
             nome_base = base.name,
             json_base = base.json,

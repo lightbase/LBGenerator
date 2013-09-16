@@ -36,6 +36,9 @@ class CustomView(RESTfulView):
     def get_base(self):
         return BASES.get_base(self.base_name)
 
+    def set_base(self, base_json):
+        return BASES.set_base(base_json)
+
     def get_collection(self):
         kwargs = self.request.params.get('$$', {})
         if kwargs:
