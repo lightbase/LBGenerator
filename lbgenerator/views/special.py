@@ -10,51 +10,86 @@ from lbgenerator.lib import utils
 from lbgenerator.lib.sharp import SharpJSON
 import json
 import datetime
+from pyramid.decorator import reify
 
-# Route: api/doc/{base_name}/{id_reg}/sharp
-@view_config(route_name='json-sharp')
-def json_sharp(request):
-    from lbgenerator.model.context.registry import RegContextFactory
-    from lbgenerator.views.registry import RegCustomView
+class SpecialView(object):
 
-    base_name = request.matchdict['base_name']
-    id_reg = request.matchdict['id_reg']
+    def __init__(self, request):
+        self.request = request
+        self.data = dict(self.request.params)
+        self.base_name = request.matchdict.get('base')
+        self.id = request.matchdict.get('id')
+        if not base_exists(self.base_name): raise Exception('Base does not exist!')
+        self.doc_entity = doc_hyper_class(self.base_name)
+        self.reg_entity = reg_hyper_class(self.base_name)
 
-    if request.params:
-        RegHyperClass = reg_hyper_class(base_name)
-        session = begin_session()
-        member = session.query(RegHyperClass).get(id_reg)
-        session.close()
+        from lbgenerator.model.context.registry import RegContextFactory
+        from lbgenerator.views.registry import RegCustomView
+
+        self.reg_context_factory = RegContextFactory
+        self.reg_custom_view = RegCustomView
+
+    @reify
+    def session(self):
+        return begin_session()
+
+
+@view_defaults(route_name='depth_key')
+class DepthKeySpecialView(SpecialView):
+
+    def __init__(self, request):
+        super(DepthKeySpecialView, self).__init__(request)
+
+    @view_config(request_method='GET')
+    def get_key(self):
+        return Response('Not Implemented', status=200)
+
+    @view_config(request_method='POST')
+    def set_key(self):
+        member = self.session.query(self.reg_entity).get(self.id)
+        self.session.close()
 
         json_reg = utils.to_json(member.json_reg)
         sharp = SharpJSON(json_reg)
 
-        path, value = request.params.get('path'), request.params.get('value')
-        sharped = sharp.set(path, value)
+        sharped = sharp.new(self.data['name'], self.data['value'])
+
+        return Response('Ha yeye.', status=500)
+
+    @view_config(request_method='PUT')
+    def update_key(self):
+        member = self.session.query(self.reg_entity).get(self.id)
+        self.session.close()
+
+        json_reg = utils.to_json(member.json_reg)
+        sharp = SharpJSON(json_reg)
+
+        sharped = sharp.set(self.data['name'], self.data['value'])
 
         if sharped:
             config = {
-                'matchdict': {'basename': base_name, 'id': id_reg},
+                'matchdict': {'basename': self.base_name, 'id': self.id},
                 'params': {'json_reg': sharped},
                 'method': 'PUT'
             }
             request = utils.FakeRequest(**config)
-            context = RegContextFactory(request)
-            view = RegCustomView(context, request)
+            context = self.reg_context_factory(request)
+            view = self.reg_custom_view(context, request)
 
             response = view.update_member()
             response.content_type='text/html'
             response.charset='utf-8'
             if response.text == 'UPDATED':
-                return Response('UPDATED', status=200)
+                return Response(response.text, charset='utf-8', status=200, content_type='')
 
-        return Response('Could not sharp json', status=500)
+            return Response('Could not sharp json', status=500)
 
-    return Response('No params supplied.', status=500)
+        return Response('No params supplied.', status=500)
 
+    @view_config(request_method='DELETE')
+    def delete_key(self):
+        pass
 
-
-# Route: api/doc/{base_name}/{id_doc}/download
 @view_config(route_name='download')
 def download(request):
     session = begin_session()

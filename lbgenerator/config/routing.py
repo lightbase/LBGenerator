@@ -23,11 +23,10 @@ def make_routes(config):
 
     #   ***Métodos especiais***
 
-    config.add_route('json-sharp', 'reg/{base_name}/{id_reg}/sharp')
+    config.add_route('depth_key', 'reg/{base}/{id}/depth_key')
     config.add_route('full_reg', 'reg/{base_name}/{id_reg}/full')
     config.add_route('download', 'doc/{base_name}/{id_doc}/download')
     config.add_route('text', 'doc/{base_name}/{id_doc}/text')
-
 
 
 

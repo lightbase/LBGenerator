@@ -17,7 +17,12 @@ class SharpJSON(object):
         if setted > 0:
             return self.json
         else:
-            return False
+            unmodified = dict(self.json)
+            dpath.util.new(self.json, path, value)
+            if self.json == unmodified:
+                return False
+            else:
+                return self.json
         
     def new(self, path, value):
         path = switch_path(path)
