@@ -125,7 +125,7 @@ class Index:
     def delete(self, id):
 
         if not self.is_indexable:
-            return False
+            return True
 
         url = self.url_encode(self.host, str(id))
         try:
