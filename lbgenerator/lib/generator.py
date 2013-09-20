@@ -14,8 +14,8 @@ class BaseMemory():
 
     def get_base(self, base_name):
         base = self.bases.get(base_name)
-        session = self.session()
         if base is None:
+            session = self.session()
             base_json = session.query(self.entity.json_base).filter_by(nome_base=base_name).first()
             session.close()
             if not base_json:

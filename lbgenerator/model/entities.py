@@ -52,18 +52,22 @@ def get_reg_table(base_name, metadata, **custom_cols):
         Column('dt_index_tex', DateTime),
         Column('dt_index_sem', DateTime),
     )
+    include_columns = [ ]
     if custom_cols:
         for col in custom_cols['unique_cols']:
+            include_columns.append(col)
             if col in custom_cols['date_types']:
                 cols += (Column(col, DateTime, unique=True),)
             else:
                 cols += (Column(col, String, unique=True),)
         for col in custom_cols['normal_cols']:
+            include_columns.append(col)
             if col in custom_cols['date_types']:
                 cols += (Column(col, DateTime),)
             else:
                 cols += (Column(col, String),)
-    return Table(*cols, extend_existing=True)
+    try: return Table(*cols, extend_existing=True, autoload=True, include_columns=include_columns)
+    except: return Table(*cols, extend_existing=True)
 
 class DocSuperClass():
     def __init__(self, id_doc, id_reg, nome_doc, blob_doc, mimetype,
