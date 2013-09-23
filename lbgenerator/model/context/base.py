@@ -4,6 +4,7 @@ from lbgenerator.model.entities import *
 from lbgenerator.model.context import CustomContextFactory
 from lbgenerator.lib import utils
 from lbgenerator.model import engine
+from lbgenerator.model import base_exists
 from lbgenerator.model import metadata
 from lbgenerator.model import BASES
 from lbgenerator.model import _history
@@ -16,7 +17,9 @@ class BaseContextFactory(CustomContextFactory):
 
     def create_member(self, data):
 
-         # Create reg and doc tables
+        if base_exists(data['nome_base']):
+            raise Exception('Base "%s" already exists!' % data['nome_base'])
+        # Create reg and doc tables
         base_name = data['nome_base']
         base_json = utils.to_json(data['json_base'])
         custom_cols = BASES.set_base(base_json).custom_columns
@@ -77,10 +80,15 @@ class BaseContextFactory(CustomContextFactory):
             del BASES.bases[member.nome_base]
 
         # Delete parallel tables
-        doc_table = get_doc_table(member.nome_base, metadata)
-        reg_table = get_reg_table(member.nome_base, metadata, **custom_columns)
-        metadata.drop_all(bind=engine, tables=[reg_table])
-        metadata.drop_all(bind=engine, tables=[doc_table])
+        #doc_table = get_doc_table(member.nome_base, metadata)
+        #reg_table = get_reg_table(member.nome_base, metadata, **custom_columns)
+        #metadata.drop_all(bind=engine, tables=[reg_table])
+        #metadata.drop_all(bind=engine, tables=[doc_table])
+
+        self.session.execute('DROP TABLE lb_reg_%s ' % member.nome_base)
+        self.session.execute('DROP TABLE lb_doc_%s ' % member.nome_base)
+        self.session.execute('DROP SEQUENCE lb_reg_%s_id_reg_seq ' % member.nome_base)
+        self.session.execute('DROP SEQUENCE lb_doc_%s_id_doc_seq ' % member.nome_base)
 
         _history.create_member(**{
             'id_base': member.id_base,
