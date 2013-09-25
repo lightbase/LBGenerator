@@ -2,6 +2,7 @@
 from pyramid.response import Response
 from lbgenerator.views import CustomView
 from lbgenerator.lib.validation.base import validate_base_data
+from pyramid.exceptions import HTTPNotFound
 
 class BaseCustomView(CustomView):
 
