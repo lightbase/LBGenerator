@@ -80,15 +80,15 @@ class BaseContextFactory(CustomContextFactory):
             del BASES.bases[member.nome_base]
 
         # Delete parallel tables
-        #doc_table = get_doc_table(member.nome_base, metadata)
-        #reg_table = get_reg_table(member.nome_base, metadata, **custom_columns)
-        #metadata.drop_all(bind=engine, tables=[reg_table])
-        #metadata.drop_all(bind=engine, tables=[doc_table])
+        doc_table = get_doc_table(member.nome_base, metadata)
+        reg_table = get_reg_table(member.nome_base, metadata, **custom_columns)
+        metadata.drop_all(bind=engine, tables=[reg_table])
+        metadata.drop_all(bind=engine, tables=[doc_table])
 
-        self.session.execute('DROP TABLE lb_reg_%s ' % member.nome_base)
-        self.session.execute('DROP TABLE lb_doc_%s ' % member.nome_base)
-        self.session.execute('DROP SEQUENCE lb_reg_%s_id_reg_seq ' % member.nome_base)
-        self.session.execute('DROP SEQUENCE lb_doc_%s_id_doc_seq ' % member.nome_base)
+        #self.session.execute('DROP TABLE lb_reg_%s ' % member.nome_base)
+        #self.session.execute('DROP TABLE lb_doc_%s ' % member.nome_base)
+        #self.session.execute('DROP SEQUENCE lb_reg_%s_id_reg_seq ' % member.nome_base)
+        #self.session.execute('DROP SEQUENCE lb_doc_%s_id_doc_seq ' % member.nome_base)
 
         _history.create_member(**{
             'id_base': member.id_base,
