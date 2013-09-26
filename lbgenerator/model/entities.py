@@ -2,6 +2,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.schema import Column, Table, ForeignKey
 from sqlalchemy.types import Integer, String, DateTime, Binary
 from sqlalchemy.schema import Sequence
+from sqlalchemy.schema import MetaData
 
 Base = declarative_base()
 
@@ -42,7 +43,7 @@ class RegSuperClass():
 
 def get_reg_table(base_name, metadata, **custom_cols):
     cols = (
-        'lb_reg_%s' %(base_name), metadata,
+        'lb_reg_%s' %(base_name), MetaData(),
         Column('id_reg', Integer, Sequence('lb_reg_%s_id_reg_seq' %(base_name)), primary_key=True),
         Column('json_reg', String, nullable=False),
         Column('grupos_acesso', String),#nullable=False
@@ -83,7 +84,7 @@ class DocSuperClass():
 
 def get_doc_table(base_name, metadata):
     doc_table = Table(
-        'lb_doc_%s' %(base_name), metadata,
+        'lb_doc_%s' %(base_name), MetaData(),
         Column('id_doc', Integer, Sequence('lb_doc_%s_id_doc_seq' %(base_name)), primary_key=True),
         #Column('id_reg', Integer, ForeignKey('lb_reg_%s.id_reg' %(base_name)), nullable=False),
         Column('id_reg', Integer, nullable=False),

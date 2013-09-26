@@ -22,10 +22,16 @@ class BaseContextFactory(CustomContextFactory):
         # Create reg and doc tables
         base_name = data['nome_base']
         base_json = utils.to_json(data['json_base'])
-        custom_cols = BASES.set_base(base_json).custom_columns
-        reg_hyper_class(base_name, **custom_cols)
-        doc_hyper_class(base_name)
-        metadata.create_all(bind=engine)
+        custom_columns = BASES.set_base(base_json).custom_columns
+
+        #reg_hyper_class(base_name, **custom_cols)
+        #doc_hyper_class(base_name)
+        #metadata.create_all(bind=engine)
+
+        doc_table = get_doc_table(base_name, metadata)
+        reg_table = get_reg_table(base_name, metadata, **custom_columns)
+        reg_table.create(engine, checkfirst=True)
+        doc_table.create(engine, checkfirst=True)
 
         member = self.entity(**data)
         self.session.add(member)
@@ -82,8 +88,11 @@ class BaseContextFactory(CustomContextFactory):
         # Delete parallel tables
         doc_table = get_doc_table(member.nome_base, metadata)
         reg_table = get_reg_table(member.nome_base, metadata, **custom_columns)
-        metadata.drop_all(bind=engine, tables=[reg_table])
-        metadata.drop_all(bind=engine, tables=[doc_table])
+        reg_table.drop(engine)
+        doc_table.drop(engine)
+
+        #metadata.drop_all(bind=engine, tables=[reg_table])
+        #metadata.drop_all(bind=engine, tables=[doc_table])
 
         #self.session.execute('DROP TABLE lb_reg_%s ' % member.nome_base)
         #self.session.execute('DROP TABLE lb_doc_%s ' % member.nome_base)
