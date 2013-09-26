@@ -52,9 +52,27 @@ class DepthKeySpecialView(SpecialView):
         json_reg = utils.to_json(member.json_reg)
         sharp = SharpJSON(json_reg)
 
-        sharped = sharp.new(self.data['name'], self.data['value'])
+        index, sharped = sharp.new(self.data['name'], self.data['value'])
 
-        return Response('Ha yeye.', status=500)
+        if sharped:
+            config = {
+                'matchdict': {'basename': self.base_name, 'id': self.id},
+                'params': {'json_reg': sharped},
+                'method': 'PUT'
+            }
+            request = utils.FakeRequest(**config)
+            context = self.reg_context_factory(request)
+            view = self.reg_custom_view(context, request)
+
+            response = view.update_member()
+            response.content_type='text/html'
+            response.charset='utf-8'
+            if response.text == 'UPDATED':
+                return Response(str(index), charset='utf-8', status=200, content_type='')
+
+            return Response('Could not sharp json', status=500)
+
+        return Response('No params supplied.', status=500)
 
     @view_config(request_method='PUT')
     def update_key(self):

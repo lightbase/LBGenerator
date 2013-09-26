@@ -1,5 +1,14 @@
 
 from lbgenerator.lib import dpath
+from lbgenerator.lib import utils
+from copy import deepcopy
+
+class Reference():
+    def __init__(self, json):
+        self.copy = deepcopy(json)
+    
+    def compare(self, obj):
+        return self.copy == obj
 
 class SharpJSON(object):
     
@@ -14,7 +23,19 @@ class SharpJSON(object):
 
     def get(self, path):
         path = self.switch_path(path)
-        return []
+        split = path.split(self.separator)
+        structure = self.json
+        fixed = [ ]
+        for name in split:
+            if type(structure) is dict:
+                fixed.append(name)
+                if not name in structure:
+                    dpath.util.new(self.json, self.separator.join(fixed), [ ])
+                    return [ ]
+            elif type(structure) is list:
+                fixed.append(name)
+            structure = structure[name]
+        return structure
 
     def set(self, path, value):
         path = self.switch_path(path)
@@ -31,23 +52,30 @@ class SharpJSON(object):
         
     def new(self, path, value):
         path = self.switch_path(path)
-        unmodified = dict(self.json)
-
+        ref = Reference(self.json)
+        value = parse_dict(value)
+        
         array = self.get(path)
-        if array:
-            index = len(array) + 1
+        if len(array) > 0:
+            index = len(array)
             path = '%s%s%i' % (path, self.separator, index)
             dpath.util.new(self.json, path, value)
         else:
+            index = 0
             dpath.util.new(self.json, path, [])
             path = '%s%s%i' % (path, self.separator, 0)
             dpath.util.new(self.json, path, value)
 
-        if self.json == unmodified:
+        if ref.compare(self.json):
             return False
         else:
-            return self.json
+            return index, self.json
 
+def parse_dict(d):
+    try:
+        return utils.to_json(d)
+    except:
+        return d
 
 
 
