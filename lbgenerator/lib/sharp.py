@@ -43,9 +43,9 @@ class SharpJSON(object):
         if setted > 0:
             return self.json
         else:
-            unmodified = dict(self.json)
+            ref = Reference(self.json)
             dpath.util.new(self.json, path, value)
-            if self.json == unmodified:
+            if ref.compare(self.json):
                 return False
             else:
                 return self.json
@@ -70,6 +70,9 @@ class SharpJSON(object):
             return False
         else:
             return index, self.json
+
+    def delete(self, path):
+        pass
 
 def parse_dict(d):
     try:
