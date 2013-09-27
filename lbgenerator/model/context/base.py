@@ -88,8 +88,8 @@ class BaseContextFactory(CustomContextFactory):
         # Delete parallel tables
         doc_table = get_doc_table(member.nome_base, metadata)
         reg_table = get_reg_table(member.nome_base, metadata, **custom_columns)
-        reg_table.drop(engine)
-        doc_table.drop(engine)
+        reg_table.drop(engine, checkfirst=True)
+        doc_table.drop(engine, checkfirst=True)
 
         #metadata.drop_all(bind=engine, tables=[reg_table])
         #metadata.drop_all(bind=engine, tables=[doc_table])
