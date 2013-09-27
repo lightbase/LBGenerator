@@ -17,6 +17,7 @@ class SpecialView(object):
     def __init__(self, request):
         self.request = request
         self.data = dict(self.request.params)
+        self.matchdict = self.request.matchdict
         self.base_name = request.matchdict.get('base')
         self.id = request.matchdict.get('id')
         if not base_exists(self.base_name): raise Exception('Base does not exist!')
@@ -34,11 +35,11 @@ class SpecialView(object):
         return begin_session()
 
 
-@view_defaults(route_name='depth_key')
-class DepthKeySpecialView(SpecialView):
+@view_defaults(route_name='path')
+class PathSpecialView(SpecialView):
 
     def __init__(self, request):
-        super(DepthKeySpecialView, self).__init__(request)
+        super(PathSpecialView, self).__init__(request)
 
     @view_config(request_method='GET')
     def get_key(self):
@@ -104,9 +105,33 @@ class DepthKeySpecialView(SpecialView):
 
         return Response('No params supplied.', status=500)
 
-    @view_config(request_method='DELETE')
+    @view_config(route_name='delete_path', request_method='DELETE')
     def delete_key(self):
-        pass
+        member = self.session.query(self.reg_entity).get(self.id)
+        self.session.close()
+
+        json_reg = utils.to_json(member.json_reg)
+        sharp = SharpJSON(json_reg)
+
+        deleted = sharp.delete(self.matchdict['name'])
+
+        if deleted:
+            config = {
+                'matchdict': {'basename': self.base_name, 'id': self.id},
+                'params': {'json_reg': deleted},
+                'method': 'PUT'
+            }
+            request = utils.FakeRequest(**config)
+            context = self.reg_context_factory(request)
+            view = self.reg_custom_view(context, request)
+
+            response = view.update_member()
+            response.content_type='text/html'
+            response.charset='utf-8'
+            if response.text == 'UPDATED':
+                return Response('DELETED', charset='utf-8', status=200, content_type='')
+
+        return Response(status=500)
 
 @view_config(route_name='download')
 def download(request):

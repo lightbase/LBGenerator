@@ -72,7 +72,34 @@ class SharpJSON(object):
             return index, self.json
 
     def delete(self, path):
-        pass
+        path = self.switch_path(path)
+        path_split = path.split(self.separator)
+        path_len = len(path_split)
+        structure = self.json
+
+        for name in path_split:
+
+            if type(structure) is dict:
+                if not name in structure:
+                    raise KeyNotFound()
+                elif path_len == 1:
+                    del structure[name]
+                    break
+                else:
+                    path_len -= 1
+                    structure = structure[name]
+                    
+            elif type(structure) is list:
+                if not utils.is_integer(name):
+                    raise InvalidListIndex()
+                elif path_len == 1:
+                    del structure[int(name)]
+                    break
+                else:
+                    path_len -= 1
+                    structure = structure[int(name)]
+
+        return self.json
 
 def parse_dict(d):
     try:
@@ -80,5 +107,10 @@ def parse_dict(d):
     except:
         return d
 
+class KeyNotFound(Exception):
+    pass
+
+class InvalidListIndex(Exception):
+    pass
 
 

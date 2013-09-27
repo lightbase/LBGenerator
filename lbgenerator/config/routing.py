@@ -23,9 +23,13 @@ def make_routes(config):
 
     #   ***Métodos especiais***
 
-    config.add_route('depth_key', 'reg/{base}/{id}/depth_key')
+    config.add_route('path', 'reg/{base}/{id}/path')
+    config.add_route('delete_path', 'reg/{base}/{id}/path/{name}')
+
     config.add_route('full_reg', 'reg/{base_name}/{id_reg}/full')
+
     config.add_route('download', 'doc/{base_name}/{id_doc}/download')
+
     config.add_route('text', 'doc/{base_name}/{id_doc}/text')
 
 
