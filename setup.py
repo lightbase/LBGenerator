@@ -13,7 +13,7 @@ requires = [
     'pyramid_restler',
     'sqlalchemy',
     'psycopg2',
-    'voluptuous'
+    'voluptuous',
     ]
 
 

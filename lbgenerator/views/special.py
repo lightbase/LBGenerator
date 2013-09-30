@@ -129,7 +129,8 @@ class PathSpecialView(SpecialView):
             response.content_type='text/html'
             response.charset='utf-8'
             if response.text == 'UPDATED':
-                return Response('DELETED', charset='utf-8', status=200, content_type='')
+                member = view.get_member(render=False)
+                return Response(member.json_reg, charset='utf-8', status=200, content_type='')
 
         return Response(status=500)
 
