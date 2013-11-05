@@ -45,13 +45,18 @@ def validate_doc_data(cls, request):
     data = params
 
     if method == 'POST':
+        pass
+        """
         if not 'id_reg' in params:
             raise Exception('Required param: id_reg')
         cls.id_reg = params['id_reg']
         cls.set_json_reg()
         data.update(get_doc(params))
+        """
 
     elif method == 'PUT':
+        pass
+        """
         if has_doc(params):
             if not 'id_reg' in params:
                 raise Exception('Trying to insert a new doc? Param "id_reg" is required!')
@@ -61,5 +66,6 @@ def validate_doc_data(cls, request):
                 data.update(get_doc(params))
         data['dt_ext_texto'] = None
         data['texto_doc'] = None
+        """
 
     return utils.filter_params(data, valid_fields)

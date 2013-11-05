@@ -1,41 +1,32 @@
 
 from lbgenerator.model.entities import *
-from lbgenerator.model import consistence
 from pyramid.compat import string_types
-import json 
-import inspect 
-import requests 
+import json
+import inspect
 import datetime
 import sqlalchemy
 from sqlalchemy import asc, desc
 from sqlalchemy.orm.state import InstanceState
 from pyramid_restler.model import SQLAlchemyORMContext
 from lbgenerator.lib import utils
-from lbgenerator.model.index import Index
+from lbgenerator.lib.consistency import Consistency
 from lbgenerator.model import begin_session
-from lbgenerator.model import engine
-from lbgenerator.model import metadata
-from lbgenerator.model import get_bases
-from lbgenerator.model import reg_hyper_class
-from lbgenerator.model import doc_hyper_class
+from lbgenerator.model import BASES
 
 class CustomContextFactory(SQLAlchemyORMContext):
 
     def __init__(self, request):
         self.request = request
-        self.base_name = self.request.matchdict.get('basename')
-        if self.base_name:
-            self.index = Index(self.base_name)
+        self.base_name = self.request.matchdict.get('base')
 
     def session_factory(self):
         return begin_session()
 
-    def _execute(self, seq):
-        """ Get next value from sequence.
-        """
-        seq.create(bind=engine)
-        value = self.session.execute(seq)
-        return value
+    def get_base(self):
+        return BASES.get_base(self.base_name)
+
+    def set_base(self, base_json):
+        return BASES.set_base(base_json)
 
     def get_cols(self):
         cols = tuple()
@@ -77,7 +68,8 @@ class CustomContextFactory(SQLAlchemyORMContext):
 
         # UPDATE MEMBER
         if 'json_reg' in data and index is True:
-            data = consistence.normalize(self.base_name, self.session, data)
+            consistency = Consistency(self.get_base(), data['json_reg'])
+            data['json_reg'] = consistency.normalize()
         for name in data:
             setattr(member, name, data[name])
         self.session.flush()

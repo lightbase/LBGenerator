@@ -1,19 +1,11 @@
 [app:main]
 use = egg:LBGenerator
 
-
-sqlalchemy.url = postgresql://postgres:postgres@127.0.0.1/projeto1
-#sqlalchemy.url = postgresql://postgres:postgres@10.1.0.147/projeto1
-sqlalchemy.max_overflow = 0
-sqlalchemy.pool_size = 20
-storage.tmp_dir = /tmp
-index.url= http://10.1.0.148:9200
-pyramid.reload_templates = true
-pyramid.debug_authorization = true
-pyramid.debug_notfound = true
-pyramid.debug_routematch = true
+pyramid.reload_templates = false
+pyramid.debug_authorization = false
+pyramid.debug_notfound = false
+pyramid.debug_routematch = false
 pyramid.default_locale_name = en
-mako.directories = lbgenerator:templates
 
 [server:main]
 use = egg:waitress#main
@@ -32,11 +24,11 @@ keys = console
 keys = generic
 
 [logger_root]
-level = INFO
+level = WARN
 handlers = console
 
 [logger_lbgenerator]
-level = DEBUG
+level = WARN
 handlers =
 qualname = lbgenerator
 

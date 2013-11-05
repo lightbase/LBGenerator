@@ -38,10 +38,3 @@ def validate_base_data(cls, request):
         )
 
     return data
-
-        
-
-
-
-
-

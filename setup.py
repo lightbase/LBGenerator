@@ -18,7 +18,7 @@ requires = [
 
 
 setup(name='LBGenerator',
-      version='0.3',
+      version='0.4',
       description='LBGenerator',
       long_description=README + '\n\n' +  CHANGES,
       classifiers=[

@@ -2,31 +2,30 @@
 from pyramid_restler.view import RESTfulView
 from pyramid.response import Response
 from pyramid.exceptions import HTTPNotFound
-from lbgenerator.model.entities import *
-from lbgenerator.model import BASES
 from lbgenerator.lib import utils
 
 class CustomView(RESTfulView):
 
     """ General Customized Views for REST app.
     """
-    def __init__(self, *args):
-        self.context = args[0]
-        self.request = args[1]
+    def __init__(self, context, request):
+        self.context = context
+        self.request = request
         md = self.request.matchdict
-        self.base_name = md.get('basename')
+        self.base_name = md.get('base')
         if md.get('id'):
             if not utils.is_integer(md.get('id')):
                 raise Exception('id "%s" is not an integer!' %(md.get('id')))
 
-    def get_member(self, render=True):
+    def get_db_obj(self):
         id = self.request.matchdict['id']
-        if hasattr(self.context.entity, 'json_reg'):
-            self.fields = ['json_reg']
+        return self.context.get_member(id)
+
+    def get_member(self):
+        id = self.request.matchdict['id']
         self.wrap = False
         member = self.context.get_member(id)
-        if render: return self.render_to_response(member)
-        else: return member
+        return self.render_to_response(member)
 
     def _get_data(self):
         """ Get all valid data from (request) POST or PUT.
@@ -34,10 +33,10 @@ class CustomView(RESTfulView):
         return self.data
 
     def get_base(self):
-        return BASES.get_base(self.base_name)
+        return self.context.get_base()
 
     def set_base(self, base_json):
-        return BASES.set_base(base_json)
+        return self.context.set_base(base_json)
 
     def get_collection(self):
         kwargs = self.request.params.get('$$', {})
@@ -71,8 +70,6 @@ class CustomView(RESTfulView):
 
     def delete_member(self):
         id = self.request.matchdict['id']
-        if hasattr(self.context, 'delete_referenced_docs'):
-            self.context.delete_referenced_docs(id)
         member = self.context.delete_member(id)
         if member is None:
             raise HTTPNotFound()

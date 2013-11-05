@@ -27,7 +27,7 @@ class HistoryMetaBase(object):
                     "name":"id_base",
                     "alias":"id_base",
                     "description":"Base old ID.",
-                    "datatype":"Inteiro",
+                    "datatype":"Integer",
                     "required":True,
                     "multivalued":False,
                     "indices":[
@@ -40,7 +40,7 @@ class HistoryMetaBase(object):
                     "name":"author",
                     "alias":"author",
                     "description":"Event Author.",
-                    "datatype":"Texto",
+                    "datatype":"Text",
                     "required":True,
                     "multivalued":False,
                     "indices":[
@@ -53,7 +53,7 @@ class HistoryMetaBase(object):
                     "name":"date",
                     "alias":"date",
                     "description":"Event Date.",
-                    "datatype":"Data",
+                    "datatype":"Date",
                     "required":True,
                     "multivalued":False,
                     "indices":[
@@ -66,7 +66,7 @@ class HistoryMetaBase(object):
                     "name":"name",
                     "alias":"name",
                     "description":"Base old name.",
-                    "datatype":"Texto",
+                    "datatype":"Text",
                     "required":True,
                     "multivalued":False,
                     "indices":[
@@ -79,7 +79,7 @@ class HistoryMetaBase(object):
                     "name":"structure",
                     "alias":"structure",
                     "description":"Base old structure",
-                    "datatype":"JSON",
+                    "datatype":"Json",
                     "required":True,
                     "multivalued":False,
                     "indices":[
@@ -92,7 +92,7 @@ class HistoryMetaBase(object):
                     "name":"status",
                     "alias":"status",
                     "description":"Base status",
-                    "datatype":"Texto",
+                    "datatype":"Text",
                     "required":True,
                     "multivalued":False,
                     "indices":[
@@ -101,7 +101,7 @@ class HistoryMetaBase(object):
                  }
               }
            ]
-        }            
+        }
 
 
     def create_base(self, begin_session):
@@ -125,16 +125,20 @@ class HistoryMetaBase(object):
             base_context.create_member(data)
 
     def create_member(self, **registry):
-                
-        request = utils.FakeRequest(matchdict = {'basename': '_history'})
+
+        request = utils.FakeRequest(matchdict = {'base': '_history'})
         reg_context = RegContextFactory(request)
-        id_reg = reg_context._execute(self.seq)
+        id_reg = reg_context.entity.next_id()
         registry['id_reg'] = id_reg
-        reg_context.create_member({
-            'id_reg': id_reg,
-            'json_reg': json.dumps(registry, ensure_ascii=False),
-            'dt_reg': datetime.datetime.now()
-        })
+        json_reg = json.dumps(registry, ensure_ascii=False)
+        try:
+            reg_context.create_member({
+                'id_reg': id_reg,
+                'json_reg': json_reg,
+                'dt_reg': datetime.datetime.now()
+            })
+        except:
+            print('ERROR: could not create registry on _history. id: %s, json: %s' %(id_reg, json_reg))
 
 
 

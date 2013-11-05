@@ -1,5 +1,5 @@
 import requests, datetime, json
-from lbgenerator.views.special import full_reg
+#from lbgenerator.views.special import full_reg
 from lbgenerator.model import BASES
 
 class FakeRequest:
@@ -26,8 +26,9 @@ class Index:
 
     """ Handles registry index
     """
-    def __init__(self, base_name):
+    def __init__(self, base_name, get_full_reg):
         self.base_name = base_name
+        self.get_full_reg = get_full_reg
 
         base_obj = BASES.get_base(self.base_name)
 
@@ -107,7 +108,8 @@ class Index:
 
         url = self.url_encode(self.host, str(id))
         request = FakeRequest(self.base_name, id)
-        _full_reg = full_reg(request, json_reg=data['json_reg']).text
+        #_full_reg = full_reg(request, json_reg=data['json_reg']).text
+        _full_reg = self.get_full_reg(utils.to_json(data['json_reg'])).text
 
         try:
             r = requests.put(url, data=_full_reg)

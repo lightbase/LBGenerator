@@ -43,7 +43,7 @@ class BaseContextFactory(CustomContextFactory):
         member = self.get_member(id)
         if member is None:
             return None
-        
+
         if member.nome_base != data['nome_base']:
             old_name = 'lb_reg_%s' %(member.nome_base)
             new_name = 'lb_reg_%s' %(data['nome_base'])
@@ -61,6 +61,10 @@ class BaseContextFactory(CustomContextFactory):
             new_name = 'lb_doc_%s_id_doc_seq' %(data['nome_base'])
             self.session.execute('ALTER SEQUENCE %s RENAME TO %s' %(old_name, new_name))
 
+        for name in data:
+            setattr(member, name, data[name])
+        self.session.commit()
+
         _history.create_member(**{
             'id_base': member.id_base,
             'author': 'Author',
@@ -70,14 +74,12 @@ class BaseContextFactory(CustomContextFactory):
             'status': 'UPDATED'
         })
 
-        for name in data:
-            setattr(member, name, data[name])
-        self.session.commit()
         self.session.close()
+
         return member
 
     def delete_member(self, id):
-        member = self.get_member(id, force=True)
+        member = self.get_member(id)
         if member is None:
             return None
 
@@ -90,6 +92,10 @@ class BaseContextFactory(CustomContextFactory):
         reg_table = get_reg_table(member.nome_base, metadata, **custom_columns)
         reg_table.drop(engine, checkfirst=True)
         doc_table.drop(engine, checkfirst=True)
+
+        # Delete base
+        self.session.delete(member)
+        self.session.commit()
 
         #metadata.drop_all(bind=engine, tables=[reg_table])
         #metadata.drop_all(bind=engine, tables=[doc_table])
@@ -108,12 +114,10 @@ class BaseContextFactory(CustomContextFactory):
             'status': 'DELETED'
         })
 
-        # Delete base
-        self.session.delete(member)
-        self.session.commit()
         self.session.close()
+
         return member
-        
+
     def member_to_dict(self, member, fields=None):
         if fields is None:
             fields = self.default_fields

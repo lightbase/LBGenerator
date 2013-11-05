@@ -2,6 +2,7 @@ CHANGES.txt
 MANIFEST.in
 README.txt
 development.ini
+lbgenerator.wsgi
 production.ini
 setup.cfg
 setup.py

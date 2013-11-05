@@ -4,7 +4,7 @@ import json
 class FakeRequest(object):
 
     def __init__(self, params={}, matchdict={}, method='GET'):
-        self.params = params 
+        self.params = params
         self.matchdict = matchdict
         self.method = method
 
@@ -28,10 +28,10 @@ def sincronize(registry, schema):
         raise Exception('JSON data is not according to base definition. Details: %s' % str(e))
 
 def is_integer(i):
-    try: 
+    try:
         int(i)
         return True
-    except ValueError: 
+    except ValueError:
         return False
 
 def split_request(request):
@@ -59,3 +59,29 @@ def is_sqlinject(s):
     for statement in sqlinject:
         if statement in s:
             raise Exception('Invalid statements in literal search.')
+
+class FileMask():
+
+    def __init__(self, id_doc, nome_doc, mimetype, uuid):
+        self._id_doc = id_doc
+        self.nome_doc = nome_doc
+        self.mimetype = mimetype
+        self.uuid = uuid
+
+    @property
+    def _id_doc(self):
+        return self.id_doc
+
+    @_id_doc.setter
+    def _id_doc(self, id):
+        try:
+            self.id_doc = int(id)
+        except:
+            raise Exception('ValueError: id_doc must be integer.')
+
+def is_file_mask(mask):
+    try:
+        FileMask(**mask)
+        return True
+    except:
+        return False
