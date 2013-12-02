@@ -1,6 +1,6 @@
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.schema import Column, Table, ForeignKey
-from sqlalchemy.types import Integer, String, DateTime, Binary
+from sqlalchemy.types import Integer, String, DateTime, Binary, Boolean
 from sqlalchemy.schema import Sequence
 from sqlalchemy.schema import MetaData
 
@@ -15,6 +15,13 @@ class LB_Base(Base):
     json_base = Column(String, nullable=False)
     reg_model = Column(String, nullable=False)
     dt_base = Column(DateTime, nullable=False)
+
+    password = Column(String, nullable=False)
+    index_export = Column(Boolean, nullable=False)
+    index_url = Column(String)
+    index_time = Column(Integer)
+    doc_extract = Column(Boolean, nullable=False)
+    extract_time = Column(Integer)
 
 class LB_Form(Base):
 

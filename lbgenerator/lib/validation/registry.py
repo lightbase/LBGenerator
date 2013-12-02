@@ -22,31 +22,40 @@ def validate_reg_data(cls, request):
     data = utils.filter_params(params, valid_fields)
 
     if method == 'POST':
-
-        if 'json_reg' in data:
-            id = cls.context.entity.next_id()
-            json_reg = utils.to_json(data.get('json_reg'))
-
-            base = cls.get_base()
-
-            data['id_reg'] = id
-            data['json_reg'] = base.validate(json_reg, id)
-            data['dt_reg'] = datetime.datetime.now()
-
-            data.update(cls.get_cc_data(json_reg))
+        return validate_post_data(cls, data)
 
     elif method == 'PUT':
+        id = int(request.matchdict['id'])
+        return validate_put_data(cls, data, id)
 
-        if 'json_reg' in data:
-            json_reg = utils.to_json(data['json_reg'])
+def validate_post_data(cls, data):
 
-            base = cls.get_base()
+    if 'json_reg' in data:
+        id = cls.context.entity.next_id()
+        json_reg = utils.to_json(data.get('json_reg'))
 
-            id = int(request.matchdict['id'])
-            data['json_reg'] = base.validate(json_reg, id)
+        base = cls.get_base()
 
-            data.update(cls.get_cc_data(json_reg))
-            if not 'dt_index_tex' in data:
-                data['dt_index_tex'] = None
+        data['id_reg'] = id
+        data['json_reg'] = base.validate(json_reg, id)
+        data['dt_reg'] = datetime.datetime.now()
+
+        data.update(cls.get_relational_data(json_reg))
 
     return data
+
+def validate_put_data(cls, data, id):
+
+    if 'json_reg' in data:
+        json_reg = utils.to_json(data['json_reg'])
+
+        base = cls.get_base()
+
+        data['json_reg'] = base.validate(json_reg, id)
+
+        data.update(cls.get_relational_data(json_reg))
+        if not 'dt_index_tex' in data:
+            data['dt_index_tex'] = None
+
+    return data
+

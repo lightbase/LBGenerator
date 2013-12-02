@@ -2,8 +2,12 @@
 from lbgenerator.model.context import CustomContextFactory
 from lbgenerator.model import get_bases
 from lbgenerator.model import doc_hyper_class
+import json
 
 class DocContextFactory(CustomContextFactory):
+
+    """ Document Factory Methods
+    """
 
     def __init__(self, request):
         super(DocContextFactory, self).__init__(request)
@@ -12,8 +16,13 @@ class DocContextFactory(CustomContextFactory):
         self.entity = doc_hyper_class(self.base_name)
 
     def get_member(self, id):
-        q = self.session.query(self.entity)
-        return q.get(id)
+        self.single_member = True
+        # We don't want to query hole file when searching ..
+        q = self.session.query(*self.get_cols()).filter_by(id_doc=id).all()
+        return q or None
+
+    def get_raw_member(self, id):
+        return self.session.query(self.entity).get(id)
 
     def member_to_dict(self, member, fields=None):
         if fields is None:
@@ -30,11 +39,8 @@ class DocContextFactory(CustomContextFactory):
             obj['blob_doc'] = url
         return obj
 
-    def delete_member(self, id):
-        member = self.get_member(id)
-        if member is None:
-            return None
-        self.session.delete(member)
-        self.session.commit()
-        self.session.close()
-        return member
+    def to_json(self, value, fields=None, wrap=True):
+        obj = self.get_json_obj(value, fields, wrap)
+        if getattr(self, 'single_member', None) is True and type(obj) is list:
+            obj = obj[0]
+        return json.dumps(obj, cls=self.json_encoder, ensure_ascii=False)

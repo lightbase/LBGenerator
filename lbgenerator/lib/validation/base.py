@@ -10,7 +10,14 @@ def validate_base_data(cls, request):
         'id_base',
         'nome_base',
         'json_base',
-        'dt_base'
+        'dt_base',
+        'reg_model',
+        'password',
+        'index_export',
+        'index_url',
+        'index_time',
+        'doc_extract',
+        'extract_time'
         )
 
     data = utils.filter_params(params, valid_fields)
@@ -22,8 +29,14 @@ def validate_base_data(cls, request):
         data = dict(
             nome_base = base.name,
             json_base = base.json,
-            reg_model = str(base.schema.schema),
-            dt_base = str(datetime.datetime.now())
+            reg_model = base.reg_model,
+            dt_base = str(datetime.datetime.now()),
+            password = base.password,
+            index_export = base.index_export,
+            index_url = base.index_url,
+            index_time= base.index_time,
+            doc_extract = base.doc_extract,
+            extract_time = base.extract_time
         )
 
     if method == 'PUT':
@@ -34,7 +47,13 @@ def validate_base_data(cls, request):
         data = dict(
             nome_base = base.name,
             json_base = base.json,
-            reg_model = str(base.schema.schema),
+            reg_model = base.reg_model,
+            password = base.password,
+            index_export = base.index_export,
+            index_url = base.index_url,
+            index_time= base.index_time,
+            doc_extract = base.doc_extract,
+            extract_time = base.extract_time
         )
 
     return data

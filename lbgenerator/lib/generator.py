@@ -1,5 +1,4 @@
 
-from liblightbase.lbbase import Base
 from liblightbase.lbbase.genesis import json_to_base
 from lbgenerator.lib import utils
 

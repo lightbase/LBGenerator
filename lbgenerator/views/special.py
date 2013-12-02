@@ -53,7 +53,7 @@ class DocText(object):
         text = params.get('texto_doc')
         doc.texto_doc = text
         doc.dt_ext_texto = str(datetime.datetime.now())
-        if text != 'nulo':
+        if text != '':
             reg.dt_index_tex = None
 
         self.session.commit()

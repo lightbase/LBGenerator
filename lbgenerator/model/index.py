@@ -1,144 +1,206 @@
 import requests, datetime, json
-#from lbgenerator.views.special import full_reg
-from lbgenerator.model import BASES
+from lbgenerator.lib import utils
+from lbgenerator import config
 
-class FakeRequest:
-
-    """ Defines fake request.
-        Useful for calling internal view callables.
+class CreatedIndex():
+    """ Represents a successfull response when creating an index.
     """
-    def __init__(self, base_name, id_reg):
-        self.matchdict = dict(
-            base_name = base_name,
-            id_reg = id_reg
-        )
+    def __init__(self, ok, _index, _type, _id, _version):
+        pass
 
-def to_object(js):
-    if not js:
-        return False
-    try:
-        jdec = json.JSONDecoder()
-        return jdec.raw_decode(js)[0]
-    except:
-        return False
+class UpdatedIndex():
+    """ Represents a successfull response when updating an index.
+    """
+    def __init__(self, ok, _index, _type, _id, _version):
+        pass
 
-class Index:
+class DeletedIndex():
+    """ Represents a successfull response when deleting an index.
+    """
+    def __init__(self, ok, found, _index, _type, _id, _version):
+        pass
+
+class DeletedRoot():
+    """ Represents a successfull response when deleting root index.
+    """
+    def __init__(self, acknowledged, ok):
+        pass
+
+class Index():
 
     """ Handles registry index
     """
-    def __init__(self, base_name, get_full_reg):
-        self.base_name = base_name
+    def __init__(self, base, get_full_reg):
+        self.base = base
         self.get_full_reg = get_full_reg
+        self.is_indexable = self.base.index_export
+        self.INDEX_URL = self.base.index_url
+        if self.is_indexable:
+            self._host = self.INDEX_URL.split('/')[2]
+            self._index = self.INDEX_URL.split('/')[3]
+            self._type = self.INDEX_URL.split('/')[4]
+        self.TIMEOUT = config.REQUESTS_TIMEOUT
 
-        base_obj = BASES.get_base(self.base_name)
-
-        if base_obj.index_export == 'True':
-            self.is_indexable = True
-        else:
-            self.is_indexable = False
-
-        self.host = self.url_encode(
-             base_obj.index_url,
-             base_name,
-             base_name
-             )
-
-    def url_encode(self, *args):
+    def to_url(self, *args):
         return '/'.join(list(args))
 
     def is_created(self, msg):
+        """ Ensures index is created
         """
-        Success reponse example = {
-            "ok":true,
-            "_index":"base1",
-            "_type":"base1",
-            "_id":"138",
-            "_version":1
-        }
-        """
-        if type(msg) is dict and len(msg) == 5:
-            comps = 'ok' and '_index' and '_type' and '_id' and '_version'
-            if comps in msg:
-                return True
-        return False
+        try: CreatedIndex(**msg); return True
+        except: return False
 
     def is_updated(self, msg):
-        return self.is_created(msg)
+        """ Ensures index is updated
+        """
+        try: UpdatedIndex(**msg); return True
+        except: return False
 
     def is_deleted(self, msg):
+        """ Ensures index is deleted
         """
-        Success reponse example = {
-            "ok":true,
-            "_found":true,
-            "_index":"base1",
-            "_type":"base1",
-            "_id":"138",
-            "_version":1
-        }
+        try: DeletedIndex(**msg); return True
+        except: return False
+
+    def is_root_deleted(self, msg):
+        """ Ensures root index is deleted
         """
-        if type(msg) is dict and len(msg) == 6:
-            comps = 'ok' and '_found' and '_index' and '_type' and '_id' and '_version'
-            if comps in msg:
-                return True
-        return False
+        try: DeletedRoot(**msg); return True
+        except: return False
 
     def create(self, data):
-
+        """ Creates index 
+        """
         if not self.is_indexable:
             return data
 
-        url = self.url_encode(self.host, str(data.get('id_reg')))
-        try:
-            r = requests.post(url, data=data['json_reg'])
-            r_content = bytes.decode(r.content)
-        except:
-            r_content = None
+        # Get parsed registry
+        registry = utils.to_json(data['json_reg'])
+        #parser = RegistryParser(self.base.object, registry)
+        # IMPORTANT: This time we dont have ensure_ascii=False
+        #registry = json.dumps(parser.parse(), ensure_ascii=False)
+        #registry = json.dumps(parser.parse())
+        registry = json.dumps(registry)
 
-        if self.is_created(to_object(r_content)):
+        # Try to index registry
+        url = self.to_url(self.INDEX_URL, str(data['id_reg']))
+        try: response = requests.post(url, data=registry, timeout=self.TIMEOUT).json()
+        except: response = None
+
+        if self.is_created(response):
             data['dt_index_tex'] = datetime.datetime.now()
         else:
             data['dt_index_tex'] = None
-
         return data
 
     def update(self, id, data):
-
+        """ Updates index 
+        """
         if not self.is_indexable:
             return data
 
-        url = self.url_encode(self.host, str(id))
-        request = FakeRequest(self.base_name, id)
-        #_full_reg = full_reg(request, json_reg=data['json_reg']).text
-        _full_reg = self.get_full_reg(utils.to_json(data['json_reg'])).text
+        # Get full registry
+        full_reg = self.get_full_reg(utils.to_json(data['json_reg']), close_session=False)
+        # Get parsed registry
+        #parser = RegistryParser(self.base.object, full_reg)
+        # registry = json.dumps(parser.parse(), ensure_ascii=False)
+        # IMPORTANT: This time we dont have ensure_ascii=False
+        #registry = json.dumps(parser.parse())
+        registry = json.dumps(full_reg)
 
-        try:
-            r = requests.put(url, data=_full_reg)
-            r_content = bytes.decode(r.content)
-        except:
-            r_content = None
+        # Try to index registry
+        url = self.to_url(self.INDEX_URL, str(id))
+        try: response = requests.put(url, data=registry, timeout=self.TIMEOUT).json()
+        except: response = None
 
-        if self.is_updated(to_object(r_content)):
+        if self.is_updated(response):
             data['dt_index_tex'] = datetime.datetime.now()
         else:
             data['dt_index_tex'] = None
-
         return data
 
     def delete(self, id):
-
+        """ Deletes index 
+        """
         if not self.is_indexable:
             return True
 
-        url = self.url_encode(self.host, str(id))
-        try:
-            r = requests.delete(url)
-            r_content = bytes.decode(r.content)
-        except:
-            r_content = None
+        url = self.to_url(self.INDEX_URL, str(id))
+        try: response = requests.delete(url, timeout=self.TIMEOUT).json()
+        except : response = None
 
-        if self.is_deleted(to_object(r_content)):
+        if self.is_deleted(response):
             response = True
         else:
             response = False
-
         return response
+
+    def delete_root(self):
+        """ Deletes root type
+        """
+        try: response = requests.delete(self.INDEX_URL, timeout=self.TIMEOUT).json()
+        except : response = None
+
+        if self.is_root_deleted(response):
+            response = True
+        else:
+            response = False
+        return response
+
+class RegistryParser():
+
+    def __init__(self, base, registry):
+        self.base = base
+        self.registry = registry
+        self.id = self.registry['id_reg']
+        del self.registry['id_reg']
+
+    def get_base(self, base, attr):
+        for content in base['content']:
+            if content.get('field'):
+                field = content['field']
+                if field['name'] == attr:
+                    return field
+            elif content.get('group'):
+                group = content['group']
+                if group['metadata']['name'] == attr:
+                    return group
+        raise Exception('Structure "%s" is not present in base definitions.' % attr)
+
+    def destroy_field(self, base, registry, field):
+        if 'Nenhum' in base.get('indices', []):
+            del registry[field]
+            return True
+        return False
+
+    def parse(self, base=None, registry=None):
+        """ Will search fields in registry that are setted with "NoIndex" in base structure, 
+            and then will delete it from registry, so they cannot be indexed.
+        """
+        if not registry: registry = self.registry
+        if not base: base = self.base
+
+        _registry = registry.copy()
+
+        for attr in _registry:
+
+            value = _registry[attr]
+            _base = self.get_base(base, attr)
+
+            #is_field = isinstance(_base, Field)
+            #is_group = isinstance(_base, Group)
+
+            if type(value) is dict and not 'id_doc' in value:
+                self.parse(_base, value)
+
+            elif type(value) is list:
+
+                if not self.destroy_field(_base, registry, attr):
+                    for item in value:
+                        if type(item) is dict:
+                            self.parse(_base, item)
+            else:
+                self.destroy_field(_base, registry, attr)
+
+        self.registry['id_reg'] = self.id
+        return self.registry

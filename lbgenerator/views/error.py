@@ -18,13 +18,13 @@ def json_msg(status=None, err_msg=None, request=None):
 
 @view_config(context=NotFound)
 def notfound_view(request):
-    """ Customized NotFound view for Rest Api
+    """ Customized NotFound view
     """
     return json_msg(404, 'Not Found', request)
 
 @view_config(context=Exception)
 def error_view(exc, request):
-    """ Customized view for thowing RestExceptions
+    """ Customized view for Exceptions
         Prints error exceptions into log file
     """
     print(traceback.format_exc())

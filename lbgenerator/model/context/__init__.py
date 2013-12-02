@@ -1,32 +1,38 @@
 
-from lbgenerator.model.entities import *
 from pyramid.compat import string_types
 import json
 import inspect
 import datetime
 import sqlalchemy
 from sqlalchemy import asc, desc
-from sqlalchemy.orm.state import InstanceState
 from pyramid_restler.model import SQLAlchemyORMContext
 from lbgenerator.lib import utils
-from lbgenerator.lib.consistency import Consistency
+from lbgenerator import model
 from lbgenerator.model import begin_session
-from lbgenerator.model import BASES
 
 class CustomContextFactory(SQLAlchemyORMContext):
+
+    """ Default Factory Methods
+    """
 
     def __init__(self, request):
         self.request = request
         self.base_name = self.request.matchdict.get('base')
 
     def session_factory(self):
+        """ Connect to database and begin transaction
+        """
         return begin_session()
 
     def get_base(self):
-        return BASES.get_base(self.base_name)
+        """ Return Base object
+        """
+        return model.BASES.get_base(self.base_name)
 
     def set_base(self, base_json):
-        return BASES.set_base(base_json)
+        """ Set Base object
+        """
+        return model.BASES.set_base(base_json)
 
     def get_cols(self):
         cols = tuple()
@@ -38,77 +44,15 @@ class CustomContextFactory(SQLAlchemyORMContext):
             cols += (getattr(self.entity, 'id_doc'),)
         return cols
 
-    def get_member(self, id, force=False):
+    def get_member(self, id):
         self.single_member = True
-        if 'blob_doc' in self.default_fields and not force:
-            q = self.session.query(*self.get_cols()).filter_by(id_doc=id)
-            return q.all() or None
         q = self.session.query(self.entity)
         return q.get(id)
 
-    def create_member(self, data):
-        # CREATE MEMBER
-        member = self.entity(**data)
-        self.session.add(member)
-        self.session.flush()
-
-        # INDEX MEMBER
-        if 'json_reg' in data:
-            data = self.index.create(data)
-        for name in data:
-            setattr(member, name, data[name])
-        self.session.commit()
-        self.session.close()
-        return member
-
-    def update_member(self, id, data, index=True):
-        member = self.get_member(id, force=True)
-        if member is None:
-            return None
-
-        # UPDATE MEMBER
-        if 'json_reg' in data and index is True:
-            consistency = Consistency(self.get_base(), data['json_reg'])
-            data['json_reg'] = consistency.normalize()
-        for name in data:
-            setattr(member, name, data[name])
-        self.session.flush()
-
-        # INDEX MEMBER
-        if 'json_reg' in data and index is True:
-            data = self.index.update(id, data)
-        for name in data:
-            setattr(member, name, data[name])
-
-        self.session.commit()
-        self.session.close()
-        return member
-
-    def clear_del_data(self, id, member):
-        for attr in member.__dict__:
-            static_attrs = isinstance(member.__dict__[attr], InstanceState)\
-            or attr == 'id_reg' or attr == 'dt_reg'
-            if not static_attrs:
-                setattr(member, attr, None)
-        setattr(member, 'dt_reg_del', datetime.datetime.now())
-        setattr(member, 'json_reg', '{"id_reg":%s}' % str(id))
-        return member
-
-    def delete_member(self, id, is_reg=False):
-        member = self.get_member(id, force=True)
-        if member is None:
-            return None
-        if is_reg:
-            if self.index.delete(id):
-                self.session.delete(member)
-            else:
-                member = self.clear_del_data(id, member)
-        self.session.commit()
-        self.session.close()
-        return member
-
     def get_collection(self, select=None, distinct=False, order_by=None, limit=None,
                        offset=None, filters=None, literal=None):
+        """ Search database objects
+        """
 
         if select and select != '*':
             self.default_fields = list()
@@ -172,15 +116,6 @@ class CustomContextFactory(SQLAlchemyORMContext):
         q = q.limit(self.default_limit)
 
         return q.all()
-
-    def to_json(self, value, fields=None, wrap=True):
-        obj = self.get_json_obj(value, fields, wrap)
-        if fields is not None and len(fields) is 1 and fields[0] == 'json_reg' and wrap is False:
-            obj = obj[0].get('json_reg')
-        elif getattr(self, 'single_member', None) is True and type(obj) is list:
-            obj = obj[0]
-
-        return json.dumps(obj, cls=self.json_encoder, ensure_ascii=False)
 
     def wrap_json_obj(self, obj):
         count = len(obj)

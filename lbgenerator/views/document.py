@@ -1,28 +1,27 @@
 import json
 import datetime
-from lbgenerator.views import CustomView
-from pyramid.response import Response
-from pyramid.exceptions import HTTPNotFound
-from lbgenerator.model import tmp_dir
-from lbgenerator.lib.validation.document import validate_doc_data
-from lbgenerator.lib import utils
-
 import uuid
 import os
 import glob
 import cgi
 import base64
+from lbgenerator.views import CustomView
+from pyramid.response import Response
+from pyramid.exceptions import HTTPNotFound
+from lbgenerator import config
+from lbgenerator.lib.validation.document import validate_doc_data
+from lbgenerator.lib import utils
 
 class DocCustomView(CustomView):
 
-    """ Customized view for doc REST app.
+    """ Documents Customized View Methods
     """
     def __init__(self, context, request):
         self.context = context
         self.request = request
         self.base_name = self.request.matchdict.get('base')
         self.data = validate_doc_data(self, request)
-        self.tmp_dir = tmp_dir + '/lightbase_tmp_storage/' + self.base_name
+        self.tmp_dir = config.TMP_DIR + '/lightbase_tmp_storage/' + self.base_name
 
     def build_storage(self, filename, mimetype, input_file):
         if not os.path.exists(self.tmp_dir):
@@ -50,6 +49,12 @@ class DocCustomView(CustomView):
         os.rename(tmp_file_path, file_path)
         return str(file_id)
 
+    def get_member(self):
+        id = self.request.matchdict['id']
+        member = self.context.get_member(id)
+        self.wrap = False
+        return self.render_to_response(member)
+
     def create_member(self):
         if self.request.params:
             for k, v in self.request.params.items():
@@ -61,17 +66,12 @@ class DocCustomView(CustomView):
             return Response(file_id, status=201)
         return Response(status=200)
 
-    def get_member(self):
-        id = self.request.matchdict['id']
-        member = self.context.get_member(id)
-        self.context.single_member = True
-        self.wrap = False
-        return self.render_to_response(member)
-
     def update_member(self):
         return Response('NOT IMPLEMENTED', charset='utf-8', status=500, content_type='')
 
     def delete_member(self):
+        return Response('NOT IMPLEMENTED', charset='utf-8', status=500, content_type='')
+        """
         storage = self.request.matchdict['id']
         try:
             for filename in glob.glob(self.tmp_dir + '/' + storage + '*'):
@@ -79,10 +79,13 @@ class DocCustomView(CustomView):
             return Response(status=200)
         except:
             return Response(status=500)
+        """
 
     def download(self):
+        """ Returns file bytes stream, so user can download it.
+        """
         id = self.request.matchdict.get('id')
-        member = self.context.get_member(id)
+        member = self.context.get_raw_member(id)
         if member is None:
             raise HTTPNotFound()
 

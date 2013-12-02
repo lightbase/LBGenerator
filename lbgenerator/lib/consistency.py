@@ -16,11 +16,12 @@ class Consistency():
         return begin_session()
 
     def normalize(self):
-
         """
         This method sincronizes database doc objecs and doc fields within json_reg.
-        If provided param data is diferent from data returned:
-        That means that something in REST API is inconsistent, and must be analized.
+        The main purpose is when user removes a file from registry, this method will
+        delete the file on database. If the reverse way happens (the file doesnt exists 
+        on database but exists in registry) , this method will delete the field from
+        registry. The case must be studied.
         """
         self.entity = doc_hyper_class(self.base.name)
         self.files = self.session.query(self.entity.id_doc).filter_by(id_reg=self.registry['id_reg']).all()
@@ -38,13 +39,6 @@ class Consistency():
 
         return json.dumps(self.registry, ensure_ascii=True)
 
-    def is_file_mask(self, mask):
-        try:
-            utils.FileMask(**mask)
-            return True
-        except:
-            return False
-
     def remove_inconsistent_files(self, registry):
 
         #TODO: Test this function
@@ -58,12 +52,11 @@ class Consistency():
         to_delete = [ ]
         for k, v in _registry.items():
 
-            if type(v) is dict and self.is_file_mask(v):
+            if type(v) is dict and utils.is_file_mask(v):
                 id = v['id_doc']
                 if not (id,) in self.files:
                     # file is not in database, delete it from registry
                     to_delete.append(k)
-                    #del registry[k]
                 else:
                     # file is OK, remove it from list
                     self.files.remove((id,))
@@ -73,6 +66,10 @@ class Consistency():
 
         to_delete.reverse()
         for k in to_delete:
-            del registry[k]
+            # DANGEROUS !!!!!
+            # When will it happen ???
+            # execute, or not to execute ???
+            pass
+            # del registry[k]
 
         return registry

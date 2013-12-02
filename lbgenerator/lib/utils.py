@@ -21,12 +21,6 @@ def to_json(obj):
     except Exception as e:
         raise Exception('Could not parse JSON data. Details: %s' % str(e.args[0]))
 
-def sincronize(registry, schema):
-    try:
-        return schema(registry)
-    except Exception as e:
-        raise Exception('JSON data is not according to base definition. Details: %s' % str(e))
-
 def is_integer(i):
     try:
         int(i)
@@ -35,6 +29,8 @@ def is_integer(i):
         return False
 
 def split_request(request):
+    # TODO: if user send a parameter on get like '%', if not url_encoded, will 
+    # raise an utf-8 decode error by webob lib. Need to fix it !!!
     return dict(request.params), request.method
 
 def filter_params(params, valid_fields):

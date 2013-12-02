@@ -1,11 +1,10 @@
-from lbgenerator.model.context.registry import RegContextFactory
 from lbgenerator.lib import utils
 from liblightbase.lbbase import genesis
 import json
 import datetime
 from sqlalchemy import Sequence
 
-class HistoryMetaBase(object):
+class HistoryMetaBase():
 
     def __init__(self):
         self.seq = Sequence('lb_doc__history_id_doc_seq')
@@ -108,11 +107,18 @@ class HistoryMetaBase(object):
 
         from lbgenerator.model.context.base import BaseContextFactory
         base = genesis.json_to_base(self.structure)
+
         data = dict(
-            nome_base = self.structure['metadata']['name'],
-            json_base = json.dumps(self.structure),
-            reg_model = str(base.schema.schema),
-            dt_base = str(datetime.datetime.now())
+            nome_base = base.name,
+            json_base = base.json,
+            reg_model = base.reg_model,
+            dt_base = str(datetime.datetime.now()),
+            password = base.password,
+            index_export = base.index_export,
+            index_url = base.index_url,
+            index_time= base.index_time,
+            doc_extract = base.doc_extract,
+            extract_time = base.extract_time
         )
         request = utils.FakeRequest(method = 'POST')
         base_context = BaseContextFactory(request)
@@ -125,6 +131,8 @@ class HistoryMetaBase(object):
             base_context.create_member(data)
 
     def create_member(self, **registry):
+
+        from lbgenerator.model.context.registry import RegContextFactory
 
         request = utils.FakeRequest(matchdict = {'base': '_history'})
         reg_context = RegContextFactory(request)
