@@ -9,6 +9,7 @@ class Logger():
     def __init__(self, module):
         """ Get configurations and build the logger object
         """
+        """
         # Build logging object
         self.logger = logging.getLogger(module)
         self.logger.setLevel(logging.INFO)
@@ -23,6 +24,7 @@ class Logger():
 
         #self.enabled = config.LOG_ENABLED
         self.enabled = True
+        """
 
     def log(self, msg):
         pass
