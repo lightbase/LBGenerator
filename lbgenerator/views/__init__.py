@@ -6,6 +6,11 @@ from pyramid.httpexceptions import HTTPFound
 from lbgenerator.lib import utils
 import json
 
+def response_callback(request, response):
+    if 'callback' in request.params:
+        response.text = request.params['callback'] + '(' + response.text + ')'
+
+
 class CustomView(RESTfulView):
 
     """ Default Customized View Methods
@@ -13,6 +18,7 @@ class CustomView(RESTfulView):
     def __init__(self, context, request):
         self.context = context
         self.request = request
+        self.request.add_response_callback(response_callback)
         self.base_name = self.request.matchdict.get('base')
         if self.request.matchdict.get('id'):
             id = self.request.matchdict['id']
