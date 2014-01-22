@@ -18,6 +18,11 @@ class BaseContextFactory(CustomContextFactory):
 
     entity = LB_Base
 
+    def get_member(self, base):
+        self.single_member = True
+        member = self.session.query(self.entity).filter_by(nome_base = base).first()
+        return member or None
+
     def create_member(self, data):
 
         if base_exists(data['nome_base']):
@@ -25,14 +30,14 @@ class BaseContextFactory(CustomContextFactory):
         # Create reg and doc tables
         base_name = data['nome_base']
         base_json = utils.to_json(data['json_base'])
-        custom_columns = model.BASES.set_base(base_json).custom_columns
+        relational_fields = model.BASES.set_base(base_json).relational_fields
 
         #reg_hyper_class(base_name, **custom_cols)
         #doc_hyper_class(base_name)
         #metadata.create_all(bind=engine)
 
         doc_table = get_doc_table(base_name, config.METADATA)
-        reg_table = get_reg_table(base_name, config.METADATA, **custom_columns)
+        reg_table = get_reg_table(base_name, config.METADATA, **relational_fields)
         reg_table.create(config.ENGINE, checkfirst=True)
         doc_table.create(config.ENGINE, checkfirst=True)
 
@@ -87,14 +92,14 @@ class BaseContextFactory(CustomContextFactory):
             return None
 
         index = None
-        custom_columns = model.BASES.get_base(member.nome_base).custom_columns
+        relational_fields = model.BASES.get_base(member.nome_base).relational_fields
         if model.BASES.bases.get(member.nome_base) is not None:
             index = Index(model.BASES.bases[member.nome_base], None)
             del model.BASES.bases[member.nome_base]
 
         # Delete parallel tables
         doc_table = get_doc_table(member.nome_base, config.METADATA)
-        reg_table = get_reg_table(member.nome_base, config.METADATA, **custom_columns)
+        reg_table = get_reg_table(member.nome_base, config.METADATA, **relational_fields)
         reg_table.drop(config.ENGINE, checkfirst=True)
         doc_table.drop(config.ENGINE, checkfirst=True)
 
@@ -135,8 +140,3 @@ class BaseContextFactory(CustomContextFactory):
             dic[name] = attr
         return dic
 
-    def to_json(self, value, fields=None, wrap=True):
-        obj = self.get_json_obj(value, fields, wrap)
-        if getattr(self, 'single_member', None) is True and type(obj) is list:
-            obj = obj[0]
-        return json.dumps(obj, cls=self.json_encoder, ensure_ascii=False)

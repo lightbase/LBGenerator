@@ -34,7 +34,10 @@ def split_request(request):
     return dict(request.params), request.method
 
 def filter_params(params, valid_fields):
-    return { param: params[param] for param in params if param in valid_fields }
+    for param in params:
+        if param not in valid_fields:
+            raise Exception('Invalid param: %s' % param)
+    return dict(params)
 
 def is_sqlinject(s):
     s = s.upper()

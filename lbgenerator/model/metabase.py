@@ -2,23 +2,22 @@ from lbgenerator.lib import utils
 from liblightbase.lbbase import genesis
 import json
 import datetime
-from sqlalchemy import Sequence
+import traceback
 
 class HistoryMetaBase():
 
     def __init__(self):
-        self.seq = Sequence('lb_doc__history_id_doc_seq')
         self.structure = {
            "metadata":{
-                "name":"_history",
-                "description":"LightBase's History Meta Base.",
+                "name": "_history",
+                "description": "LightBase's History Meta Base.",
                 "password": "password",
                 "color": "color",
-                "index_url":"",
-                "index_time":"0",
-                "extract_time":"0",
-                "doc_extract":False,
-                "index_export":False
+                "index_url": "",
+                "index_time": 0,
+                "extract_time": 0,
+                "doc_extract": False,
+                "index_export": False
            },
            "content":[
               {
@@ -145,8 +144,9 @@ class HistoryMetaBase():
                 'json_reg': json_reg,
                 'dt_reg': datetime.datetime.now()
             })
-        except:
-            print('ERROR: could not create registry on _history. id: %s, json: %s' %(id_reg, json_reg))
+        except Exception as e:
+            print('ERROR: could not create registry on _history. id: %s, json: %s, error_msg: %s'
+                %(id_reg, json_reg, traceback.format_exc()))
 
 
 

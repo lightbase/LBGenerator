@@ -20,8 +20,12 @@ class DocCustomView(CustomView):
         self.context = context
         self.request = request
         self.base_name = self.request.matchdict.get('base')
-        self.data = validate_doc_data(self, request)
         self.tmp_dir = config.TMP_DIR + '/lightbase_tmp_storage/' + self.base_name
+
+    def _get_data(self):
+        """ Get all valid data from (request) POST or PUT.
+        """
+        return validate_doc_data(self, self.request)
 
     def build_storage(self, filename, mimetype, input_file):
         if not os.path.exists(self.tmp_dir):
@@ -38,7 +42,7 @@ class DocCustomView(CustomView):
         # Finally write the data to a temporary file
         input_file.seek(0)
         while True:
-            data = input_file.read(2<<16)
+            data = input_file.read()
             if not data:
                 break
             output_file.write(data)
@@ -67,10 +71,10 @@ class DocCustomView(CustomView):
         return Response(status=200)
 
     def update_member(self):
-        return Response('NOT IMPLEMENTED', charset='utf-8', status=500, content_type='')
+        raise NotImplementedError('NOT IMPLEMENTED')
 
     def delete_member(self):
-        return Response('NOT IMPLEMENTED', charset='utf-8', status=500, content_type='')
+        raise NotImplementedError('NOT IMPLEMENTED')
         """
         storage = self.request.matchdict['id']
         try:
@@ -89,16 +93,16 @@ class DocCustomView(CustomView):
         if member is None:
             raise HTTPNotFound()
 
-        cd = 'filename=' + member.nome_doc
+        content_disposition = 'filename=' + member.nome_doc
         params = self.request.params
         if params.get('disposition'):
             if params['disposition'] == 'attachment':
-                cd = 'attachment;' + cd
+                content_disposition = 'attachment;' + content_disposition
             elif params['disposition'] == 'inline':
-                cd = 'inline;' + cd
+                content_disposition = 'inline;' + content_disposition
 
         return Response(
             content_type=member.mimetype,
-            content_disposition=cd,
+            content_disposition=content_disposition,
             app_iter=[member.blob_doc]
         )

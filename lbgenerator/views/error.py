@@ -14,13 +14,16 @@ def json_msg(status=None, err_msg=None, request=None):
         _path=getattr(request, 'path', None),
         _request=req
         )
-    return Response(json.dumps(msg), content_type='application/json', status=status)
+    return msg
+    #return Response(json.dumps(msg), content_type='application/json', status=status)
 
 @view_config(context=NotFound)
 def notfound_view(request):
     """ Customized NotFound view
     """
-    return json_msg(404, 'Not Found', request)
+    status = 404
+    ERROR = json_msg(status, 'Not Found', request)
+    return Response(json.dumps(ERROR), content_type='application/json', status=status)
 
 @view_config(context=Exception)
 def error_view(exc, request):
@@ -32,4 +35,12 @@ def error_view(exc, request):
         em = str(exc.args[0])
     else:
         em = str(exc.args)
-    return json_msg(500, em, request)
+    status = 500
+    ERROR = json_msg(status, em, request)
+    print(ERROR)
+
+    return Response(json.dumps(ERROR), content_type='application/json', status=status)
+
+
+
+

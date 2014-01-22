@@ -36,13 +36,20 @@ class DocText(object):
         response = {'texto_doc': text}
         return Response(json.dumps(response, ensure_ascii=True), content_type='application/json')
 
-    @view_config(request_method='POST')
-    def post(self):
+    @view_config(request_method='PUT')
+    def put(self):
         params = self.request.params
         if not 'texto_doc' in params:
             raise Exception('Required param: texto_doc')
 
-        doc = self.session.query(self.doc_entity).get(self.id_doc)
+        doc_cols = (
+            self.doc_entity.id_reg,
+            self.doc_entity.id_doc,
+            self.doc_entity.texto_doc,
+            self.doc_entity.dt_ext_texto
+        )
+        #doc = self.session.query(self.doc_entity).get(self.id_doc)
+        doc = self.session.query(self.doc_entity).filter_by(id_doc = self.id_doc).first()
         if not doc:
             raise HTTPNotFound()
 

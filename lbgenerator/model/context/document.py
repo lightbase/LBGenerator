@@ -39,8 +39,3 @@ class DocContextFactory(CustomContextFactory):
             obj['blob_doc'] = url
         return obj
 
-    def to_json(self, value, fields=None, wrap=True):
-        obj = self.get_json_obj(value, fields, wrap)
-        if getattr(self, 'single_member', None) is True and type(obj) is list:
-            obj = obj[0]
-        return json.dumps(obj, cls=self.json_encoder, ensure_ascii=False)

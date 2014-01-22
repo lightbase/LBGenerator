@@ -37,7 +37,7 @@ class Consistency():
         self.session.commit()
         self.session.close()
 
-        return json.dumps(self.registry, ensure_ascii=True)
+        return json.dumps(self.registry, ensure_ascii=False)
 
     def remove_inconsistent_files(self, registry):
 

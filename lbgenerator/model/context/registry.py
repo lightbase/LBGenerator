@@ -17,7 +17,7 @@ class RegContextFactory(CustomContextFactory):
     def __init__(self, request):
         super(RegContextFactory, self).__init__(request)
         base = self.get_base()
-        self.entity = reg_hyper_class(self.base_name, **base.custom_columns)
+        self.entity = reg_hyper_class(self.base_name, **base.relational_fields)
         self.doc_entity = doc_hyper_class(self.base_name)
         self.index = Index(base, self.get_full_reg)
 
@@ -25,12 +25,13 @@ class RegContextFactory(CustomContextFactory):
         """ Create all documents relationated with given id
         """
         base = self.get_base()
-        docs = base.__docs__[int(id)]
-        for doc in docs:
-            doc_member = self.doc_entity(**doc)
-            self.session.add(doc_member)
-        # Clear memory
-        del base.__docs__[int(id)]
+        docs = base.__docs__.get(int(id))
+        if docs is not None:
+            for doc in docs:
+                doc_member = self.doc_entity(**doc)
+                self.session.add(doc_member)
+            # Clear memory
+            del base.__docs__[int(id)]
 
     def create_member(self, data):
         """ Create regitry
@@ -87,7 +88,7 @@ class RegContextFactory(CustomContextFactory):
         if member is None:
             return None
 
-        if member.dt_reg_del:
+        if member.dt_reg_del is not None:
             # Member was deleted once, but it's index was not successfull deleted.
             # This time we will force it's deletion ...
             self.session.delete(member)

@@ -21,19 +21,21 @@ class CustomView(RESTfulView):
 
     def get_db_obj(self):
         id = self.request.matchdict['id']
-        return self.context.get_member(id)
+        member = self.context.get_member(id)
+        if member is None:
+            raise HTTPNotFound()
+        return member
 
     def get_column(self):
         """ Get column value
         """
         id = self.request.matchdict['id']
-        column = self.request.matchdict['column']
-        if column == 'blob_doc':
-            location = self.request.path.replace('blob_doc', 'download')
-            return HTTPFound(location=location)
+        PATH = self.request.matchdict['column'].split('/')
+        column = PATH.pop(0)
+
         member = self.context.get_member(id)
         if member is None:
-            return HTTPNotFound()
+            raise HTTPNotFound()
 
         if type(member) is list: member = member[0]
         try: value = getattr(member, column)
@@ -42,19 +44,16 @@ class CustomView(RESTfulView):
         try: value = utils.to_json(value)
         except: pass
 
+        if PATH:
+            for path_name in PATH:
+                try: path_name = int(path_name)
+                except: pass
+                try: value = value[path_name]
+                except:
+                    raise Exception('Invalid attribute "%s"' % path_name)
+
         value = json.dumps(value, cls=self.context.json_encoder, ensure_ascii=False)
-        return Response(str(value), charset='utf-8', status=200, content_type='')
-
-    def get_member(self):
-        id = self.request.matchdict['id']
-        self.wrap = False
-        member = self.context.get_member(id)
-        return self.render_to_response(member)
-
-    def _get_data(self):
-        """ Get all valid data from (request) POST or PUT.
-        """
-        return self.data
+        return Response(body=value, content_type='application/json')
 
     def get_base(self):
         """ Return Base object
@@ -66,23 +65,32 @@ class CustomView(RESTfulView):
         """
         return self.context.set_base(base_json)
 
-    def get_collection(self):
+    def get_collection(self, render_to_response=True):
         """ Search database objects
         """
-        kwargs = self.request.params.get('$$', {})
+        kwargs = self.request.params.get('$$', { })
         if kwargs:
             kwargs = utils.to_json(kwargs)
         try:
             collection = self.context.get_collection(**kwargs)
-            return self.render_to_response(collection)
         except Exception as e:
             raise Exception('Error trying to complete your search: {}'.format(str(e.args[0])))
+        if render_to_response:
+            response = self.render_to_response(collection)
+        else:
+            response = collection
+        return response
+
+    def get_member(self):
+        id = self.request.matchdict['id']
+        self.wrap = False
+        member = self.context.get_member(id)
+        return self.render_to_response(member)
 
     def create_member(self):
         member = self.context.create_member(self._get_data())
         id = self.context.get_member_id_as_string(member)
-        headers = {'Location': '/'.join((self.request.path, id))}
-        return Response(id, status=201, headers=headers)
+        return self.render_custom_response(id, default_response=id)
 
     def update_member(self):
         id = self.request.matchdict['id']
@@ -90,7 +98,7 @@ class CustomView(RESTfulView):
         if member is None:
             raise HTTPNotFound()
         else:
-            return Response('UPDATED', charset='utf-8', status=200, content_type='')
+            return self.render_custom_response(id, default_response='UPDATED')
 
     def delete_member(self):
         id = self.request.matchdict['id']
@@ -98,6 +106,16 @@ class CustomView(RESTfulView):
         if member is None:
             raise HTTPNotFound()
         return Response('DELETED', charset='utf-8', status=200, content_type='')
+
+    def render_custom_response(self, id, default_response):
+        _return = self.request.params.get('return')
+        is_valid_return = hasattr(self.context.entity, str(_return))
+        if is_valid_return:
+            member = self.context.get_member(id)
+            response_attr = getattr(member, _return)
+            return Response(str(response_attr), charset='utf-8', status=200, content_type='application/json')
+        else:
+            return Response(default_response, charset='utf-8', status=200, content_type='')
 
 
 
