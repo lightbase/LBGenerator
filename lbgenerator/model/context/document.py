@@ -1,4 +1,4 @@
-
+from sqlalchemy.util import KeyedTuple
 from lbgenerator.model.context import CustomContextFactory
 from lbgenerator.model import get_bases
 from lbgenerator.model import doc_hyper_class
@@ -17,25 +17,29 @@ class DocContextFactory(CustomContextFactory):
 
     def get_member(self, id):
         self.single_member = True
+        self.default_query = True
         # We don't want to query hole file when searching ..
-        q = self.session.query(*self.get_cols()).filter_by(id_doc=id).all()
+        cols = [column for column in self.entity.__table__.c if column.name != 'blob_doc']
+        q = self.session.query(*cols).filter(self.entity.__table__.c.id_doc==id).all()
         return q or None
 
     def get_raw_member(self, id):
         return self.session.query(self.entity).get(id)
 
     def member_to_dict(self, member, fields=None):
-        if fields is None:
-            fields = self.default_fields
-        obj = dict((name, getattr(member, name)) for name in fields if name != 'blob_doc')
-        if 'blob_doc' in self.default_fields:
-            id_doc = getattr(member, 'id_doc')
-            path_split = self.request.path_url.split('/')
-            if path_split[len(path_split) -1 ] == str(id_doc):
-                complete = '/download'
-            else:
-                complete = '/' + str(id_doc) + '/download'
-            url = self.request.path_url + complete
-            obj['blob_doc'] = url
-        return obj
+        if not isinstance(member, KeyedTuple):
+            member = self.member2KeyedTuple(member)
+        dict_member = member._asdict()
+        if 'blob_doc' in dict_member or self.default_query is True:
+            id_doc = dict_member['id_doc']
+            dict_member['blob_doc'] = self.download_url(id_doc)
+        return dict_member
+
+    def download_url(self, id_doc):
+        path_split = self.request.path_url.split('/')
+        if path_split[len(path_split) -1 ] == str(id_doc):
+            complete = '/download'
+        else:
+            complete = '/' + str(id_doc) + '/download'
+        return self.request.path_url + complete
 

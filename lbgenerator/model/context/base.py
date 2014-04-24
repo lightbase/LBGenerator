@@ -10,6 +10,7 @@ from lbgenerator.model import base_exists
 from lbgenerator.model import reg_hyper_class
 from lbgenerator.model import doc_hyper_class
 from lbgenerator.model.index import Index
+from sqlalchemy.util import KeyedTuple
 
 class BaseContextFactory(CustomContextFactory):
 
@@ -29,7 +30,7 @@ class BaseContextFactory(CustomContextFactory):
             raise Exception('Base "%s" already exists!' % data['nome_base'])
         # Create reg and doc tables
         base_name = data['nome_base']
-        base_json = utils.to_json(data['json_base'])
+        base_json = utils.json2object(data['json_base'])
         relational_fields = model.BASES.set_base(base_json).relational_fields
 
         #reg_hyper_class(base_name, **custom_cols)
@@ -76,9 +77,9 @@ class BaseContextFactory(CustomContextFactory):
         model.HISTORY.create_member(**{
             'id_base': member.id_base,
             'author': 'Author',
-            'date': str(datetime.datetime.now()),
+            'date': datetime.datetime.now(),
             'name': member.nome_base,
-            'structure': utils.to_json(member.json_base),
+            'structure': utils.json2object(member.json_base),
             'status': 'UPDATED'
         })
 
@@ -120,9 +121,9 @@ class BaseContextFactory(CustomContextFactory):
         model.HISTORY.create_member(**{
             'id_base': member.id_base,
             'author': 'Author',
-            'date': str(datetime.datetime.now()),
+            'date': datetime.datetime.now(),
             'name': member.nome_base,
-            'structure': utils.to_json(member.json_base),
+            'structure': utils.json2object(member.json_base),
             'status': 'DELETED'
         })
 
@@ -130,13 +131,10 @@ class BaseContextFactory(CustomContextFactory):
         return member
 
     def member_to_dict(self, member, fields=None):
-        if fields is None:
-            fields = self.default_fields
-        dic = dict()
-        for name in fields:
-            attr = getattr(member, name)
-            if name == 'json_base' or name == 'reg_model':
-                attr = utils.to_json(attr)
-            dic[name] = attr
-        return dic
-
+        if not isinstance(member, KeyedTuple):
+            member = self.member2KeyedTuple(member)
+        dict_member = member._asdict()
+        for json_attr in ('json_base', 'reg_model'):
+            if json_attr in dict_member:
+                dict_member[json_attr] = utils.json2object(dict_member[json_attr])
+        return dict_member

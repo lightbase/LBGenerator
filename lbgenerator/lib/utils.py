@@ -1,5 +1,11 @@
 
 import json
+import datetime
+import decimal
+from sqlalchemy.util import KeyedTuple as NamedTuple
+from liblightbase.lbtypes.extended import FileMask
+from liblightbase.lbcodecs import json2object
+from liblightbase.lbcodecs import object2json
 
 class FakeRequest(object):
 
@@ -8,18 +14,25 @@ class FakeRequest(object):
         self.matchdict = matchdict
         self.method = method
 
-def to_json(obj):
-    if not obj:
-        raise Exception('No JSON data supplied.')
-    if type(obj) is dict:
+class DefaultJSONEncoder(json.JSONEncoder):
+
+    def default(self, obj):
+        """Convert ``obj`` to something JSON encoder can handle."""
+        datetime_types = (datetime.time, datetime.date, datetime.datetime)
+        if isinstance(obj, NamedTuple):
+            obj = dict((k, getattr(obj, k)) for k in obj.keys())
+        elif isinstance(obj, decimal.Decimal):
+            obj = str(obj)
+        elif isinstance(obj, datetime.datetime):
+            obj = obj.strftime('%d/%m/%Y %H:%M:%S')
+        elif isinstance(obj, datetime.time):
+            obj = obj.strftime('%H:%M:%S')
+        elif isinstance(obj, datetime.date):
+            obj = obj.strftime('%d/%m/%Y')
         return obj
-    if isinstance(obj, str):
-        obj = obj.encode('utf-8')
-    try:
-        obj = json.loads(obj.decode('utf-8'))
-        return obj
-    except Exception as e:
-        raise Exception('Could not parse JSON data. Details: %s' % str(e.args[0]))
+
+def registry2json(registry):
+    return object2json(registry, cls=DefaultJSONEncoder)
 
 def is_integer(i):
     try:
@@ -58,25 +71,6 @@ def is_sqlinject(s):
     for statement in sqlinject:
         if statement in s:
             raise Exception('Invalid statements in literal search.')
-
-class FileMask():
-
-    def __init__(self, id_doc, nome_doc, mimetype, uuid):
-        self._id_doc = id_doc
-        self.nome_doc = nome_doc
-        self.mimetype = mimetype
-        self.uuid = uuid
-
-    @property
-    def _id_doc(self):
-        return self.id_doc
-
-    @_id_doc.setter
-    def _id_doc(self, id):
-        try:
-            self.id_doc = int(id)
-        except:
-            raise Exception('ValueError: id_doc must be integer.')
 
 def is_file_mask(mask):
     try:

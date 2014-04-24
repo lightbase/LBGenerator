@@ -34,7 +34,7 @@ class DocText(object):
     def get(self):
         text = self.get_text(self.id_doc)
         response = {'texto_doc': text}
-        return Response(json.dumps(response, ensure_ascii=True), content_type='application/json')
+        return Response(json.dumps(response, ensure_ascii=False), content_type='application/json')
 
     @view_config(request_method='PUT')
     def put(self):
@@ -62,6 +62,7 @@ class DocText(object):
         doc.dt_ext_texto = str(datetime.datetime.now())
         if text != '':
             reg.dt_index_tex = None
+            reg.dt_last_up = doc.dt_ext_texto
 
         self.session.commit()
         self.session.close()

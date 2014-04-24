@@ -54,7 +54,7 @@ class BaseCustomView(CustomView):
         try: value = getattr(member, column)
         except: raise Exception('Could not find column %s' % column)
 
-        try: value = utils.to_json(value)
+        try: value = utils.json2object(value)
         except: pass
 
         if PATH:

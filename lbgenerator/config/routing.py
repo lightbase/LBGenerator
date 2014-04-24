@@ -1,9 +1,14 @@
 # -*- coding: utf-8 -*-
+from pyramid_restler.view import RESTfulView
 
 def make_routes(config):
     """
     Cria rotas para aplicação do gerador de bases
     """
+
+    # Import token controller and context factory
+    from lbgenerator.views.user import UserView
+    from lbgenerator.model.context.user import UserContextFactory
 
     # Import Bases controller and context factory
     from lbgenerator.views.base import BaseCustomView
@@ -20,42 +25,68 @@ def make_routes(config):
     config.add_directive('add_restful_base_routes', add_restful_base_routes)
     config.add_static_view('static', 'static', cache_max_age=3600)
 
+    def add_custom_routes(route_name, pattern, factory_class, view_class, views):
+        config.add_route(route_name, pattern, factory=factory_class)
+        for view_kw in views:
+            config.add_view(view=view_class, route_name=route_name, **view_kw)
+
+    #----------------#
+    # Authentication # 
+    #----------------#
+
+    add_custom_routes('authentication', 'user/login', UserContextFactory, UserView, [
+        {'attr': 'authenticate', 'request_method': 'POST'},
+    ])
+    add_custom_routes('unauthentication', 'user/logout', UserContextFactory, UserView, [
+        {'attr': 'unauthenticate', 'request_method': 'POST'},
+    ])
+
+    # Restful routes for base users.
+    config.add_restful_routes('user', UserContextFactory, view=UserView)
+
     #-----------------#
     # Registry Routes # 
     #-----------------#
 
-    # Restful route for full registry (with document text)
-    config.add_route('full_reg', '{base}/reg/{id}/full', factory=RegContextFactory)
-    config.add_view(view=RegCustomView, attr='full_reg', route_name='full_reg', request_method='GET')
+    add_custom_routes('full_reg', '{base}/reg/{id}/full', RegContextFactory, RegCustomView, [
+        # Route for full registry (with document text)
+        {'attr': 'full_reg', 'request_method':'GET', 'permission': 'view'}
+    ])
 
-    # Restful routes for registry path
-    config.add_route('path', '{base}/reg/{id}/path/{path}', factory=RegContextFactory)
-    config.add_view(view=RegCustomView, attr='get_path', route_name='path', request_method='GET')
-    config.add_view(view=RegCustomView, attr='set_path', route_name='path', request_method='POST')
-    config.add_view(view=RegCustomView, attr='put_path', route_name='path', request_method='PUT')
-    config.add_view(view=RegCustomView, attr='delete_path', route_name='path', request_method='DELETE')
+    add_custom_routes('path', '{base}/reg/{id}/path/{path}', RegContextFactory, RegCustomView, [
+        # Restful routes for registry path
+        {'attr':'get_path', 'request_method':'GET', 'permission': 'view'},
+        {'attr':'set_path', 'request_method':'POST', 'permission': 'create'},
+        {'attr':'put_path', 'request_method':'PUT', 'permission': 'edit'},
+        {'attr':'delete_path', 'request_method':'DELETE', 'permission': 'delete'}
+    ])
 
-    # Get specific column route
-    config.add_route('get_reg_column', '{base}/reg/{id}/{column:.*}', factory=RegContextFactory)
-    config.add_view(view=RegCustomView, attr='get_column', route_name='get_reg_column', request_method='GET')
+    add_custom_routes('get_reg_column', '{base}/reg/{id}/{column:.*}', RegContextFactory, RegCustomView, [
+        # Get specific column route
+        {'attr':'get_column', 'request_method':'GET', 'permission': 'view'}
+        #{'attr':'set_column', 'request_method':'POST', 'permission':'create'},
+        #{'attr':'put_column', 'request_method':'PUT', 'permission': 'edit'}
+        #{'attr':'delete_path', 'request_method':'DELETE', 'permission': 'delete'}
+    ])
 
     #-----------------#
     # Document Routes # 
     #-----------------#
 
-    # File Download View
-    config.add_route('download', '{base}/doc/{id}/download', factory=DocContextFactory)
-    config.add_view(view=DocCustomView, attr='download', route_name='download', request_method='GET')
+    add_custom_routes('download', '{base}/doc/{id}/download', DocContextFactory, DocCustomView, [
+        # File Download View
+        {'attr':'download', 'request_method':'GET', 'permission': 'view'}
+    ])
 
     config.add_route('text', '{base}/doc/{id}/text')
 
-    # Get specific column route
-    config.add_route('get_doc_column', '{base}/doc/{id}/{column:.*}', factory=DocContextFactory)
-    config.add_view(view=DocCustomView, attr='get_column', route_name='get_doc_column', request_method='GET')
-
-    # Route for putting text on file
-    #config.add_route('doc_text', '{base}/doc/{id}/text', factory=DocContextFactory)
-    #config.add_view(view=DocCustomView, attr='text', route_name='doc_text', request_method='PUT')
+    add_custom_routes('get_doc_column', '{base}/doc/{id}/{column:.*}', DocContextFactory, DocCustomView, [
+        # Get specific column route
+        {'attr':'get_column', 'request_method':'GET', 'permission': 'view'}
+        #{'attr':'set_column', 'request_method':'POST','permission':'create'},
+        #{'attr':'put_column', 'request_method':'PUT', 'permission': 'edit'}
+        #{'attr':'delete_path', 'request_method':'DELETE', 'permission': 'delete'}
+    ])
 
     #-------------#
     # Base Routes # 
@@ -67,22 +98,28 @@ def make_routes(config):
     # Restful routes for base registries.
     config.add_restful_routes('{base}/reg', RegContextFactory, view=RegCustomView)
 
-    # Restful routes for registry collection
-    config.add_route('registry_collection', '{base}/reg', factory=RegContextFactory)
-    config.add_view(view=RegCustomView, attr='update_collection', route_name='registry_collection', request_method='PUT')
-    config.add_view(view=RegCustomView, attr='delete_collection', route_name='registry_collection', request_method='DELETE')
+    add_custom_routes('registry_collection', '{base}/reg', RegContextFactory, RegCustomView, [
+        # Restful routes for registry collection
+        {'attr':'update_collection', 'request_method': 'PUT', 'permission': 'edit'},
+        {'attr':'delete_collection', 'request_method': 'DELETE', 'permission': 'delete'}
+    ])
 
     # Restful routes for base documents.
     config.add_restful_routes('{base}/doc', DocContextFactory, view=DocCustomView)
 
-    # Restful routes for documents collection
-    config.add_route('document_collection', '{base}/doc', factory=RegContextFactory)
-    config.add_view(view=RegCustomView, attr='update_collection', route_name='document_collection', request_method='PUT')
-    config.add_view(view=RegCustomView, attr='delete_collection', route_name='document_collection', request_method='DELETE')
+    add_custom_routes('document_collection', '{base}/doc', DocContextFactory, DocCustomView, [
+        # Restful routes for documents collection
+        {'attr':'update_collection', 'request_method': 'PUT', 'permission': 'edit'},
+        {'attr':'delete_collection', 'request_method': 'DELETE', 'permission': 'delete'}
+    ])
 
-    # Get specific column route
-    config.add_route('get_base_column', '{base}/{column:.*}', factory=BaseContextFactory)
-    config.add_view(view=BaseCustomView, attr='get_column', route_name='get_base_column', request_method='GET')
+    add_custom_routes('get_base_column', '{base}/{column:.*}', BaseContextFactory, BaseCustomView, [
+        # Get specific column route
+        {'attr':'get_column', 'request_method':'GET', 'permission': 'view'}
+        #{'attr':'set_base_column', 'request_method':'POST', 'permission':'create'},
+        #{'attr':'put_base_column', 'request_method':'PUT', 'permission': 'edit'},
+        #{'attr':'delete_path', 'request_method':'DELETE', 'permission': 'delete'},
+    ])
 
 
 def add_restful_base_routes(self, name='base'):
@@ -106,7 +143,7 @@ def add_restful_base_routes(self, name='base'):
         base='{base}',
         renderer='{renderer}')
 
-    def add_route(name, pattern, attr, method):
+    def add_route(name, pattern, attr, method, **view_kw):
         name = name.format(**subs)
         pattern = pattern.format(**subs)
         self.add_route(
@@ -118,21 +155,102 @@ def add_restful_base_routes(self, name='base'):
 
     # Get collection
     add_route(
-        'get_{name}_collection', '/', 'get_collection', 'GET')
+        'get_{name}_collection', '/', 'get_collection', 'GET', permission='view')
 
     # Get member
     add_route(
-        'get_{name}_rendered', '/{base}.{renderer}', 'get_member', 'GET')
-    add_route('get_{name}', '/{base}', 'get_member', 'GET')
+        'get_{name}_rendered', '/{base}.{renderer}', 'get_member', 'GET', permission='view')
+    add_route('get_{name}', '/{base}', 'get_member', 'GET', permission='view')
 
     # Create member
-    add_route('create_{name}', '/', 'create_member', 'POST')
+    add_route('create_{name}', '/', 'create_member', 'POST', permission='create')
 
     # Update member
-    add_route('update_{name}', '/{base}', 'update_member', 'PUT')
+    add_route('update_{name}', '/{base}', 'update_member', 'PUT', permission='edit')
 
     # Delete member
-    add_route('delete_{name}', '/{base}', 'delete_member', 'DELETE')
+    add_route('delete_{name}', '/{base}', 'delete_member', 'DELETE', permission='delete')
+
+def add_restful_routes(self, name, factory, view=RESTfulView,
+                       route_kw=None, view_kw=None):
+    """Add a set of RESTful routes for an entity.
+
+    URL patterns for an entity are mapped to a set of views encapsulated in
+    a view class. The view class interacts with the model through a context
+    adapter that knows the particulars of that model.
+
+    To use this directive in your application, first call
+    `config.include('pyramid_restler')` somewhere in your application's
+    `main` function, then call `config.add_restful_routes(...)`.
+
+    ``name`` is used as the base name for all route names and patterns. In
+    route names, it will be used as-is. In route patterns, underscores will
+    be converted to dashes.
+
+    ``factory`` is the model adapter that the view interacts with. It can be
+    any class that implements the :class:`pyramid_restler.interfaces.IContext`
+    interface.
+
+    ``view`` must be a view class that implements the
+    :class:`pyramid_restler.interfaces.IView` interface.
+
+    Additional route and view keyword args can be passed directly through to
+    all `add_route` and `add_view` calls. Pass ``route_kw`` and/or ``view_kw``
+    as dictionaries to do so.
+
+    """
+    route_kw = {} if route_kw is None else route_kw
+    view_kw = {} if view_kw is None else view_kw
+    view_kw.setdefault('http_cache', 0)
+
+    subs = dict(
+        name=name,
+        slug=name.replace('_', '-'),
+        id='{id}',
+        renderer='{renderer}')
+
+    perms = {
+        'GET': 'view',
+        'POST': 'create',
+        'PUT': 'edit',
+        'DELETE': 'delete'
+    }
+
+    def add_route(name, pattern, attr, method):
+        name = name.format(**subs)
+        pattern = pattern.format(**subs)
+        self.add_route(
+            name, pattern, factory=factory,
+            request_method=method, **route_kw)
+        if name == 'create_user':
+            permission = None
+        else:
+            permission = perms[method]
+        self.add_view(
+            view=view, attr=attr, route_name=name,
+            #request_method=method, **view_kw)
+            request_method=method, permission=permission)
+
+    # Get collection
+    add_route(
+        'get_{name}_collection_rendered', '/{slug}.{renderer}',
+        'get_collection', 'GET')
+    add_route(
+        'get_{name}_collection', '/{slug}', 'get_collection', 'GET')
+
+    # Get member
+    add_route(
+        'get_{name}_rendered', '/{slug}/{id}.{renderer}', 'get_member', 'GET')
+    add_route('get_{name}', '/{slug}/{id}', 'get_member', 'GET')
+
+    # Create member
+    add_route('create_{name}', '/{slug}', 'create_member', 'POST')
+
+    # Update member
+    add_route('update_{name}', '/{slug}/{id}', 'update_member', 'PUT')
+
+    # Delete member
+    add_route('delete_{name}', '/{slug}/{id}', 'delete_member', 'DELETE')
 
 
 

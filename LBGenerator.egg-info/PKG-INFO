@@ -3,8 +3,8 @@ Name: LBGenerator
 Version: 0.4
 Summary: LBGenerator
 Home-page: UNKNOWN
-Author: UNKNOWN
-Author-email: UNKNOWN
+Author: Antony Carvalho
+Author-email: antony.carvalho@lightbase.com.br
 License: UNKNOWN
 Description: LBGenerator README
         
@@ -14,7 +14,7 @@ Description: LBGenerator README
         
         -  Initial version
         
-Keywords: web pyramid pylons
+Keywords: web pyramid pylons lightbase application
 Platform: UNKNOWN
 Classifier: Programming Language :: Python
 Classifier: Framework :: Pylons

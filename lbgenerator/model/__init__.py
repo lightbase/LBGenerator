@@ -6,12 +6,13 @@ from sqlalchemy.schema import Sequence
 from lbgenerator import config
 from lbgenerator.model.metabase import HistoryMetaBase
 from sqlalchemy.orm import scoped_session
+from lbgenerator.lib.provider import AuthProvider
+import json
 
 def begin_session():
     """ Returns Session object.
     """
-    SESSION = sessionmaker(bind=config.ENGINE, autocommit=True)
-    session = scoped_session(SESSION)
+    session = scoped_session(sessionmaker(bind=config.ENGINE, autocommit=True))
     session.begin()
     session.execute('SET datestyle = "ISO, DMY";')
     return session
@@ -37,7 +38,7 @@ def make_restful_app():
     """ Initialize Restfull API
     """
     # Create Base table
-    config.METADATA.create_all(bind=config.ENGINE, tables=[LB_Base.__table__])
+    config.METADATA.create_all(bind=config.ENGINE, tables=[LB_Base.__table__, LB_Users.__table__])
 
     global BASES
     global HISTORY
@@ -67,7 +68,7 @@ def reg_hyper_class(base_name, **custom_cols):
 
     ext = {
         'next_id': reg_next_id,
-        'base_name': base_name
+        '__table__': reg_table
     }
 
     RegHyperClass = type(classname, (RegSuperClass, ), ext)
@@ -92,10 +93,30 @@ def doc_hyper_class(base_name):
 
     ext = {
         'next_id': doc_next_id,
-        'base_name': base_name
+        '__table__': doc_table
     }
 
     DocHyperClass = type(classname, (DocSuperClass, ), ext)
     mapper(DocHyperClass, doc_table)
     return DocHyperClass
+
+def user_callback(user_name, request):
+
+    if user_name == config.ADMIN_USER:
+        return 'Authenticated'
+
+    owner = request.matchdict.get('owner')
+    base = request.matchdict.get('base')
+    resource = request.matchdict.get('id')
+    auth_provider = AuthProvider(owner, base, resource)
+
+    session = begin_session()
+    user = session.query(LB_Users).filter_by(user_name=user_name).first()
+    session.close()
+    user_auth = json.loads(user.auth)
+
+    for auth_pattern in user_auth:
+        authorized = auth_provider.get_authorization(auth_pattern)
+        if authorized: return authorized
+    return [ ]
 

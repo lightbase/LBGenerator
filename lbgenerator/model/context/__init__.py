@@ -1,19 +1,35 @@
 
 from pyramid.compat import string_types
 import json
-import inspect
-import datetime
 import sqlalchemy
+from sqlalchemy.util import KeyedTuple
 from sqlalchemy import asc, desc
 from pyramid_restler.model import SQLAlchemyORMContext
 from lbgenerator.lib import utils
 from lbgenerator import model
 from lbgenerator.model import begin_session
+from pyramid.security import Allow
+from pyramid.security import Everyone
+from pyramid.security import Deny
+from pyramid.security import ALL_PERMISSIONS
+from pyramid.security import Authenticated
+from lbgenerator.lib.query import JsonQuery
 
 class CustomContextFactory(SQLAlchemyORMContext):
 
     """ Default Factory Methods
     """
+
+    json_encoder = utils.DefaultJSONEncoder
+
+    __acl__ = [
+        (Allow, 'group:viewers', 'view'),
+        (Allow, 'group:creators', 'create'),
+        (Allow, 'group:editors', 'edit'),
+        (Allow, 'group:deleters', 'delete'),
+        (Allow, Authenticated, ALL_PERMISSIONS),
+        (Deny, Everyone, ALL_PERMISSIONS),
+    ]
 
     def __init__(self, request):
         self.request = request
@@ -34,103 +50,119 @@ class CustomContextFactory(SQLAlchemyORMContext):
         """
         return model.BASES.set_base(base_json)
 
-    def get_cols(self):
-        cols = tuple()
-        for field in self.default_fields:
-            if field != 'blob_doc':
-                col = (getattr(self.entity, field),)
-                cols += col
-        if not 'id_doc' in self.default_fields and 'blob_doc' in self.default_fields:
-            cols += (getattr(self.entity, 'id_doc'),)
-        return cols
-
     def get_member(self, id):
         self.single_member = True
         q = self.session.query(self.entity)
         return q.get(id)
 
-    def get_collection(self, select=None, distinct=False, order_by=None, limit=None,
-                       offset=None, filters=None, literal=None):
-        """ Search database objects
+    def get_collection(self, query):
+        """ Search database objects based on query
+        """
+        """ 
+        kw = {
+            'select':[
+                #'id_reg',
+                {'column': 'json_reg', 'distinct': False, 'order_by':'asc'}
+                #{'column': 'json_reg','transform': 'upper', 'params':['+json_reg'], 'distinct': True}
+            ],
+            'from_': {
+                'select':[
+                    {'column': 'json_reg'},
+                    {'column': 'a1', 'alias':'len1', 'transform':'array_length', 'params':['+a1', 1]},
+                    {'column': 'a1', 'alias':'idx1', 'transform':'generate_subscripts', 'params':['+a1', 1]},
+                    {'column': 'a1', 'alias':'val1', 'transform':'unnest', 'params':['+a1']},
+                    {'column': 'a2', 'alias':'len2', 'transform':'array_length', 'params':['+a2', 1]},
+                    {'column': 'a2', 'alias':'idx2', 'transform':'generate_subscripts', 'params':['+a2', 1]},
+                    {'column': 'a2', 'alias':'val2', 'transform':'unnest', 'params':['+a2']},
+                ]
+            },
+            'where': [
+               {'+val1': {'=': '20'}},
+               {'+idx1': {'=': '+idx2'}},
+               {'+val2': {'=': '3'}},
+               {'+idx1': {'=': '1'}}
+            ],
+            'literal': "val1='20' AND idx1=idx2 AND val2='3' AND idx1='1'"
+        }
         """
 
-        if select and select != '*':
-            self.default_fields = list()
-            for s in select: self.default_fields.append(s)
+        self._query = query
 
-        cols = self.get_cols()
-        q = self.session.query(*cols)
+        # Instanciate the query compiler 
+        compiler = JsonQuery(self, **query)
+
+        # Build query as SQL 
+        sql = compiler.build_query()
+
+        self.default_fields = [col.name for col in sql]
+
+        # Query results and close session
+        results = self.session.query(*sql)
         self.session.close()
 
-        def filter_query(q, f, expr='None'):
-            field, operation, term = getattr(self.entity, f['field']), f['operation'], f['term']
+        # Filter results
+        q = compiler.filter(results)
 
-            if operation == '=':
-                q = q.filter(field == term)
-            elif operation == 'contains':
-                q = q.filter(field.contains(term))
-            elif operation == 'like':
-                q = q.filter(field.like(term))
-            else: expr = 'self.entity.{0} {1} "{2}"'.format(f['field'], operation, term)
-            return q.filter(eval(expr))
-
-        if filters:
-            if type(filters) is not list: raise Exception('filters must be list')
-            for f in filters: q = filter_query(q, f)
-        if literal:
-            utils.is_sqlinject(str(literal))
-            q = q.filter(literal)
-        if type(select) is list and len(select) == 0:
-            self.default_fields = list()
-        if distinct:
-            q = q.distinct()
-        if order_by is not None:
-            for o in order_by:
+        # TODO: GET RID OF IT
+        if compiler.order_by is not None:
+            for o in compiler.order_by:
                 order = getattr(sqlalchemy, o)
-                for i in order_by[o]: q = q.order_by(order(i))
+                for i in compiler.order_by[o]: q = q.order_by(order(i))
 
+        if compiler.distinct:
+            q = q.distinct()
+
+        # Set total count for pagination 
         self.total_count = q.count()
 
-        frame = inspect.currentframe()
-        k, a, w, v = inspect.getargvalues(frame)
-        args = {i: v[i] for i in k if i != 'self'}
+        # TODO: GET RID OF IT -- from here
+        has_any_query = False
+        for k, v in query.items():
+            if v is None or v is False: pass
+            else: has_any_query = True
 
-        kwargs = False
-        for i in args:
-            if args[i] is None or args[i] is False: pass
-            else: kwargs = True
-
-        if not kwargs:
-            self.default_offset = 0
-            self.default_limit = 10
-        else:
+        if has_any_query:
             self.default_offset = None
             self.default_limit = None
+        else:
+            self.default_offset = 0
+            self.default_limit = 10
 
-        if offset is not None:
-            self.default_offset = offset
-        if limit is not None:
-            self.default_limit = limit
+        if compiler.offset is not None:
+            self.default_offset = compiler.offset
+        if compiler.limit is not None:
+            self.default_limit = compiler.limit
 
         q = q.offset(self.default_offset)
         q = q.limit(self.default_limit)
 
+        # -- until here
+
+        """
+        if not 'limit' in query:
+            compiler.limit = 10
+        if not 'offset' in query:
+            compiler.offset = 0
+
+        self.default_limit = compiler.limit
+        self.default_offset = compiler.offset
+
+        # limit and offset results
+        q = q.limit(compiler.limit)
+        q = q.offset(compiler.offset)
+        """
+
+        # Return Results
         return q.all()
 
     def wrap_json_obj(self, obj):
-        count = len(obj)
-        if hasattr(self, 'total_count'): count = self.total_count
-        # Select no fields:
-        if self.default_fields is not None and len(self.default_fields) is 0: obj = list()
 
-        limit = getattr(self, 'default_limit', 10)
-        limit = 0 if limit is None else limit
-        offset = getattr(self, 'default_offset', 0)
-        offset = 0 if offset is None else offset
+        limit = 0 if self.default_limit is None else self.default_limit
+        offset = 0 if self.default_offset is None else self.default_offset
 
         return dict(
             results = obj,
-            result_count = count,
+            result_count = self.total_count,
             limit = limit,
             offset = offset
         )
@@ -147,3 +179,10 @@ class CustomContextFactory(SQLAlchemyORMContext):
         if getattr(self, 'single_member', None) is True and type(obj) is list:
             obj = obj[0]
         return json.dumps(obj, cls=self.json_encoder, ensure_ascii=False)
+
+    def member2KeyedTuple(self, member):
+        keys = list(member.__dict__.keys())
+        values = list(member.__dict__.values())
+        keys.pop(0) # _sa_instance_state object
+        values.pop(0) # _sa_instance_state object
+        return KeyedTuple(values, labels=keys)

@@ -94,12 +94,9 @@ class DocCustomView(CustomView):
             raise HTTPNotFound()
 
         content_disposition = 'filename=' + member.nome_doc
-        params = self.request.params
-        if params.get('disposition'):
-            if params['disposition'] == 'attachment':
-                content_disposition = 'attachment;' + content_disposition
-            elif params['disposition'] == 'inline':
-                content_disposition = 'inline;' + content_disposition
+        disposition = self.request.params.get('disposition')
+        if disposition and disposition in ('inline', 'attachment'):
+            content_disposition = disposition + ';' + content_disposition
 
         return Response(
             content_type=member.mimetype,

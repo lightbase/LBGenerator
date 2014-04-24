@@ -2,6 +2,8 @@ pyramid
 waitress
 liblightbase
 pyramid_restler
+pyramid_who
+pymongo
 sqlalchemy
 psycopg2
 voluptuous

@@ -121,10 +121,11 @@ class HistoryMetaBase():
         )
         request = utils.FakeRequest(method = 'POST')
         base_context = BaseContextFactory(request)
-        bases = base_context.get_collection(
+        query = dict(
             select=['id_base'],
             literal="nome_base = '_history'"
         )
+        bases = base_context.get_collection(query)
         if len(bases) == 0:
             base_context.session = begin_session()
             base_context.create_member(data)
@@ -136,17 +137,25 @@ class HistoryMetaBase():
         request = utils.FakeRequest(matchdict = {'base': '_history'})
         reg_context = RegContextFactory(request)
         id_reg = reg_context.entity.next_id()
-        registry['id_reg'] = id_reg
-        json_reg = json.dumps(registry, ensure_ascii=False)
+        now = datetime.datetime.now()
+        registry['_metadata'] = {
+            "dt_reg": now,
+            "id_reg": id_reg,
+            "dt_index_tex": None,
+            "dt_last_up": now,
+            "dt_reg_del": None
+        }
         try:
             reg_context.create_member({
                 'id_reg': id_reg,
-                'json_reg': json_reg,
-                'dt_reg': datetime.datetime.now()
+                'json_reg': registry,
+                'dt_reg': now,
+                'dt_last_up': now,
+                '__docs__': {}
             })
         except Exception as e:
             print('ERROR: could not create registry on _history. id: %s, json: %s, error_msg: %s'
-                %(id_reg, json_reg, traceback.format_exc()))
+                %(id_reg, registry, traceback.format_exc()))
 
 
 

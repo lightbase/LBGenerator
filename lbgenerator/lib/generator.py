@@ -19,7 +19,7 @@ class BaseMemory():
             session.close()
             if not base_json:
                 raise Exception('Base "%s" does not exist' %(base_name))
-            return self.set_base(utils.to_json(base_json[0]))
+            return self.set_base(utils.json2object(base_json[0]))
         return base
 
     def set_base(self, base_json):

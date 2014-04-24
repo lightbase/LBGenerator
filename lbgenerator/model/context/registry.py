@@ -1,5 +1,6 @@
 
 from sqlalchemy.orm.state import InstanceState
+from sqlalchemy.util import KeyedTuple
 from lbgenerator.model.context import CustomContextFactory
 from lbgenerator.model.index import Index
 from lbgenerator.model import reg_hyper_class
@@ -21,17 +22,15 @@ class RegContextFactory(CustomContextFactory):
         self.doc_entity = doc_hyper_class(self.base_name)
         self.index = Index(base, self.get_full_reg)
 
-    def create_docs(self, id):
+    def create_docs(self, docs):
         """ Create all documents relationated with given id
         """
-        base = self.get_base()
-        docs = base.__docs__.get(int(id))
-        if docs is not None:
-            for doc in docs:
-                doc_member = self.doc_entity(**doc)
-                self.session.add(doc_member)
-            # Clear memory
-            del base.__docs__[int(id)]
+        for doc in docs:
+            doc_member = self.doc_entity(**doc)
+            self.session.add(doc_member)
+
+    def sync_metadata(self, data):
+        data['json_reg']['_metadata']['dt_index_tex'] = data.get('dt_index_tex', None)
 
     def create_member(self, data):
         """ Create regitry
@@ -39,12 +38,17 @@ class RegContextFactory(CustomContextFactory):
         # Create member
         member = self.entity(**data)
         self.session.add(member)
-        self.session.flush()
 
         if 'json_reg' in data:
-            # Index member and create documents
+            # Index member 
             data = self.index.create(data)
-            self.create_docs(data['id_reg'])
+            self.sync_metadata(data)
+
+            # Create documents
+            self.create_docs(data['__docs__'])
+
+            # Serialize registry
+            data['json_reg'] = utils.registry2json(data['json_reg'])
 
         for name in data:
             setattr(member, name, data[name])
@@ -53,26 +57,25 @@ class RegContextFactory(CustomContextFactory):
         self.session.close()
         return member
 
-    def update_member(self, id, data):
-        """ Update regitry
+    def update_member(self, member, data):
+        """ Update registry
         """
-        member = self.get_member(id)
-        if member is None:
-            return None
 
         if 'json_reg' in data:
+
+            # Normalize registry
             consistency = Consistency(self.get_base(), data['json_reg'])
             data['json_reg'] = consistency.normalize()
 
-        for name in data:
-            # Update member
-            setattr(member, name, data[name])
-        self.session.flush()
+            # Index member 
+            data = self.index.update(member.id_reg, data)
+            self.sync_metadata(data)
 
-        # Index member and create documents
-        if 'json_reg' in data:
-            data = self.index.update(id, data)
-            self.create_docs(id)
+            # Create documents
+            self.create_docs(data['__docs__'])
+
+            # Serialize registry 
+            data['json_reg'] = utils.registry2json(data['json_reg'])
 
         for name in data:
             setattr(member, name, data[name])
@@ -82,7 +85,7 @@ class RegContextFactory(CustomContextFactory):
         return member
 
     def delete_member(self, id):
-        """ Delete regitry
+        """ Delete registry
         """
         member = self.get_member(id)
         if member is None:
@@ -110,7 +113,7 @@ class RegContextFactory(CustomContextFactory):
         """
         for attr in member.__dict__:
             static_attrs = isinstance(member.__dict__[attr], InstanceState)\
-            or attr == 'id_reg' or attr == 'dt_reg'
+            or attr in ['id_reg', 'dt_reg', 'dt_last_up']
             if not static_attrs:
                 setattr(member, attr, None)
         setattr(member, 'dt_reg_del', datetime.datetime.now())
@@ -129,7 +132,7 @@ class RegContextFactory(CustomContextFactory):
         """ This method will return the registry with documents texts
             within it.
         """
-        id = registry['id_reg']
+        id = registry['_metadata']['id_reg']
         doc_cols = (
            self.doc_entity.id_doc,
            self.doc_entity.texto_doc,
@@ -166,18 +169,41 @@ class RegContextFactory(CustomContextFactory):
         return registry
 
     def member_to_dict(self, member, fields=None):
-        if fields is None:
-            fields = self.default_fields
-        d = dict()
-        for name in fields:
-            attr = getattr(member, name)
-            if name == 'json_reg' and attr is not None:
-                attr = utils.to_json(attr)
-            d[name] = attr
-        return d
+        if not isinstance(member, KeyedTuple):
+            member = self.member2KeyedTuple(member)
+        dict_member = member._asdict()
+        if 'json_reg' in dict_member:
+            dict_member['json_reg'] = utils.json2object(dict_member['json_reg'])
+        if self.default_query is True:
+            dict_member = dict_member['json_reg']
+        return dict_member
 
     def to_json(self, value, fields=None, wrap=True):
         obj = self.get_json_obj(value, fields, wrap)
         if getattr(self, 'single_member', None) is True and type(obj) is list:
-            obj = obj[0].get('json_reg')
+            obj = obj[0]
         return json.dumps(obj, cls=self.json_encoder, ensure_ascii=False)
+
+    def get_docs_text_by_registry_id(self, id_reg, close_session=True):
+        """
+        @param id_reg: id from registry 
+        @param close_session: If true, will close current session, else will not.
+
+        This method will return a dictonary in the format {id_doc: texto_doc},
+        with all docs referenced by @param: id_reg
+        """
+
+        # Query documents
+        documents = self.session.query(self.doc_entity.id_doc, self.doc_entity.texto_doc)\
+            .filter_by(id_reg=id_reg).all() or [ ]
+
+        if close_session is True:
+            # Close session if param close_session is True
+            self.session.close()
+
+        files = { }
+        for document in documents:
+            # Build dictionary
+            files[document.id_doc] = document.texto_doc
+
+        return files

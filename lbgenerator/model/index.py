@@ -1,6 +1,7 @@
 import requests, datetime, json
 from lbgenerator.lib import utils
 from lbgenerator import config
+import copy
 
 class CreatedIndex():
     """ Represents a successfull response when creating an index.
@@ -75,12 +76,12 @@ class Index():
             return data
 
         # Get parsed registry
-        registry = utils.to_json(data['json_reg'])
+        registry = utils.json2object(data['json_reg'])
         #parser = RegistryParser(self.base.object, registry)
         # IMPORTANT: This time we dont have ensure_ascii=False
         #registry = json.dumps(parser.parse(), ensure_ascii=False)
         #registry = json.dumps(parser.parse())
-        registry = json.dumps(registry)
+        registry = json.dumps(registry, cls=utils.DefaultJSONEncoder)
 
         # Try to index registry
         url = self.to_url(self.INDEX_URL, str(data['id_reg']))
@@ -99,14 +100,15 @@ class Index():
         if not self.is_indexable:
             return data
 
+        reg_copy = copy.deepcopy(data['json_reg'])
         # Get full registry
-        full_reg = self.get_full_reg(utils.to_json(data['json_reg']), close_session=False)
+        full_reg = self.get_full_reg(utils.json2object(reg_copy), close_session=False)
         # Get parsed registry
         #parser = RegistryParser(self.base.object, full_reg)
         # registry = json.dumps(parser.parse(), ensure_ascii=False)
         # IMPORTANT: This time we dont have ensure_ascii=False
         #registry = json.dumps(parser.parse())
-        registry = json.dumps(full_reg)
+        registry = json.dumps(full_reg, cls=utils.DefaultJSONEncoder)
 
         # Try to index registry
         url = self.to_url(self.INDEX_URL, str(id))

@@ -10,7 +10,6 @@ def response_callback(request, response):
     if 'callback' in request.params:
         response.text = request.params['callback'] + '(' + response.text + ')'
 
-
 class CustomView(RESTfulView):
 
     """ Default Customized View Methods
@@ -47,7 +46,7 @@ class CustomView(RESTfulView):
         try: value = getattr(member, column)
         except: raise Exception('Could not find column %s' % column)
 
-        try: value = utils.to_json(value)
+        try: value = utils.json2object(value)
         except: pass
 
         if PATH:
@@ -74,13 +73,12 @@ class CustomView(RESTfulView):
     def get_collection(self, render_to_response=True):
         """ Search database objects
         """
-        kwargs = self.request.params.get('$$', { })
-        if kwargs:
-            kwargs = utils.to_json(kwargs)
+        params = self.request.params.get('$$', '{}')
+        query = utils.json2object(params)
         try:
-            collection = self.context.get_collection(**kwargs)
+            collection = self.context.get_collection(query)
         except Exception as e:
-            raise Exception('Error trying to complete your search: {}'.format(str(e.args[0])))
+            raise Exception('SearchError: %s' % e)
         if render_to_response:
             response = self.render_to_response(collection)
         else:
@@ -100,11 +98,11 @@ class CustomView(RESTfulView):
 
     def update_member(self):
         id = self.request.matchdict['id']
-        member = self.context.update_member(id, self._get_data())
+        member = self.context.get_member(id)
         if member is None:
             raise HTTPNotFound()
-        else:
-            return self.render_custom_response(id, default_response='UPDATED')
+        self.context.update_member(member, self._get_data(member))
+        return self.render_custom_response(id, default_response='UPDATED')
 
     def delete_member(self):
         id = self.request.matchdict['id']
@@ -114,8 +112,8 @@ class CustomView(RESTfulView):
         return Response('DELETED', charset='utf-8', status=200, content_type='')
 
     def render_custom_response(self, id, default_response):
-        _return = self.request.params.get('return')
-        is_valid_return = hasattr(self.context.entity, str(_return))
+        _return = self.request.params.get('return', '')
+        is_valid_return = hasattr(self.context.entity, _return)
         if is_valid_return:
             member = self.context.get_member(id)
             response_attr = getattr(member, _return)

@@ -17,33 +17,17 @@ class RegCustomView(CustomView):
         super(RegCustomView, self).__init__(context, request)
         self.logger = Logger(__name__)
 
-    def _get_data(self):
+    def _get_data(self, *args):
         """ Get all valid data from (request) POST or PUT.
         """
-        return validate_reg_data(self, self.request)
+        return validate_reg_data(self, self.request, *args)
 
     def get_member(self):
         id = self.request.matchdict['id']
-        self.fields = ['json_reg']
         self.wrap = False
+        self.context.default_query = True
         member = self.context.get_member(id)
         return self.render_to_response(member)
-
-    def get_relational_data(self, json_reg):
-        """ Extract values from registry if field is relational. 
-        """
-        relational_fields = self.get_base().relational_fields
-
-        unique_data = { field: None for field in relational_fields['unique_cols'] }
-        relational_data = { field: None for field in relational_fields['normal_cols'] }
-        relational_data.update(unique_data)
-
-        for field in json_reg:
-            if field in relational_fields['unique_cols']:
-                relational_data[field] = json_reg[field]
-            elif field in relational_fields['normal_cols']:
-                relational_data[field] = json_reg[field]
-        return relational_data
 
     def get_path(self):
         """ Go further into registry and get path's value.
@@ -80,7 +64,7 @@ class RegCustomView(CustomView):
 
         # Build Response
         if data.get('return'):
-            registry = utils.to_json(member.json_reg)
+            registry = utils.json2object(member.json_reg)
             _return['json_reg'] = member.json_reg
             _return['new_value'] = base.get_path(registry, _return['new_path'])
             _return['json_path'] = base.get_path(registry, path)
@@ -102,18 +86,17 @@ class RegCustomView(CustomView):
         _return = base.put_path(member.json_reg, path, value)
         registry = _return['json_reg']
 
-        id = int(self.request.matchdict['id'])
         data = dict(json_reg = registry)
-        data = validate_put_data(self, data, id)
+        data = validate_put_data(self, data, member)
 
         # Update member
-        member = self.context.update_member(id, data)
+        member = self.context.update_member(member, data)
 
         # Build Response
         if data.get('return'):
             registry = member.json_reg
             _return['json_reg'] = registry
-            _return['new_value'] = base.get_path(utils.to_json(registry), path)
+            _return['new_value'] = base.get_path(utils.json2object(registry), path)
             return Response(_return[data['return']], content_type='application/json')
         else:
             return Response(_return['DEFAULT'])
@@ -149,7 +132,7 @@ class RegCustomView(CustomView):
     def full_reg(self):
         """ Get documents texts and put it into registry. Return registry with documents texts.
         """
-        registry = utils.to_json(self.get_db_obj().json_reg)
+        registry = utils.json2object(self.get_db_obj().json_reg)
         registry = self.context.get_full_reg(registry)
         return Response(json.dumps(registry, ensure_ascii=False), content_type='application/json')
 
@@ -160,15 +143,22 @@ class RegCustomView(CustomView):
         success, failure = 0, 0
 
         for member in collection:
-            id = member.id_reg
-            data = validate_reg_data(self, self.request, id=id)
-            self.context.session = self.context.session_factory()
+            #data = validate_reg_data(self, self.request, member)
+            member = self.context.get_member(member.id_reg)
+            data = {'json_reg':member.json_reg}
+            data = validate_put_data(self, data, member)
+            #self.context.session = self.context.session_factory()
+
+            if not self.context.session.is_active:
+                self.context.session.begin()
             try:
                 # Try to get data and update member
-                self.context.update_member(id, data)
+                self.context.update_member(member, data)
                 success = success + 1
 
             except Exception as e:
+                import traceback
+                print(traceback.format_exc())
                 failure = failure + 1
 
             finally:

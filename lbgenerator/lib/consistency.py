@@ -9,7 +9,7 @@ class Consistency():
 
     def __init__(self, base, registry):
         self.base = base
-        self.registry = utils.to_json(registry)
+        self.registry = utils.json2object(registry)
 
     @reify
     def session(self):
@@ -24,7 +24,8 @@ class Consistency():
         registry. The case must be studied.
         """
         self.entity = doc_hyper_class(self.base.name)
-        self.files = self.session.query(self.entity.id_doc).filter_by(id_reg=self.registry['id_reg']).all()
+        self.files = self.session.query(self.entity.id_doc)\
+            .filter_by(id_reg=self.registry['_metadata']['id_reg']).all()
         # self.files = [(1,), (2,) ... ]
 
         # Remove all files in registry that are not in database
@@ -37,7 +38,7 @@ class Consistency():
         self.session.commit()
         self.session.close()
 
-        return json.dumps(self.registry, ensure_ascii=False)
+        return self.registry
 
     def remove_inconsistent_files(self, registry):
 

@@ -3,6 +3,7 @@
 
 from sqlalchemy.engine import create_engine
 from sqlalchemy.schema import MetaData
+import json
 
 def set_globals(**settings):
 
@@ -22,6 +23,7 @@ def set_globals(**settings):
     global METADATA
 
     ENGINE = create_engine(DB_URL, pool_size=POOL_SIZE, max_overflow=MAX_OVERFLOW)
+    #ENGINE = create_engine(DB_URL, pool_size=POOL_SIZE, max_overflow=MAX_OVERFLOW, echo=True)
     METADATA = MetaData(ENGINE)
 
     global LOG_FILE
@@ -30,4 +32,15 @@ def set_globals(**settings):
     #LOG_FORMAT = settings['log.format']
     LOG_FILE = '/var/log/lbgenerator.log'
     LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+
+    global AUTH_ENABLED 
+    global AUTH_INCLUDE_IP
+    global ADMIN_USER
+    global ADMIN_PASSWD 
+
+    AUTH_ENABLED = bool(int(settings['auth.enabled']))
+    AUTH_INCLUDE_IP = bool(int(settings['auth.include_ip']))
+    ADMIN_USER = settings['auth.admin_user']
+    ADMIN_PASSWD = settings['auth.admin_passwd']
+
 
