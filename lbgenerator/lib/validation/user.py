@@ -1,5 +1,5 @@
 
-from lbgenerator.lib import utils
+from .. import utils
 import datetime
 
 def validate_user_data(cls, request, id=None):
@@ -38,22 +38,5 @@ def validate_post_data(cls, data):
     return data
 
 def validate_put_data(cls, data, id):
-
-    for key in data:
-        if key == 'json_reg':
-            pass
-        else:
-            try: data[key] = utils.json2object(data[key])
-            except: pass
-
-    if 'json_reg' in data:
-        json_reg = utils.json2object(data['json_reg'])
-
-        base = cls.get_base()
-
-        data['json_reg'] = base.validate(json_reg, id)
-
-        data.update(cls.get_relational_data(json_reg))
-        data['dt_index_tex'] = None
 
     return data

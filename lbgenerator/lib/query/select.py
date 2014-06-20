@@ -1,5 +1,5 @@
 
-from lbgenerator.lib.query.column import ColumnQuery
+from .column import ColumnQuery
 
 class SelectQuery():
 
@@ -17,10 +17,7 @@ class SelectQuery():
     def column_list(self):
 
         if self.select == self.wildcard or self.select is None:
-            self.context.default_query = True
             return self.default_list()
-        else:
-            self.context.default_query = False
 
         _column_list = [ ]
 

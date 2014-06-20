@@ -1,10 +1,9 @@
 
-from lbgenerator.views import CustomView
-from lbgenerator.lib.validation.base import validate_base_data
-from lbgenerator.lib import utils
+from . import CustomView
+from ..lib.validation.base import validate_base_data
+from ..lib import utils
 from pyramid.response import Response
 from pyramid.exceptions import HTTPNotFound
-import json
 
 class BaseCustomView(CustomView):
 
@@ -65,5 +64,5 @@ class BaseCustomView(CustomView):
                 except:
                     raise Exception('Invalid attribute "%s"' % path_name)
 
-        value = json.dumps(value, cls=self.context.json_encoder, ensure_ascii=False)
-        return Response(body=value, content_type='application/json')
+        value = utils.object2json(value)
+        return Response(value, content_type='application/json')

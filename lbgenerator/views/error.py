@@ -7,13 +7,13 @@ from pyramid.httpexceptions import HTTPInternalServerError
 from pyramid.httpexceptions import HTTPNotFound
 from pyramid.httpexceptions import HTTPForbidden
 import traceback
-import json
-import sys 
+from ..lib import utils
+import sys
 
 class JsonErrorMessage():
 
     def get_error(self):
-        return json.dumps(dict(
+        return utils.object2json(dict(
             _status = self.code,
             _error_message = self._error_message,
             _request = self.get_request_str(),
@@ -28,7 +28,7 @@ class JsonHTTPServerError(HTTPInternalServerError, JsonErrorMessage):
 
     def __init__(self, request, _error_message):
         print(traceback.format_exc())
-        self._error_message = _error_message 
+        self._error_message = _error_message
         self.request = request
         Response.__init__(self, self.get_error(), status=self.code)
         self.content_type = 'application/json'

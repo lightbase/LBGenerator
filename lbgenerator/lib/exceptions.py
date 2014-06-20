@@ -1,24 +1,26 @@
 
-from pyramid.httpexceptions import HTTPUnauthorized, HTTPBadRequest, HTTPNotImplemented
+from . import utils
+from pyramid.httpexceptions import HTTPUnauthorized
+from pyramid.httpexceptions import HTTPNotImplemented
+from pyramid.httpexceptions import HTTPBadRequest
 from pyramid.response import Response
-import json
 
 class JSONHTTPUnauthorized(HTTPUnauthorized):
 
     def __init__(self, error):
-        Response.__init__(self, json.dumps(error), status=self.code)
+        Response.__init__(self, utils.object2json(error), status=self.code)
         self.content_type = 'application/json'
 
 class JSONHTTPBadRequest(HTTPBadRequest):
 
     def __init__(self, error):
-        Response.__init__(self, json.dumps(error), status=self.code)
+        Response.__init__(self, utils.object2json(error), status=self.code)
         self.content_type = 'application/json'
 
 class JSONHTTPNotImplemented(HTTPNotImplemented):
 
     def __init__(self, error):
-        Response.__init__(self, json.dumps(error), status=self.code)
+        Response.__init__(self, utils.object2json(error), status=self.code)
         self.content_type = 'application/json'
 
 class OAuth2ErrorHandler(object):

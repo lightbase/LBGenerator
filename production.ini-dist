@@ -1,11 +1,11 @@
 [app:main]
 use = egg:LBGenerator
 
-sqlalchemy.url = postgresql://rest:rest@127.0.0.1/neolight
+sqlalchemy.url = postgresql://rest:rest@localhost/neolight
 sqlalchemy.max_overflow = 0
 sqlalchemy.pool_size = 20
 storage.tmp_dir = /tmp
-requests.timeout = 5
+requests.timeout = 30
 
 pyramid.reload_templates = true
 pyramid.debug_authorization = true
@@ -14,10 +14,16 @@ pyramid.debug_routematch = true
 pyramid.default_locale_name = en
 mako.directories = lbgenerator:templates
 
-auth.enabled = false
-auth.include_ip = true
+auth.enabled = 0
+auth.include_ip = 1
 auth.admin_user = admin
 auth.admin_passwd = admin
+
+[alembic]
+sqlalchemy.url = postgresql://rest:rest@localhost/neolight
+sqlalchemy.max_overflow = 0
+sqlalchemy.pool_size = 20
+script_location = db_versions
 
 [server:main]
 use = egg:waitress#main
@@ -27,7 +33,7 @@ port = 6543
 # Begin logging configuration
 
 [loggers]
-keys = root, lbgenerator
+keys = root, lbgenerator, alembic
 
 [handlers]
 keys = console
@@ -36,13 +42,23 @@ keys = console
 keys = generic
 
 [logger_root]
-level = INFO
+level = WARN
 handlers = console
 
 [logger_lbgenerator]
-level = DEBUG
+level = WARN
 handlers =
 qualname = lbgenerator
+
+[logger_alembic]
+level = WARN
+handlers =
+qualname = alembic
+
+[logger_sqlalchemy]
+level = WARN
+handlers =
+qualname = sqlalchemy.engine
 
 [handler_console]
 class = StreamHandler
@@ -52,5 +68,6 @@ formatter = generic
 
 [formatter_generic]
 format = %(asctime)s %(levelname)-5.5s [%(name)s][%(threadName)s] %(message)s
+datefmt = %H:%M:%S
 
 # End logging configuration

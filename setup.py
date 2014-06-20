@@ -3,17 +3,23 @@ import os
 from setuptools import setup, find_packages
 
 here = os.path.abspath(os.path.dirname(__file__))
-README = open(os.path.join(here, 'README.txt')).read()
-CHANGES = open(os.path.join(here, 'CHANGES.txt')).read()
+README = open(os.path.join(here, 'README.md')).read()
+CHANGES = open(os.path.join(here, 'CHANGES.md')).read()
 
 requires = [
-    'pyramid',
-    'waitress',
+    'alembic',
+    'bcrypt',
+    # 'lbauth',
     'liblightbase',
-    'pyramid_restler',
-    'sqlalchemy',
     'psycopg2',
+    'pymongo',
+    'pyramid',
+    'pyramid_restler',
+    'pyramid_who',
+    'requests',
+    'sqlalchemy',
     'voluptuous',
+    'waitress'
     ]
 
 

@@ -1,1 +1,0 @@
-LBGenerator README

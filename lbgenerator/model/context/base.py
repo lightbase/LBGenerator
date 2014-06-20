@@ -1,15 +1,11 @@
 
 import datetime
-import json
-from lbgenerator import model
-from lbgenerator.model.entities import *
-from lbgenerator.model.context import CustomContextFactory
-from lbgenerator.lib import utils
-from lbgenerator import config
-from lbgenerator.model import base_exists
-from lbgenerator.model import reg_hyper_class
-from lbgenerator.model import doc_hyper_class
-from lbgenerator.model.index import Index
+from . import CustomContextFactory
+from ..entities import *
+from ..index import Index
+from ... import model
+from ... import config
+from ...lib import utils
 from sqlalchemy.util import KeyedTuple
 
 class BaseContextFactory(CustomContextFactory):
@@ -17,29 +13,27 @@ class BaseContextFactory(CustomContextFactory):
     """ Base Factory Methods
     """
 
-    entity = LB_Base
+    entity = LBBase
+
+    def get_next_id(self):
+        return model.base_next_id()
 
     def get_member(self, base):
         self.single_member = True
-        member = self.session.query(self.entity).filter_by(nome_base = base).first()
+        member = self.session.query(self.entity)\
+            .filter_by(name=base).first()
         return member or None
 
     def create_member(self, data):
 
-        if base_exists(data['nome_base']):
-            raise Exception('Base "%s" already exists!' % data['nome_base'])
         # Create reg and doc tables
-        base_name = data['nome_base']
-        base_json = utils.json2object(data['json_base'])
+        base_name = data['name']
+        base_json = utils.json2object(data['struct'])
         relational_fields = model.BASES.set_base(base_json).relational_fields
 
-        #reg_hyper_class(base_name, **custom_cols)
-        #doc_hyper_class(base_name)
-        #metadata.create_all(bind=engine)
-
-        doc_table = get_doc_table(base_name, config.METADATA)
-        reg_table = get_reg_table(base_name, config.METADATA, **relational_fields)
-        reg_table.create(config.ENGINE, checkfirst=True)
+        file_table = get_file_table(base_name, config.METADATA)
+        doc_table = get_doc_table(base_name, config.METADATA, **relational_fields)
+        file_table.create(config.ENGINE, checkfirst=True)
         doc_table.create(config.ENGINE, checkfirst=True)
 
         member = self.entity(**data)
@@ -53,21 +47,21 @@ class BaseContextFactory(CustomContextFactory):
         if member is None:
             return None
 
-        if member.nome_base != data['nome_base']:
-            old_name = 'lb_reg_%s' %(member.nome_base)
-            new_name = 'lb_reg_%s' %(data['nome_base'])
+        if member.name != data['name']:
+            old_name = 'lb_doc_%s' %(member.name)
+            new_name = 'lb_doc_%s' %(data['name'])
             self.session.execute('ALTER TABLE %s RENAME TO %s' %(old_name, new_name))
 
-            old_name = 'lb_doc_%s' %(member.nome_base)
-            new_name = 'lb_doc_%s' %(data['nome_base'])
+            old_name = 'lb_file_%s' %(member.name)
+            new_name = 'lb_file_%s' %(data['name'])
             self.session.execute('ALTER TABLE %s RENAME TO %s' %(old_name, new_name))
 
-            old_name = 'lb_reg_%s_id_reg_seq' %(member.nome_base)
-            new_name = 'lb_reg_%s_id_reg_seq' %(data['nome_base'])
+            old_name = 'lb_doc_%s_id_doc_seq' %(member.name)
+            new_name = 'lb_doc_%s_id_doc_seq' %(data['name'])
             self.session.execute('ALTER SEQUENCE %s RENAME TO %s' %(old_name, new_name))
 
-            old_name = 'lb_doc_%s_id_doc_seq' %(member.nome_base)
-            new_name = 'lb_doc_%s_id_doc_seq' %(data['nome_base'])
+            old_name = 'lb_file_%s_id_file_seq' %(member.name)
+            new_name = 'lb_file_%s_id_file_seq' %(data['name'])
             self.session.execute('ALTER SEQUENCE %s RENAME TO %s' %(old_name, new_name))
 
         for name in data:
@@ -77,9 +71,9 @@ class BaseContextFactory(CustomContextFactory):
         model.HISTORY.create_member(**{
             'id_base': member.id_base,
             'author': 'Author',
-            'date': datetime.datetime.now(),
-            'name': member.nome_base,
-            'structure': utils.json2object(member.json_base),
+            'date': datetime.datetime.now().strftime('%d/%m/%Y %H:%M:%S'),
+            'name': member.name,
+            'structure': utils.json2object(member.struct),
             'status': 'UPDATED'
         })
 
@@ -93,15 +87,15 @@ class BaseContextFactory(CustomContextFactory):
             return None
 
         index = None
-        relational_fields = model.BASES.get_base(member.nome_base).relational_fields
-        if model.BASES.bases.get(member.nome_base) is not None:
-            index = Index(model.BASES.bases[member.nome_base], None)
-            del model.BASES.bases[member.nome_base]
+        relational_fields = model.BASES.get_base(member.name).relational_fields
+        if model.BASES.bases.get(member.name) is not None:
+            index = Index(model.BASES.bases[member.name], None)
+            del model.BASES.bases[member.name]
 
         # Delete parallel tables
-        doc_table = get_doc_table(member.nome_base, config.METADATA)
-        reg_table = get_reg_table(member.nome_base, config.METADATA, **relational_fields)
-        reg_table.drop(config.ENGINE, checkfirst=True)
+        file_table = get_file_table(member.name, config.METADATA)
+        doc_table = get_doc_table(member.name, config.METADATA, **relational_fields)
+        file_table.drop(config.ENGINE, checkfirst=True)
         doc_table.drop(config.ENGINE, checkfirst=True)
 
         # Delete base
@@ -110,20 +104,12 @@ class BaseContextFactory(CustomContextFactory):
         if index:
             index.delete_root()
 
-        #metadata.drop_all(bind=engine, tables=[reg_table])
-        #metadata.drop_all(bind=engine, tables=[doc_table])
-
-        #self.session.execute('DROP TABLE lb_reg_%s ' % member.nome_base)
-        #self.session.execute('DROP TABLE lb_doc_%s ' % member.nome_base)
-        #self.session.execute('DROP SEQUENCE lb_reg_%s_id_reg_seq ' % member.nome_base)
-        #self.session.execute('DROP SEQUENCE lb_doc_%s_id_doc_seq ' % member.nome_base)
-
         model.HISTORY.create_member(**{
             'id_base': member.id_base,
             'author': 'Author',
-            'date': datetime.datetime.now(),
-            'name': member.nome_base,
-            'structure': utils.json2object(member.json_base),
+            'date': datetime.datetime.now().strftime('%d/%m/%Y %H:%M:%S'),
+            'name': member.name,
+            'structure': utils.json2object(member.struct),
             'status': 'DELETED'
         })
 
@@ -133,8 +119,15 @@ class BaseContextFactory(CustomContextFactory):
     def member_to_dict(self, member, fields=None):
         if not isinstance(member, KeyedTuple):
             member = self.member2KeyedTuple(member)
-        dict_member = member._asdict()
-        for json_attr in ('json_base', 'reg_model'):
-            if json_attr in dict_member:
-                dict_member[json_attr] = utils.json2object(dict_member[json_attr])
+
+        dict_member = utils.json2object(
+            member._asdict()[self.entity.__table__.__factory__[1].name]
+        )
+
+        fields = getattr(self,'_query', {}).get('select')
+        if fields and not '*' in fields:
+            return {'metadata':
+                {field: dict_member['metadata'][field] for field in fields}
+            }
+
         return dict_member

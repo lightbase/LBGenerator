@@ -1,6 +1,6 @@
 
-from lbgenerator.lib.query.select import SelectQuery
-from lbgenerator.lib.query.filter import FilterQuery
+from .select import SelectQuery
+from .filter import FilterQuery
 
 class JsonQuery():
 

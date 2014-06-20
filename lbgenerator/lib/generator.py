@@ -1,6 +1,6 @@
 
+from . import utils
 from liblightbase.lbbase.genesis import json_to_base
-from lbgenerator.lib import utils
 
 class BaseMemory():
 
@@ -15,7 +15,7 @@ class BaseMemory():
         base = self.bases.get(base_name)
         if base is None:
             session = self.session()
-            base_json = session.query(self.entity.json_base).filter_by(nome_base=base_name).first()
+            base_json = session.query(self.entity.struct).filter_by(name=base_name).first()
             session.close()
             if not base_json:
                 raise Exception('Base "%s" does not exist' %(base_name))

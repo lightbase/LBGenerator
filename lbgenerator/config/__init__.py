@@ -3,17 +3,18 @@
 
 from sqlalchemy.engine import create_engine
 from sqlalchemy.schema import MetaData
-import json
 
 def set_globals(**settings):
 
     global DB_URL
+    global DB_NAME
     global POOL_SIZE
     global MAX_OVERFLOW
     global TMP_DIR
     global REQUESTS_TIMEOUT
 
     DB_URL = settings['sqlalchemy.url']
+    DB_NAME = DB_URL.split('/')[-1]
     POOL_SIZE = int(settings['sqlalchemy.pool_size'])
     MAX_OVERFLOW = int(settings['sqlalchemy.max_overflow'])
     TMP_DIR = settings['storage.tmp_dir']
@@ -33,10 +34,10 @@ def set_globals(**settings):
     LOG_FILE = '/var/log/lbgenerator.log'
     LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 
-    global AUTH_ENABLED 
+    global AUTH_ENABLED
     global AUTH_INCLUDE_IP
     global ADMIN_USER
-    global ADMIN_PASSWD 
+    global ADMIN_PASSWD
 
     AUTH_ENABLED = bool(int(settings['auth.enabled']))
     AUTH_INCLUDE_IP = bool(int(settings['auth.include_ip']))

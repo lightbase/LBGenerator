@@ -1,14 +1,14 @@
 
-from pyramid.httpexceptions import HTTPOk, HTTPForbidden
-from pyramid.exceptions import HTTPNotFound
-from lbgenerator.lib.exceptions import OAuth2ErrorHandler
-from lbgenerator import config
+from . import CustomView
+from ..lib.validation.user import validate_user_data
+from ..lib.exceptions import OAuth2ErrorHandler
+from .. import config
 from pyramid.security import authenticated_userid
 from pyramid.security import remember
 from pyramid.security import forget
 from pyramid.response import Response
-from lbgenerator.views import CustomView
-from lbgenerator.lib.validation.user import validate_user_data
+from pyramid.httpexceptions import HTTPOk, HTTPForbidden
+from pyramid.exceptions import HTTPNotFound
 
 class UserView(CustomView):
 

@@ -1,13 +1,11 @@
+from ..model import begin_session
+from ..model import document_entity
+from ..model import file_entity
+from ..lib import utils
 from pyramid.view import view_config
 from pyramid.view import view_defaults
 from pyramid.exceptions import HTTPNotFound
 from pyramid.response import Response
-from lbgenerator.model import begin_session
-from lbgenerator.model import base_exists
-from lbgenerator.model import reg_hyper_class
-from lbgenerator.model import doc_hyper_class
-from lbgenerator.lib import utils
-import json
 import datetime
 
 @view_defaults(route_name='text')
@@ -16,15 +14,14 @@ class DocText(object):
     def __init__(self, request):
         self.request = request
         self.base_name = request.matchdict.get('base')
-        self.id_doc = request.matchdict.get('id')
-        if not base_exists(self.base_name):
-            raise Exception('Base does not exist!')
-        self.doc_entity = doc_hyper_class(self.base_name)
-        self.reg_entity = reg_hyper_class(self.base_name)
+        self.pk = request.matchdict.get('id')
+        self.doc_entity = document_entity(self.base_name)
+        self.file_entity = file_entity(self.base_name)
         self.session = begin_session()
 
-    def get_text(self, id_doc):
-        response = self.session.query(self.doc_entity.texto_doc).filter_by(id_doc=id_doc).first()
+    def get_text(self, pk):
+        response = self.session.query(self.file_entity.filetext)\
+            .filter_by(id_file=pk).first()
         if response is None:
             raise HTTPNotFound()
         self.session.close()
@@ -32,37 +29,31 @@ class DocText(object):
 
     @view_config(request_method='GET')
     def get(self):
-        text = self.get_text(self.id_doc)
-        response = {'texto_doc': text}
-        return Response(json.dumps(response, ensure_ascii=False), content_type='application/json')
+        text = self.get_text(self.pk)
+        response = {'filetext': text}
+        return Response(utils.object2json(response), content_type='application/json')
 
     @view_config(request_method='PUT')
     def put(self):
         params = self.request.params
-        if not 'texto_doc' in params:
-            raise Exception('Required param: texto_doc')
+        if not 'filetext' in params:
+            raise Exception('Required param: filetext')
 
-        doc_cols = (
-            self.doc_entity.id_reg,
-            self.doc_entity.id_doc,
-            self.doc_entity.texto_doc,
-            self.doc_entity.dt_ext_texto
-        )
-        #doc = self.session.query(self.doc_entity).get(self.id_doc)
-        doc = self.session.query(self.doc_entity).filter_by(id_doc = self.id_doc).first()
-        if not doc:
+        file_ = self.session.query(self.file_entity)\
+            .filter_by(id_file=self.pk).first()
+        if not file_:
             raise HTTPNotFound()
 
-        reg = self.session.query(self.reg_entity).get(doc.id_reg)
-        if not reg:
+        document = self.session.query(self.doc_entity).get(file_.id_doc)
+        if not document:
             raise HTTPNotFound()
 
-        text = params.get('texto_doc')
-        doc.texto_doc = text
-        doc.dt_ext_texto = str(datetime.datetime.now())
-        if text != '':
-            reg.dt_index_tex = None
-            reg.dt_last_up = doc.dt_ext_texto
+        filetext = params.get('filetext')
+        file_.filetext = filetext
+        file_.dt_ext_text = datetime.datetime.now()
+        if filetext != '':
+            document.dt_idx = None
+            document.dt_last_up = file_.dt_ext_text
 
         self.session.commit()
         self.session.close()

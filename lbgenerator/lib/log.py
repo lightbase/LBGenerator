@@ -1,6 +1,6 @@
 
+from .. import config
 import logging
-from lbgenerator import config
 
 class Logger():
 

@@ -1,105 +1,251 @@
-import json
-import datetime
-import uuid
-import os
-import glob
-import cgi
-import base64
-from lbgenerator.views import CustomView
+
+from . import CustomView
+from ..lib.validation.document import validate_document_data
+from ..lib.validation.document import validate_put_data
+from ..lib.validation.path import validate_path_data
+from ..lib import utils
+from ..lib.log import Logger
 from pyramid.response import Response
 from pyramid.exceptions import HTTPNotFound
-from lbgenerator import config
-from lbgenerator.lib.validation.document import validate_doc_data
-from lbgenerator.lib import utils
 
-class DocCustomView(CustomView):
+class DocumentCustomView(CustomView):
 
-    """ Documents Customized View Methods
+    """ Registry Customized View Methods.
     """
     def __init__(self, context, request):
-        self.context = context
-        self.request = request
-        self.base_name = self.request.matchdict.get('base')
-        self.tmp_dir = config.TMP_DIR + '/lightbase_tmp_storage/' + self.base_name
+        super(DocumentCustomView, self).__init__(context, request)
+        self.logger = Logger(__name__)
 
-    def _get_data(self):
+    def _get_data(self, *args):
         """ Get all valid data from (request) POST or PUT.
         """
-        return validate_doc_data(self, self.request)
-
-    def build_storage(self, filename, mimetype, input_file):
-        if not os.path.exists(self.tmp_dir):
-            os.makedirs(self.tmp_dir)
-
-        file_id = uuid.uuid4()
-        safe_filename = base64.urlsafe_b64encode(filename.encode('utf-8'))
-        _filename = '%s.%s.%s' % (file_id, mimetype.replace('/', '-'), safe_filename.decode('utf-8'))
-
-        file_path = os.path.join(self.tmp_dir, _filename)
-
-        tmp_file_path = file_path + '~'
-        output_file = open(tmp_file_path, 'wb')
-        # Finally write the data to a temporary file
-        input_file.seek(0)
-        while True:
-            data = input_file.read()
-            if not data:
-                break
-            output_file.write(data)
-        # If your data is really critical you may want to force it to disk first
-        # using output_file.flush(); os.fsync(output_file.fileno())
-        output_file.close()
-        # Now that we know the file has been fully saved to disk move it into place.
-        os.rename(tmp_file_path, file_path)
-        return str(file_id)
+        return validate_document_data(self, self.request, *args)
 
     def get_member(self):
         id = self.request.matchdict['id']
-        member = self.context.get_member(id)
         self.wrap = False
+        member = self.context.get_member(id)
         return self.render_to_response(member)
 
-    def create_member(self):
-        if self.request.params:
-            for k, v in self.request.params.items():
-                if isinstance(v, cgi.FieldStorage):
-                    filename = v.filename
-                    mimetype = v.type
-                    input_file = v.file
-                    file_id = self.build_storage(filename, mimetype, input_file)
-            return Response(file_id, status=201)
-        return Response(status=200)
-
-    def update_member(self):
-        raise NotImplementedError('NOT IMPLEMENTED')
-
-    def delete_member(self):
-        raise NotImplementedError('NOT IMPLEMENTED')
+    def get_path(self):
         """
-        storage = self.request.matchdict['id']
-        try:
-            for filename in glob.glob(self.tmp_dir + '/' + storage + '*'):
-                os.remove(filename)
-            return Response(status=200)
-        except:
-            return Response(status=500)
-        """
+        Interprets the path and accesses objects. In detail, the query path
+        supported in the current implementation allows the navigation of data 
+        according to the tree structure characterizing application objects. 
+        The path has the form:
 
-    def download(self):
-        """ Returns file bytes stream, so user can download it.
+        N1/N2/.../Nn
+
+        where each `N` represents a level(Node) in the tree structure of an 
+        object (possibly indicating the collection it belongs to). Specifically,
+        every Node represents a collection, or an object identifier, or a field 
+        name.
         """
-        id = self.request.matchdict.get('id')
-        member = self.context.get_raw_member(id)
+        # Get raw mapped entity object.
+        member = self.context.get_raw_member(self.request.matchdict['id'])
         if member is None:
             raise HTTPNotFound()
 
-        content_disposition = 'filename=' + member.nome_doc
-        disposition = self.request.params.get('disposition')
-        if disposition and disposition in ('inline', 'attachment'):
-            content_disposition = disposition + ';' + content_disposition
+        # Access inner object.
+        document = self.get_base().get_path(member.document,
+            self.request.matchdict['path'].split('/'))
 
-        return Response(
-            content_type=member.mimetype,
-            content_disposition=content_disposition,
-            app_iter=[member.blob_doc]
-        )
+        response = utils.object2json(document)
+        return Response(response, content_type='application/json')
+
+    def set_path(self):
+        """
+        Interprets the path, accesses, and append objects. In detail, the query
+        path supported in the current implementation allows the navigation of 
+        data according to the tree structure characterizing application objects. 
+        The path has the form:
+
+        N1/N2/.../Nn
+
+        where each `N` represents a level(Node) in the tree structure of an 
+        object (possibly indicating the collection it belongs to). Specifically,
+        every Node represents a collection, or an object identifier, or a field 
+        name. The last Node (Nn) must return a list object, so we can append 
+        the new object to it.
+        """
+        # Get raw mapped entity object.
+        member = self.context.get_raw_member(self.request.matchdict['id'])
+        if member is None:
+            raise HTTPNotFound()
+
+        # Set path
+        index, document = self.get_base().set_path(member.document,
+                                self.request.matchdict['path'].split('/'),
+                                self.request.params['value']
+                                )
+
+        # Build data
+        data = validate_put_data(self,
+                                dict(value=document),
+                                member
+                                )
+
+        # Update member
+        member = self.context.update_member(member, data)
+        return Response(str(index), content_type='application/json')
+
+    def put_path(self):
+        """
+        Interprets the path, accesses, and update objects. In detail, the query
+        path supported in the current implementation allows the navigation of 
+        data according to the tree structure characterizing application objects. 
+        The path has the form:
+
+        N1/N2/.../Nn
+
+        where each `N` represents a level(Node) in the tree structure of an 
+        object (possibly indicating the collection it belongs to). Specifically,
+        every Node represents a collection, or an object identifier, or a field 
+        name. 
+        """
+        # Get raw mapped entity object.
+        member = self.context.get_raw_member(self.request.matchdict['id'])
+        if member is None:
+            raise HTTPNotFound()
+
+        # Update path
+        if self.request.params.get('path') == '/':
+            document = member.document
+        else:
+            document = self.get_base().put_path(member.document,
+                self.request.matchdict['path'].split('/'),
+                self.request.params['value']
+                )
+
+        # Build data
+        data = validate_put_data(self,
+                                dict(value=document),
+                                member
+                                )
+
+        if self.request.matchdict['path'] == '_metadata/dt_idx':
+            index = False
+        else:
+            index = True
+
+        # Update member
+        member = self.context.update_member(member, data, index=index)
+        return Response('UPDATED', content_type='application/json')
+
+    def delete_path(self):
+        """
+        Interprets the path, accesses, and delete objects keys. In detail, the 
+        query path supported in the current implementation allows the navigation
+        of data according to the tree structure characterizing application 
+        objects. The path has the form:
+
+        N1/N2/.../Nn
+
+        where each `N` represents a level(Node) in the tree structure of an 
+        object (possibly indicating the collection it belongs to). Specifically,
+        every Node represents a collection, or an object identifier, or a field 
+        name. 
+        """
+        # Get raw mapped entity object.
+        member = self.context.get_raw_member(self.request.matchdict['id'])
+        if member is None:
+            raise HTTPNotFound()
+
+        # Delete path
+        document = self.get_base().delete_path(member.document,
+            self.request.matchdict['path'].split('/'))
+
+        # Build data
+        data = validate_put_data(self,
+                                dict(value=document),
+                                member
+                                )
+
+        # Update member
+        member = self.context.update_member(member, data)
+        return Response('DELETED', content_type='application/json')
+
+    def full_document(self):
+        """ 
+        Get files texts and put it into document. Return document with
+        files texts.
+        """
+        # Get raw mapped entity object.
+        member = self.context.get_raw_member(self.request.matchdict['id'])
+
+        if member is None:
+            raise HTTPNotFound()
+
+        document = self.context.get_full_document(utils.json2object(member.document))
+
+        return Response(utils.object2json(document),
+                       content_type='application/json')
+
+    def update_collection(self):
+        """ 
+        Udpdate database collection of objects. This method needs a valid JSON
+        query, a valid query path and the object to update. Will query database
+        objects, and update each path to the new object. Return count of
+        successes and failures.
+        """
+        collection = self.get_collection(render_to_response=False)
+        success, failure = 0, 0
+
+        for member in collection:
+            # Override matchdict
+            self.request.matchdict = {'path': self.request.params['path'],
+                                      'id': member.id_doc}
+
+            if not self.context.session.is_active:
+                self.context.session.begin()
+            try:
+                self.put_path()
+                success = success + 1
+
+            except Exception as e:
+                import traceback
+                print(traceback.format_exc())
+                failure = failure + 1
+
+            finally:
+                if self.context.session.is_active:
+                    self.context.session.close()
+
+        return Response('{"success": %d, "failure" : %d}'
+                        % (success, failure),
+                        content_type='application/json')
+
+    def delete_collection(self):
+        """ 
+        Delete database collection of objects. This method needs a valid JSON
+        query and a valid query path . Will query database objects, and update 
+        each path (deleting the respective path). Return count of successes and 
+        failures.
+        """
+        collection = self.get_collection(render_to_response=False)
+        success, failure = 0, 0
+
+        for member in collection:
+            # Override matchdict
+            self.request.matchdict = {'path': self.request.params.get('path'),
+                                      'id': member.id_doc}
+
+            if not self.context.session.is_active:
+                self.context.session.begin()
+            try:
+                if self.request.matchdict['path'] is None:
+                    self.context.delete_member(member.id_doc)
+                else:
+                    self.delete_path()
+                success = success + 1
+
+            except Exception as e:
+                failure = failure + 1
+
+            finally:
+                if self.context.session.is_active:
+                    self.context.session.close()
+
+        return Response('{"success": %d, "failure" : %d}'
+                        % (success, failure),
+                        content_type='application/json')

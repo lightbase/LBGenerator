@@ -1,5 +1,5 @@
-from lbgenerator.model.entities import LB_Users
-from lbgenerator.model.context import CustomContextFactory
+from ..entities import LB_Users
+from ..context import CustomContextFactory
 
 class UserContextFactory(CustomContextFactory):
 

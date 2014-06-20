@@ -1,29 +1,253 @@
+
+
+# TODO: Fix NULL casing, this will help:
+#https://github.com/psycopg/psycopg2/blob/497247a52836e971b0b5a5779d0c5c60b98e654d/psycopg/adapter_list.c
+#https://github.com/zzzeek/sqlalchemy/blob/master/lib/sqlalchemy/dialects/postgresql/base.py
+#http://stackoverflow.com/questions/22485971/python-sqlalchemy-insert-array-postgres-with-null-values-not-possible
+#https://groups.google.com/forum/#!msg/sqlalchemy/D5N9L4Ihgt8/0is1EGS0798J
+
 import sqlalchemy
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.schema import Column, Table, ForeignKey
+from sqlalchemy.schema import Column, Table
 from sqlalchemy.types import Integer, String, DateTime, Binary, Boolean
 from sqlalchemy.schema import Sequence
-from sqlalchemy.schema import MetaData
 from sqlalchemy.dialects.postgresql import ARRAY
+from .jsondbtype import BaseJSON, DocumentJSON
 
 Base = declarative_base()
 
-class LB_Base(Base):
-
+class LBBase(Base):
+    """
+    Bases Object-Relational Mapping. Base concept: Definition of data structure.
+    Class used to mapp the 'lb_base' Table to object. 'lb_base' Table persists
+    all Bases structures and it's metadata.
+    """
     __tablename__ = 'lb_base'
 
+    # @column id_base: The primary key for this table and uniquely identify each
+    # base in the table.
     id_base = Column(Integer, primary_key=True)
-    nome_base = Column(String, nullable=False)
-    json_base = Column(String, nullable=False)
-    reg_model = Column(String, nullable=False)
+
+    # @column name: The base name. Should accept only low-case characters
+    # separated by underscore. Also should be a unique constraint, to ensure
+    # all bases names will be unique.
+    name = Column(String, nullable=False, unique=True)
+
+    # @column struct: The base structure. The structure is a tree-format 
+    # structure used to validate data to be inserted on database.
+    struct = Column(String, nullable=False)
+
+    # @column dt_base: The base creation date (date and time). 
     dt_base = Column(DateTime, nullable=False)
 
-    password = Column(String, nullable=False)
-    index_export = Column(Boolean, nullable=False)
-    index_url = Column(String)
-    index_time = Column(Integer)
-    doc_extract = Column(Boolean, nullable=False)
-    extract_time = Column(Integer)
+    # @column idx_exp: Index exportaction. Flag used to indicate if the base
+    # needs to be indexed. Each document inserted on Base will be indexed if
+    # this flag is true. The index engine is external to this API.
+    idx_exp = Column(Boolean, nullable=False)
+
+    # @column idx_exp_uri: Index exportaction URI (Uniform Resource Identifier).
+    # Identifier used to index the documents. Accepted format is:
+    # http://<IP>:<PORT>/<INDEX>/<TYPE>. If @column idx_exp is true, when
+    # inserting a document to base, a HTTP request is sent to this URI.
+    idx_exp_url = Column(String)
+
+    # @column idx_exp_time: Index exportaction time. Time in seconds used by 
+    # asynchronous indexer to sleep beetwen the indexing processes.
+    idx_exp_time = Column(Integer)
+
+    # @column file_ext: File extraction. Flag used by asynchronous text 
+    # extractor. Indicates the need of extracting the text of the base files.
+    file_ext = Column(Boolean, nullable=False)
+
+    # @column file_ext_time: File extraction time. Time in seconds used by 
+    # asynchronous extractor to sleep beetwen the extracting processes.
+    file_ext_time = Column(Integer)
+
+# Table factory are the default columns used when query object by API.
+LBBase.__table__.__factory__ = [LBBase.__table__.c.id_base,
+                                LBBase.__table__.c.struct]
+
+class LBDocument():
+    """
+    Documents Object-Relational Mapping. Class used to mapp the 'lb_doc_<BASE>' 
+    Table to object. Document concept:  document-oriented database 
+    implementation differs on the details of this definition, in general, they 
+    all assume documents encapsulate and encode data (or information) in some 
+    standard formats or encodings. Encodings in use include XML, YAML, JSON 
+    (this case), and BSON, as well as binary forms like PDF and Microsoft 
+    Office documents (MS Word, Excel, and so on). For necessity, the binary 
+    forms are stored in other table.
+    """
+
+    def __init__(self, id_doc, document, dt_doc=None, dt_last_up=None,
+        dt_del=None, dt_idx=None, **kwargs):
+        self.id_doc = id_doc
+        self.document = document
+        self.dt_doc = dt_doc
+        self.dt_last_up = dt_last_up
+        self.dt_del = dt_del
+        self.dt_idx = dt_idx
+
+        for k in kwargs:
+            if isinstance(kwargs[k], list)\
+                 and all(v is None for v in kwargs[k]):
+                kwargs[k]= None # Set value to None if is an empty list
+            elif kwargs[k] == '':
+                kwargs[k]= None
+        self.__dict__.update(kwargs)
+
+def get_doc_table(__base__, __metadata__, **rel_fields):
+    """
+    @param base: The base name.
+    @param metadata: A container object from sqlalchemy that keeps together 
+    many different features of a database (or multiple databases) being 
+    described.
+    @param rel_fields: Dictionary at the format {field_name: field_obj} used
+    to create adicional columns on the table.
+    @return :Table object.
+
+    Create a dynamic document Table object to be mapped with LBDocument.
+    """
+
+    COLUMNS = (
+        'lb_doc_%s' %(__base__), __metadata__,
+
+        # @column id_doc: The primary key for this table and uniquely identify
+        # each document in the table.
+        Column('id_doc', Integer, Sequence('lb_doc_%s_id_doc_seq' %(__base__)),
+            primary_key=True),
+
+        # @column document: JSON encoded data wich represent a base record or 
+        # registry. All insertions on this columns must obey the base structure.
+        Column('document', DocumentJSON, nullable=False),
+
+        # @column dt_doc: The document's creation date (date and time).
+        Column('dt_doc', DateTime, nullable=False),
+
+        # @column dt_last_up: The document's last updating date (date and time).
+        Column('dt_last_up', DateTime, nullable=False),
+
+        # @column dt_del: The document's date (date and time) of deletion. This 
+        # date is filled when he normal deletion process failed when deleting
+        # the document index. When it happens, the document is cleared up, 
+        # leaving only it's metadata.
+        Column('dt_del', DateTime),
+
+        # @column dt_idx: The document's date (date and time) if indexing. All
+        # routines that index the document must fill this field.
+        Column('dt_idx', DateTime)
+    )
+
+    for rel_field in rel_fields:
+
+        # Get liblightbase.lbbase.fields object.
+        field = rel_fields[rel_field]
+
+        # Get sqlalchemy.type object.
+        col_type = field._datatype.__schema__.__dbtype__
+
+        # Transform columns type to array if necessary.
+        if field.__dim__ > 0:
+            col_type = ARRAY(col_type, dimensions=field.__dim__)
+
+        # Add UNIQUE constraint if necessary.
+        unique = True if 'Unico' in field.indices else False
+
+        # Create Column object.
+        custom_col = Column(rel_field, col_type, unique=unique)
+        COLUMNS += (custom_col,)
+
+    # Create the Table object. extend_existing Indicates that this Table is 
+    # already present in the given MetaData.
+    table = Table(*COLUMNS, extend_existing=True)
+    # Table factory are the default columns used when query object by API.
+    table.__factory__ = [table.c.id_doc, table.c.document]
+
+    return table
+
+class LBFile():
+    """
+    Files Object-Relational Mapping. Class used to mapp the 'lb_file_<BASE>' 
+    Table to object. This entity stores computer files, and it's metadata.
+    Files may contain any type of data, encoded in binary form for computer
+    storage and processing purposes.
+    """
+
+    def __init__(self, id_file, id_doc, filename, file, mimetype, filesize,
+            filetext=None, dt_ext_text=None):
+        self.id_file = id_file
+        self.id_doc = id_doc
+        self.filename = filename
+        self.file = file
+        self.mimetype = mimetype
+        self.filesize = filesize
+        self.filetext = filetext
+        self.dt_ext_text = dt_ext_text
+
+def get_file_table(__base__, __metadata__):
+    """
+    @param base: The base name.
+    @param metadata: A container object from sqlalchemy that keeps together 
+    many different features of a database (or multiple databases) being 
+    described.
+    @return: Table object.
+
+    Create a dynamic file Table object to be mapped with LBFile.
+    """
+
+    table = Table(
+        'lb_file_%s' %(__base__), __metadata__,
+
+        # @column id_file: The primary key for this table and uniquely identify
+        # each file in the table.
+        Column('id_file', Integer, Sequence('lb_file_%s_id_file_seq' %(__base__)),
+            primary_key=True),
+
+        # @column id_doc: The primary key for document's table. Each file 
+        # belongs to a document. 
+        Column('id_doc', Integer, nullable=False),
+
+        # @column name: Name used to identify a computer file stored in a file 
+        # system. Different file systems impose different restrictions on 
+        # filename lengths and the allowed characters within filenames. 
+        Column('filename', String, nullable=False),
+
+        # @column file: Sequence of bytes, which means the binary digits (bits) 
+        # are grouped in eights. Bytes that are intended to be interpreted as 
+        # something other than text characters.
+        Column('file', Binary, nullable=False),
+
+        # @column mimetype: Internet media type. Standard identifier used on the
+        # Internet to indicate the type of data that a file contains. A media 
+        # type is composed of a type, a subtype, and zero or more optional 
+        # parameters. 
+        Column('mimetype', String, nullable=False),
+
+        # @column size: Measures the size of @column file in bytes. 
+        Column('filesize', Integer, nullable=False),
+
+        # @column text: Plain text (eletronix text) extracted from @ column
+        # file.
+        Column('filetext', String),
+
+        # @column dt_ext_text: Date (date and time) of text extraction by
+        # asynchronous text extractor.
+        Column('dt_ext_text', DateTime),
+
+        # Indicates that this Table is already present in the given MetaData.
+        extend_existing=True,
+    )
+
+    # Table factory are the default columns used when query object by API.
+    table.__factory__ = [table.c.id_file,
+                        table.c.id_doc,
+                        table.c.filename,
+                        table.c.mimetype,
+                        table.c.filesize,
+                        table.c.filetext,
+                        table.c.dt_ext_text
+                        ]
+    return table
 
 class LB_Users(Base):
 
@@ -37,118 +261,3 @@ class LB_Users(Base):
     dt_cad = Column(DateTime, nullable=False)
     in_active = Column(Boolean, nullable=False)
 
-class LB_Form(Base):
-
-    __tablename__ = 'lb_form'
-
-    id_form = Column(Integer, primary_key=True)
-    id_base = Column(Integer, ForeignKey('lb_base.id_base'), nullable=False)
-    nome_form = Column(String)
-    xml_form = Column(String)
-    html_form = Column(String)
-
-class RegSuperClass():
-    def __init__(self, id_reg, json_reg, grupos_acesso=None, dt_reg=None, dt_last_up=None, dt_reg_del=None,
-            dt_index_rel=None, dt_index_tex=None, dt_index_sem=None, **kwargs):
-        self.id_reg = id_reg
-        self.json_reg = json_reg
-        self.grupos_acesso = grupos_acesso
-        self.dt_reg = dt_reg
-        self.dt_last_up = dt_last_up
-        self.dt_reg_del = dt_reg_del
-        self.dt_index_rel = dt_index_rel
-        self.dt_index_tex = dt_index_tex
-        self.dt_index_sem = dt_index_sem
-        for k in kwargs:
-            if isinstance(kwargs[k], list) and all(v is None for v in kwargs[k]):
-                # Set value to None if is an empty list
-                kwargs[k]= None
-            elif kwargs[k] == '':
-                kwargs[k]= None
-        self.__dict__.update(kwargs)
-
-
-def get_reg_table(base_name, metadata, **rel_fields):
-    cols = (
-        'lb_reg_%s' %(base_name), MetaData(),
-        Column('id_reg', Integer, Sequence('lb_reg_%s_id_reg_seq' %(base_name)), primary_key=True),
-        Column('json_reg', String, nullable=False),
-        Column('grupos_acesso', String),#nullable=False
-        Column('dt_reg', DateTime, nullable=False),
-        Column('dt_last_up', DateTime, nullable=False),
-        Column('dt_reg_del', DateTime),
-        Column('dt_index_rel', DateTime),
-        Column('dt_index_tex', DateTime),
-        Column('dt_index_sem', DateTime),
-    )
-
-    TYPE_MAPPING = {
-        'Text':            sqlalchemy.types.String,
-        #'Document':       sqlalchemy.types.String,
-        'Integer':         sqlalchemy.types.Integer,
-        'Decimal':         sqlalchemy.types.Float,
-        'Money':           sqlalchemy.types.Float,
-        'SelfEnumerated':  sqlalchemy.types.Integer,
-        'DateTime':        sqlalchemy.types.DateTime,
-        'Date':            sqlalchemy.types.Date,
-        'Time':            sqlalchemy.types.Time,
-        #'Image':          sqlalchemy.types.String,
-        #'Sound':          sqlalchemy.types.String,
-        #'Video':          sqlalchemy.types.String,
-        'Url':             sqlalchemy.types.String,
-        'Boolean':         sqlalchemy.types.Boolean,
-        'TextArea':        sqlalchemy.types.String,
-        #'File':           sqlalchemy.types.String,
-        'Html':            sqlalchemy.types.String,
-        'Email':           sqlalchemy.types.String,
-        'Json':            sqlalchemy.types.String
-    }
-
-    include_columns = [ ]
-
-    if rel_fields:
-        for rel_field in rel_fields:
-            field = rel_fields[rel_field]
-            col_type = TYPE_MAPPING[field.datatype]
-            if field.__dim__ > 0:
-                # TODO: Fix NULL casing, this will help:
-                #https://github.com/psycopg/psycopg2/blob/497247a52836e971b0b5a5779d0c5c60b98e654d/psycopg/adapter_list.c
-                #https://github.com/zzzeek/sqlalchemy/blob/master/lib/sqlalchemy/dialects/postgresql/base.py
-                #http://stackoverflow.com/questions/22485971/python-sqlalchemy-insert-array-postgres-with-null-values-not-possible
-                #https://groups.google.com/forum/#!msg/sqlalchemy/D5N9L4Ihgt8/0is1EGS0798J
-                col_type = ARRAY(col_type, dimensions=field.__dim__)
-            unique = True if 'Unique' in field.indices else False
-            custom_col = Column(rel_field, col_type, unique=unique)
-            cols += (custom_col,)
-            include_columns.append(rel_field)
-
-    try: return Table(*cols, extend_existing=True, autoload=True, include_columns=include_columns)
-    except: return Table(*cols, extend_existing=True)
-
-class DocSuperClass():
-    def __init__(self, id_doc, id_reg, nome_doc, blob_doc, mimetype,
-            grupos_acesso=None, texto_doc=None, dt_ext_texto=None):
-        self.id_doc = id_doc
-        self.id_reg = id_reg
-        self.grupos_acesso = grupos_acesso
-        self.nome_doc = nome_doc
-        self.blob_doc = blob_doc
-        self.mimetype = mimetype
-        self.texto_doc = texto_doc
-        self.dt_ext_texto = dt_ext_texto
-
-def get_doc_table(base_name, metadata):
-    doc_table = Table(
-        'lb_doc_%s' %(base_name), MetaData(),
-        Column('id_doc', Integer, Sequence('lb_doc_%s_id_doc_seq' %(base_name)), primary_key=True),
-        #Column('id_reg', Integer, ForeignKey('lb_reg_%s.id_reg' %(base_name)), nullable=False),
-        Column('id_reg', Integer, nullable=False),
-        Column('grupos_acesso', String),
-        Column('nome_doc', String),
-        Column('blob_doc', Binary),
-        Column('mimetype', String),
-        Column('texto_doc', String),
-        Column('dt_ext_texto', DateTime),
-        extend_existing=True,
-    )
-    return doc_table

@@ -7,20 +7,20 @@ def make_routes(config):
     """
 
     # Import token controller and context factory
-    from lbgenerator.views.user import UserView
-    from lbgenerator.model.context.user import UserContextFactory
+    from ..views.user import UserView
+    from ..model.context.user import UserContextFactory
 
     # Import Bases controller and context factory
-    from lbgenerator.views.base import BaseCustomView
-    from lbgenerator.model.context.base import BaseContextFactory
+    from ..views.base import BaseCustomView
+    from ..model.context.base import BaseContextFactory
 
-    # Import Registries controller and context factory
-    from lbgenerator.views.registry import RegCustomView
-    from lbgenerator.model.context.registry import RegContextFactory
+    # Import documents controller and context factory
+    from ..views.document import DocumentCustomView
+    from ..model.context.document import DocumentContextFactory
 
-    # Import Documents controller and context factory
-    from lbgenerator.views.document import DocCustomView
-    from lbgenerator.model.context.document import DocContextFactory
+    # Import files controller and context factory
+    from ..views.file import FileCustomView
+    from ..model.context.file import FileContextFactory
 
     config.add_directive('add_restful_base_routes', add_restful_base_routes)
     config.add_static_view('static', 'static', cache_max_age=3600)
@@ -29,6 +29,16 @@ def make_routes(config):
         config.add_route(route_name, pattern, factory=factory_class)
         for view_kw in views:
             config.add_view(view=view_class, route_name=route_name, **view_kw)
+
+    from ..views.docs import DocsCustomView
+    from ..model.context.docs import DocsContextFactory
+
+    add_custom_routes('api_docs', 'api-docs', DocsContextFactory, DocsCustomView, [
+        {'attr': 'api_docs', 'request_method': 'GET'},
+    ])
+    add_custom_routes('base_docs', 'api-docs/{x:.*}', DocsContextFactory, DocsCustomView, [
+        {'attr': 'api_docs', 'request_method': 'GET'},
+    ])
 
     #----------------#
     # Authentication # 
@@ -45,47 +55,34 @@ def make_routes(config):
     config.add_restful_routes('user', UserContextFactory, view=UserView)
 
     #-----------------#
-    # Registry Routes # 
+    # Document Routes # 
     #-----------------#
 
-    add_custom_routes('full_reg', '{base}/reg/{id}/full', RegContextFactory, RegCustomView, [
-        # Route for full registry (with document text)
-        {'attr': 'full_reg', 'request_method':'GET', 'permission': 'view'}
+    add_custom_routes('full_document', '{base}/reg/{id:\d+}/full', DocumentContextFactory, DocumentCustomView, [
+        # Route for full document (with document text)
+        {'attr': 'full_document', 'request_method':'GET', 'permission': 'view'}
     ])
 
-    add_custom_routes('path', '{base}/reg/{id}/path/{path}', RegContextFactory, RegCustomView, [
-        # Restful routes for registry path
+    add_custom_routes('path', '{base}/reg/{id:\d+}/{path:.*}', DocumentContextFactory, DocumentCustomView, [
+        # Restful routes for document path
         {'attr':'get_path', 'request_method':'GET', 'permission': 'view'},
         {'attr':'set_path', 'request_method':'POST', 'permission': 'create'},
         {'attr':'put_path', 'request_method':'PUT', 'permission': 'edit'},
         {'attr':'delete_path', 'request_method':'DELETE', 'permission': 'delete'}
     ])
 
-    add_custom_routes('get_reg_column', '{base}/reg/{id}/{column:.*}', RegContextFactory, RegCustomView, [
-        # Get specific column route
-        {'attr':'get_column', 'request_method':'GET', 'permission': 'view'}
-        #{'attr':'set_column', 'request_method':'POST', 'permission':'create'},
-        #{'attr':'put_column', 'request_method':'PUT', 'permission': 'edit'}
-        #{'attr':'delete_path', 'request_method':'DELETE', 'permission': 'delete'}
-    ])
-
     #-----------------#
     # Document Routes # 
     #-----------------#
 
-    add_custom_routes('download', '{base}/doc/{id}/download', DocContextFactory, DocCustomView, [
-        # File Download View
-        {'attr':'download', 'request_method':'GET', 'permission': 'view'}
-    ])
+    config.add_route('text', '{base}/doc/{id:\d+}/text')
 
-    config.add_route('text', '{base}/doc/{id}/text')
-
-    add_custom_routes('get_doc_column', '{base}/doc/{id}/{column:.*}', DocContextFactory, DocCustomView, [
-        # Get specific column route
-        {'attr':'get_column', 'request_method':'GET', 'permission': 'view'}
-        #{'attr':'set_column', 'request_method':'POST','permission':'create'},
-        #{'attr':'put_column', 'request_method':'PUT', 'permission': 'edit'}
-        #{'attr':'delete_path', 'request_method':'DELETE', 'permission': 'delete'}
+    add_custom_routes('get_doc_column', '{base}/doc/{id:\d+}/{path:.*}',
+        FileContextFactory, FileCustomView, [
+        {'attr':'get_path', 'request_method':'GET', 'permission': 'view'},
+        {'attr':'create_path', 'request_method':'POST','permission':'create'},
+        {'attr':'update_path', 'request_method':'PUT', 'permission': 'edit'},
+        {'attr':'delete_path', 'request_method':'DELETE', 'permission': 'delete'}
     ])
 
     #-------------#
@@ -95,20 +92,20 @@ def make_routes(config):
     # Restful routes for bases.
     config.add_restful_base_routes()
 
-    # Restful routes for base registries.
-    config.add_restful_routes('{base}/reg', RegContextFactory, view=RegCustomView)
+    # Restful routes for base documents.
+    config.add_restful_routes('{base}/reg', DocumentContextFactory, view=DocumentCustomView)
 
-    add_custom_routes('registry_collection', '{base}/reg', RegContextFactory, RegCustomView, [
-        # Restful routes for registry collection
+    add_custom_routes('document_collection', '{base}/reg', DocumentContextFactory, DocumentCustomView, [
+        # Restful routes for documents collection
         {'attr':'update_collection', 'request_method': 'PUT', 'permission': 'edit'},
         {'attr':'delete_collection', 'request_method': 'DELETE', 'permission': 'delete'}
     ])
 
-    # Restful routes for base documents.
-    config.add_restful_routes('{base}/doc', DocContextFactory, view=DocCustomView)
+    # Restful routes for base files.
+    config.add_restful_routes('{base}/doc', FileContextFactory, view=FileCustomView)
 
-    add_custom_routes('document_collection', '{base}/doc', DocContextFactory, DocCustomView, [
-        # Restful routes for documents collection
+    add_custom_routes('file_collection', '{base}/doc', FileContextFactory, FileCustomView, [
+        # Restful routes for files collection
         {'attr':'update_collection', 'request_method': 'PUT', 'permission': 'edit'},
         {'attr':'delete_collection', 'request_method': 'DELETE', 'permission': 'delete'}
     ])
@@ -124,8 +121,8 @@ def make_routes(config):
 
 def add_restful_base_routes(self, name='base'):
 
-    from lbgenerator.views.base import BaseCustomView
-    from lbgenerator.model.context.base import BaseContextFactory
+    from ..views.base import BaseCustomView
+    from ..model.context.base import BaseContextFactory
 
     view = BaseCustomView
     factory = BaseContextFactory
@@ -206,7 +203,7 @@ def add_restful_routes(self, name, factory, view=RESTfulView,
     subs = dict(
         name=name,
         slug=name.replace('_', '-'),
-        id='{id}',
+        id='{id:\d+}',
         renderer='{renderer}')
 
     perms = {

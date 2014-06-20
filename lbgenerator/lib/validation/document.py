@@ -1,71 +1,112 @@
 
+from .. import utils
+from liblightbase.lbtypes import Matrix
+from liblightbase.lbdocument import DocumentMetadata
 import datetime
-import cgi
-from lbgenerator.lib import utils
-from pyramid.exceptions import NotFound
 
-def validate_doc_data(cls, request):
+def validate_document_data(cls, request, *args):
 
     params, method = utils.split_request(request)
     if method == 'GET': return None
 
     valid_fields = (
-        '_field_name_',
-        'id_doc',
-        'id_reg',
-        'grupos_acesso',
-        'nome_doc',
-        'blob_doc',
-        'mimetype',
-        'texto_doc',
-        'dt_ext_texto',
+        'value',
+        'dt_idx',
         )
 
-    def has_doc(params):
-        for k, v in params.items():
-            if isinstance(v, cgi.FieldStorage): return True
-        return False
-
-    def get_doc(params):
-        _data = dict()
-        ct = 0
-        for k, v in params.items():
-            if isinstance(v, cgi.FieldStorage):
-                ct += 1
-                _data = dict(
-                    _field_name_ = k,
-                    nome_doc = v.filename,
-                    mimetype = v.type,
-                    blob_doc = v.file.read()
-                    )
-        if ct > 1:
-            raise Exception('Forbidden: More than one document per request')
-        return _data
-
-    data = params
+    data = utils.filter_params(params, valid_fields)
 
     if method == 'POST':
-        pass
-        """
-        if not 'id_reg' in params:
-            raise Exception('Required param: id_reg')
-        cls.id_reg = params['id_reg']
-        cls.set_json_reg()
-        data.update(get_doc(params))
-        """
+        return validate_post_data(cls, data)
 
     elif method == 'PUT':
-        pass
-        """
-        if has_doc(params):
-            if not 'id_reg' in params:
-                raise Exception('Trying to insert a new doc? Param "id_reg" is required!')
-            else:
-                cls.id_reg = params['id_reg']
-                cls.set_json_reg()
-                data.update(get_doc(params))
-        data['dt_ext_texto'] = None
-        data['texto_doc'] = None
-        """
+        member = args[0]
+        return validate_put_data(cls, data, member)
 
-    return utils.filter_params(data, valid_fields)
+def validate_post_data(cls, data):
+
+    if 'value' in data:
+        # Get Base object
+        base = cls.get_base()
+
+        # Parse JSON object
+        document = utils.json2object(data['value'])
+
+        # SELECT next id from sequence
+        id = cls.context.entity.next_id()
+
+        # Build Metadata
+        now = datetime.datetime.now()
+        _metadata = DocumentMetadata(id, now, now)
+
+        (document, # Document it self.
+        reldata, # Relational data.
+        files, # All existent files within document.
+        cfiles # All non-existent (will be created) files within document.
+        ) = base.validate(document, _metadata)
+
+        # Normlize relational data
+        [fix_matrix(reldata[field]) for field in reldata if isinstance(reldata[field], Matrix)]
+
+        # Build database object
+        data['document'] = document
+        data['__cfiles__'] = cfiles
+        data.update(_metadata.__dict__)
+        data.update(reldata)
+
+    return data
+
+def validate_put_data(cls, data, member):
+
+    if 'value' in data:
+
+        # Get Base object
+        base = cls.get_base()
+
+        # Parse JSON object
+        document = utils.json2object(data['value'])
+
+        dt_idx = document.get('_metadata', { })\
+                .get('dt_idx', None)
+
+        if dt_idx and not isinstance(dt_idx, datetime.datetime):
+            dt_idx = datetime.datetime.strptime(
+                dt_idx, '%d/%m/%Y %H:%M:%S')
+
+        # Build Metadata
+        _metadata = DocumentMetadata(**dict(
+            id_doc = member.id_doc,
+            dt_doc = member.dt_doc,
+            dt_last_up = datetime.datetime.now(),
+            dt_idx = dt_idx,
+            dt_del = member.dt_del
+        ))
+
+        (document, # Document it self.
+        reldata, # Relational data.
+        files, # All existent files within document.
+        cfiles # All non-existent (will be created) files within document.
+        ) = base.validate(document, _metadata)
+
+        # Normalize relational data
+        [fix_matrix(reldata[field]) for field in reldata if isinstance(reldata[field], Matrix)]
+
+        # Build database object
+        data['document'] = document
+        data['__files__'] = files
+        data['__cfiles__'] = cfiles
+        data.update(_metadata.__dict__)
+        data.update(reldata)
+
+    return data
+
+def fix_matrix(mat):
+    inner_lens = [len(mat[i]) for i, v in enumerate(mat) if isinstance(mat[i], Matrix)]
+    for i, v in enumerate(mat):
+        if type(mat[i]) is type(None) and len(inner_lens) > 0:
+            mat[i] = [None] * max(inner_lens)
+        elif isinstance(mat[i], Matrix):
+            if len(mat[i]) < max(inner_lens):
+                [mat[i].append(None) for _ in range(max(inner_lens)-len(mat[i]))]
+            fix_matrix(mat[i])
+
