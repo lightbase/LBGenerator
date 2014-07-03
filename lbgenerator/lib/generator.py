@@ -24,7 +24,7 @@ class BaseMemory():
 
     def set_base(self, base_json):
         base = json_to_base(base_json)
-        self.bases[base.name] = base
+        self.bases[base.metadata.name] = base
         return base
 
 

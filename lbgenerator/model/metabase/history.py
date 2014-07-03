@@ -8,6 +8,8 @@ class HistoryMetaBase():
     def __init__(self):
         self.structure = {
             "metadata":{
+                "id_base": 0,
+                "dt_base": datetime.datetime.now(),
                 "name": "_history",
                 "description": "LightBase's History Meta Base.",
                 "password": "3Ax!vj6gV#DEtR",
@@ -107,14 +109,14 @@ class HistoryMetaBase():
         base = genesis.json_to_base(self.structure)
 
         data = dict(
-            name = base.name,
+            name = base.metadata.name,
             struct = base.json,
             dt_base = datetime.datetime.now(),
-            idx_exp = base.idx_exp,
-            idx_exp_url = base.idx_exp_url,
-            idx_exp_time= base.idx_exp_time,
-            file_ext = base.file_ext,
-            file_ext_time = base.file_ext_time
+            idx_exp = base.metadata.idx_exp,
+            idx_exp_url = base.metadata.idx_exp_url,
+            idx_exp_time= base.metadata.idx_exp_time,
+            file_ext = base.metadata.file_ext,
+            file_ext_time = base.metadata.file_ext_time
         )
         request = utils.FakeRequest(method = 'POST')
         base_context = BaseContextFactory(request)

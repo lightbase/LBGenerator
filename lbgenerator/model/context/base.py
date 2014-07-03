@@ -29,10 +29,12 @@ class BaseContextFactory(CustomContextFactory):
         # Create reg and doc tables
         base_name = data['name']
         base_json = utils.json2object(data['struct'])
-        relational_fields = model.BASES.set_base(base_json).relational_fields
+        base = model.BASES.set_base(base_json)
+        data['struct'] = base.json
 
         file_table = get_file_table(base_name, config.METADATA)
-        doc_table = get_doc_table(base_name, config.METADATA, **relational_fields)
+        doc_table = get_doc_table(base_name, config.METADATA,
+            **base.relational_fields)
         file_table.create(config.ENGINE, checkfirst=True)
         doc_table.create(config.ENGINE, checkfirst=True)
 

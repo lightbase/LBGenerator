@@ -35,8 +35,8 @@ class Index():
     def __init__(self, base, get_full_document):
         self.base = base
         self.get_full_document = get_full_document
-        self.is_indexable = self.base.idx_exp
-        self.INDEX_URL = self.base.idx_exp_url
+        self.is_indexable = self.base.metadata.idx_exp
+        self.INDEX_URL = self.base.metadata.idx_exp_url
         if self.is_indexable:
             self._host = self.INDEX_URL.split('/')[2]
             self._index = self.INDEX_URL.split('/')[3]
