@@ -1,4 +1,4 @@
-import uuid, os, cgi, base64
+import uuid, cgi
 from pyramid.response import Response
 from pyramid.exceptions import HTTPNotFound
 from . import CustomView
@@ -14,38 +14,53 @@ class FileCustomView(CustomView):
         self.context = context
         self.request = request
         self.base_name = self.request.matchdict.get('base')
-        self.tmp_dir = config.TMP_DIR + '/lightbase_tmp_storage/' + self.base_name
 
     def _get_data(self):
         """ Get all valid data from (request) POST or PUT.
         """
         return validate_file_data(self, self.request)
 
-    def build_storage(self, filename, mimetype, input_file):
-        if not os.path.exists(self.tmp_dir):
-            os.makedirs(self.tmp_dir)
+    def get_size(self, fileobject):
+        """ Get file size in bytes. 
+        """
+        # move the cursor to the end of the file
+        fileobject.seek(0, 2)
+        size = fileobject.tell()
+        # move the cursor to the begin of the file
+        fileobject.seek(0)
+        return size
 
-        file_id = uuid.uuid4()
-        safe_filename = base64.urlsafe_b64encode(filename.encode('utf-8'))
-        _filename = '%s.%s.%s' % (file_id, mimetype.replace('/', '-'), safe_filename.decode('utf-8'))
+    def build_file_data(self, filename, mimetype, input_file):
+        """ 
+        @param filename:
+        @param mimetype:
+        @param input_file:
+        Return filemask (dictionay) and file member (dictionay), used
+        to instaciate with mapped entity.
+        """
 
-        file_path = os.path.join(self.tmp_dir, _filename)
+        filemask = {
+           'uuid': str(uuid.uuid4()),
+           'filename': filename,
+           'filesize': self.get_size(input_file),
+           'mimetype': mimetype,
+        }
 
-        tmp_file_path = file_path + '~'
-        output_file = open(tmp_file_path, 'wb')
-        # Finally write the data to a temporary file
-        input_file.seek(0)
-        while True:
-            data = input_file.read()
-            if not data:
-                break
-            output_file.write(data)
-        # If your data is really critical you may want to force it to disk first
-        # using output_file.flush(); os.fsync(output_file.fileno())
-        output_file.close()
-        # Now that we know the file has been fully saved to disk move it into place.
-        os.rename(tmp_file_path, file_path)
-        return str(file_id)
+        namespace = uuid.UUID(filemask['uuid'])
+        name = str(hash(frozenset(filemask.items())))
+        id_file = str(uuid.uuid3(namespace, name))
+        filemask['id_file'] = id_file
+
+        member = {
+           'id_doc': None,
+           'file': input_file.read(),
+           'filetext': None,
+           'dt_ext_text': None
+        }
+
+        member.update(filemask)
+        member.pop('uuid')
+        return member, utils.object2json(filemask)
 
     ###########################
     # FILE MEMBERS OPERATIONS #
@@ -64,10 +79,12 @@ class FileCustomView(CustomView):
         elif not isinstance(file_, cgi.FieldStorage):
             raise Exception('Required param file is not a file object.')
         else:
-            file_uuid = self.build_storage(file_.filename,
-                                           file_.type,
-                                           file_.file)
-            return Response(file_uuid, status=201)
+            member, filemask = self.build_file_data(file_.filename,
+                                                    file_.type,
+                                                    file_.file)
+            member = self.context.create_member(member)
+            return Response(filemask, content_type='application/json',
+                status=201)
 
     def update_member(self):
         raise NotImplementedError('NOT IMPLEMENTED')

@@ -75,9 +75,9 @@ def make_routes(config):
     # Document Routes # 
     #-----------------#
 
-    config.add_route('text', '{base}/doc/{id:\d+}/text')
+    config.add_route('text', '{base}/doc/{id}/text')
 
-    add_custom_routes('get_doc_column', '{base}/doc/{id:\d+}/{path:.*}',
+    add_custom_routes('get_doc_column', '{base}/doc/{id}/{path:.*}',
         FileContextFactory, FileCustomView, [
         {'attr':'get_path', 'request_method':'GET', 'permission': 'view'},
         {'attr':'create_path', 'request_method':'POST','permission':'create'},
@@ -203,7 +203,8 @@ def add_restful_routes(self, name, factory, view=RESTfulView,
     subs = dict(
         name=name,
         slug=name.replace('_', '-'),
-        id='{id:\d+}',
+        #id='{id:\d+}',
+        id='{id}',
         renderer='{renderer}')
 
     perms = {

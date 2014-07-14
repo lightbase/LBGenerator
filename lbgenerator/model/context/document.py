@@ -7,6 +7,9 @@ from ...lib import utils
 from liblightbase.lbdocument import Tree
 from sqlalchemy.orm.state import InstanceState
 from sqlalchemy.util import KeyedTuple
+from sqlalchemy import update
+from sqlalchemy import delete
+from sqlalchemy import and_
 import datetime
 
 class DocumentContextFactory(CustomContextFactory):
@@ -29,39 +32,36 @@ class DocumentContextFactory(CustomContextFactory):
         # Index object 
         self.index = Index(base, self.get_full_document)
 
-    def create_files(self, cfiles):
+    def create_files(self, member, files):
         """
         @param cfiles: List of dictionary (file attributes) to create in 
         database.
-
-        Will create files (add to session) in database.
+        Will create files (actually update id_doc, because file already exists)
+        in database.
         """
-        # Create new coming files
-        for file_ in cfiles:
-            file_member = self.file_entity(**file_)
-            self.session.add(file_member)
+        stmt = update(self.file_entity.__table__).where(
+            self.file_entity.__table__.c.id_file.in_(files))\
+            .values(id_doc=member.id_doc)
+        self.session.execute(stmt)
 
     def delete_files(self, member, files):
         """
         @param member: LBDoc_<base> object (mapped ORM entity).
         @param files: List of files ids present in document.
-
         Will delete files that are not present in document.
         """
-
-        dbfiles = self.session.query(self.file_entity.id_file)\
-            .filter_by(id_doc=member.id_doc).all()
-
-        for (pk,) in dbfiles:
-            if pk not in files:
-                # Delete file that is not present in document
-                self.session.query(self.file_entity)\
-                    .filter_by(id_file=pk).delete()
+        file_table = self.file_entity.__table__
+        stmt = delete(file_table).where(
+            and_(
+                file_table.c.id_doc==member.id_doc,
+                file_table.c.id_file.notin_(files)
+            )
+        )
+        self.session.execute(stmt)
 
     def create_member(self, data):
         """ 
         @param data: dictionary at the format {column_name: value}.
-
         Receives the data to INSERT at database (table lb_doc_<base>).
         Here the document will be indexed, and files within it will be created.
         """
@@ -69,7 +69,7 @@ class DocumentContextFactory(CustomContextFactory):
         member = self.entity(**data) # Fill object.
         self.session.add(member) # Add object to session.
         data = self.index.create(data) # Index member. 
-        self.create_files(data['__cfiles__']) # Create files. 
+        self.create_files(member, data['__files__']) # Create files. 
 
         for name in data:
             setattr(member, name, data[name]) # Update entity object.
@@ -85,7 +85,6 @@ class DocumentContextFactory(CustomContextFactory):
         @param data: dictionary at the format {column_name: value}.
         @param index: Flag that indicates the need of indexing the
         document. 
-
         Receives the data to UPDATE at database (table lb_doc_<base>). 
         Here the document will be indexed, files within it will be created,
         and files that are not in document will be deleted.
@@ -95,10 +94,10 @@ class DocumentContextFactory(CustomContextFactory):
         if index:
             data = self.index.update(member.id_doc, data) # Index document.
 
-        # Normalize files 
-        self.delete_files(member, data['__files__']) # DELETE files not
-        # present in document.
-        self.create_files(data['__cfiles__']) # INSERT new coming files.
+        # Normalize files. DELETE files not present in document.
+        self.delete_files(member, data['__files__'])
+        # INSERT new coming files.
+        self.create_files(member, data['__files__'])
 
         for name in data:
             setattr(member, name, data[name]) # Update entity object.

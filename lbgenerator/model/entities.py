@@ -6,13 +6,17 @@
 #http://stackoverflow.com/questions/22485971/python-sqlalchemy-insert-array-postgres-with-null-values-not-possible
 #https://groups.google.com/forum/#!msg/sqlalchemy/D5N9L4Ihgt8/0is1EGS0798J
 
+# The explanation why I am using MetaData():
+# For some reason the right metadata is raising a Mapper error, but not always,
+# only when many requests are made. Weird.
 import sqlalchemy
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.schema import Column, Table
 from sqlalchemy.types import Integer, String, DateTime, Binary, Boolean
 from sqlalchemy.schema import Sequence
+from sqlalchemy.schema import MetaData
 from sqlalchemy.dialects.postgresql import ARRAY
-from .jsondbtype import BaseJSON, DocumentJSON
+from .jsondbtype import BaseJSON, DocumentJSON, GUID
 
 Base = declarative_base()
 
@@ -110,7 +114,8 @@ def get_doc_table(__base__, __metadata__, **rel_fields):
     """
 
     COLUMNS = (
-        'lb_doc_%s' %(__base__), __metadata__,
+        #'lb_doc_%s' %(__base__), __metadata__,
+        'lb_doc_%s' %(__base__), MetaData(),
 
         # @column id_doc: The primary key for this table and uniquely identify
         # each document in the table.
@@ -196,16 +201,16 @@ def get_file_table(__base__, __metadata__):
     """
 
     table = Table(
-        'lb_file_%s' %(__base__), __metadata__,
+        #'lb_file_%s' %(__base__), __metadata__,
+        'lb_file_%s' %(__base__), MetaData(),
 
         # @column id_file: The primary key for this table and uniquely identify
         # each file in the table.
-        Column('id_file', Integer, Sequence('lb_file_%s_id_file_seq' %(__base__)),
-            primary_key=True),
+        Column('id_file', GUID, primary_key=True),
 
         # @column id_doc: The primary key for document's table. Each file 
         # belongs to a document. 
-        Column('id_doc', Integer, nullable=False),
+        Column('id_doc', Integer),
 
         # @column name: Name used to identify a computer file stored in a file 
         # system. Different file systems impose different restrictions on 

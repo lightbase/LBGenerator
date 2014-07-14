@@ -13,16 +13,20 @@ import sys
 class JsonErrorMessage():
 
     def get_error(self):
-        return utils.object2json(dict(
-            _status = self.code,
-            _error_message = self._error_message,
-            _request = self.get_request_str(),
-            _path = getattr(self.request, 'path', None)
-        ))
-
-    def get_request_str(self):
-        try: return str(self.request)
-        except: return str()
+        json_error = {
+            'status': self.code,
+            'type': self.request.exc_info[0].__name__,
+            'error_message': self._error_message,
+            'request':{
+                'client_addr': self.request.client_addr,
+                'user_agent': self.request.user_agent,
+                'path': getattr(self.request, 'path', 'Not avalible'),
+                'method': self.request.method
+            },
+        }
+        if 'verbose' in self.request.params:
+            json_error['request']['body'] = str(self.request.text)
+        return utils.object2json(json_error)
 
 class JsonHTTPServerError(HTTPInternalServerError, JsonErrorMessage):
 

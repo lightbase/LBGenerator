@@ -1,6 +1,7 @@
 from sqlalchemy.util import KeyedTuple
 from . import CustomContextFactory
 from .. import file_entity
+from collections import Iterable
 
 class FileContextFactory(CustomContextFactory):
 
@@ -15,11 +16,18 @@ class FileContextFactory(CustomContextFactory):
         self.single_member = True
         # We don't want to query hole file when searching ..
         # So the bytes column will not be in query list this time.
-        cols = [column for column in self.entity.__table__.c \
-            if column.name != 'file']
+        cols = self.entity.__table__.__factory__
         q = self.session.query(*cols).filter(self.entity\
             .__table__.c.id_file==id).all()
         return q or None
+
+    def create_member(self, data):
+        # Create new coming files
+        member = self.entity(**data)
+        self.session.add(member)
+        self.session.commit() # COMMIT transaction.
+        self.session.close() # Close session.
+        return member
 
     def member_to_dict(self, member, fields=None):
         if not isinstance(member, KeyedTuple):
@@ -47,4 +55,16 @@ class FileContextFactory(CustomContextFactory):
         else:
             complete = '/' + str(pk) + '/download'
         return self.request.path_url + complete
+
+    def get_json_obj(self, value, fields, wrap):
+        if fields is None:
+            fields = self.default_fields
+        if not isinstance(value, Iterable):
+            value = [value]
+        # Need to filter files that don't have a doc associated yet.
+        obj = [self.member_to_dict(m, fields) for m in value\
+            if m.id_doc is not None]
+        if wrap:
+            obj = self.wrap_json_obj(obj)
+        return obj
 

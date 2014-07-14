@@ -50,7 +50,7 @@ def validate_post_data(cls, data):
 
         # Build database object
         data['document'] = document
-        data['__cfiles__'] = cfiles
+        data['__files__'] = files
         data.update(_metadata.__dict__)
         data.update(reldata)
 
