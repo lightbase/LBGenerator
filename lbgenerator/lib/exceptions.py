@@ -5,6 +5,9 @@ from pyramid.httpexceptions import HTTPNotImplemented
 from pyramid.httpexceptions import HTTPBadRequest
 from pyramid.response import Response
 
+class RequiredParameterError(Exception):
+    pass
+
 class JSONHTTPUnauthorized(HTTPUnauthorized):
 
     def __init__(self, error):

@@ -1,4 +1,3 @@
-import uuid, cgi
 from pyramid.response import Response
 from pyramid.exceptions import HTTPNotFound
 from . import CustomView
@@ -20,52 +19,6 @@ class FileCustomView(CustomView):
         """
         return validate_file_data(self, self.request)
 
-    def get_size(self, fileobject):
-        """ Get file size in bytes. 
-        """
-        # move the cursor to the end of the file
-        fileobject.seek(0, 2)
-        size = fileobject.tell()
-        # move the cursor to the begin of the file
-        fileobject.seek(0)
-        return size
-
-    def build_file_data(self, filename, mimetype, input_file):
-        """ 
-        @param filename:
-        @param mimetype:
-        @param input_file:
-        Return filemask (dictionay) and file member (dictionay), used
-        to instaciate with mapped entity.
-        """
-
-        filemask = {
-           'uuid': str(uuid.uuid4()),
-           'filename': filename,
-           'filesize': self.get_size(input_file),
-           'mimetype': mimetype,
-        }
-
-        namespace = uuid.UUID(filemask['uuid'])
-        name = str(hash(frozenset(filemask.items())))
-        id_file = str(uuid.uuid3(namespace, name))
-        filemask['id_file'] = id_file
-
-        member = {
-           'id_doc': None,
-           'file': input_file.read(),
-           'filetext': None,
-           'dt_ext_text': None
-        }
-
-        member.update(filemask)
-        member.pop('uuid')
-        return member, utils.object2json(filemask)
-
-    ###########################
-    # FILE MEMBERS OPERATIONS #
-    ###########################
-
     def get_member(self):
         id = self.request.matchdict['id']
         member = self.context.get_member(id)
@@ -73,18 +26,11 @@ class FileCustomView(CustomView):
         return self.render_to_response(member)
 
     def create_member(self):
-        file_ = self.request.params.get('file')
-        if file_ is None:
-            raise Exception('Required param file not found in request.')
-        elif not isinstance(file_, cgi.FieldStorage):
-            raise Exception('Required param file is not a file object.')
-        else:
-            member, filemask = self.build_file_data(file_.filename,
-                                                    file_.type,
-                                                    file_.file)
-            member = self.context.create_member(member)
-            return Response(filemask, content_type='application/json',
-                status=201)
+        data, filemask = self._get_data()
+        member = self.context.create_member(data)
+        return Response(filemask,
+            content_type='application/json',
+            status=201)
 
     def update_member(self):
         raise NotImplementedError('NOT IMPLEMENTED')
@@ -92,19 +38,11 @@ class FileCustomView(CustomView):
     def delete_member(self):
         raise NotImplementedError('NOT IMPLEMENTED')
 
-    ##############################
-    # FILE COLLECTION OPERATIONS #
-    ##############################
-
     def update_collection(self):
         raise NotImplementedError('NOT IMPLEMENTED')
 
     def delete_collection(self):
         raise NotImplementedError('NOT IMPLEMENTED')
-
-    ########################
-    # FILE PATH OPERATIONS #
-    ########################
 
     __paths__ = [
         "id_file",
