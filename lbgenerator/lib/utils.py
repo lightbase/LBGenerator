@@ -1,6 +1,6 @@
 
 from liblightbase.lbtypes.extended import FileMask
-from liblightbase.lbcodecs import *
+from liblightbase.lbutils.codecs import *
 
 class FakeRequest(object):
 

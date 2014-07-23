@@ -1,6 +1,6 @@
 
 from . import utils
-from liblightbase.lbbase.genesis import json_to_base
+from liblightbase.lbutils.conv import json2base
 
 class BaseMemory():
 
@@ -19,11 +19,11 @@ class BaseMemory():
             session.close()
             if not base_json:
                 raise Exception('Base "%s" does not exist' %(base_name))
-            return self.set_base(utils.json2object(base_json[0]))
+            return self.set_base(base_json[0])
         return base
 
     def set_base(self, base_json):
-        base = json_to_base(base_json)
+        base = json2base(base_json)
         self.bases[base.metadata.name] = base
         return base
 

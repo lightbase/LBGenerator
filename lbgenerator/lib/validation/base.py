@@ -1,6 +1,6 @@
 
 from .. import utils
-from liblightbase.lbbase import genesis
+from liblightbase.lbutils.conv import dict2base
 import datetime
 
 def validate_base_data(cls, request):
@@ -18,7 +18,7 @@ def validate_base_data(cls, request):
         json_base['metadata']['id_base'] = cls.context.get_next_id()
         json_base['metadata']['dt_base'] = datetime.datetime.now()
 
-        base = genesis.json_to_base(json_base)
+        base = dict2base(json_base)
 
         data = dict(
             id_base = base.metadata.id_base,
