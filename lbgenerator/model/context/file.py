@@ -64,6 +64,8 @@ class FileContextFactory(CustomContextFactory):
         # Need to filter files that don't have a doc associated yet.
         obj = [self.member_to_dict(m, fields) for m in value\
             if m.id_doc is not None]
+        # total count without unliked files
+        self.total_count -= (len(value) - len(obj))
         if wrap:
             obj = self.wrap_json_obj(obj)
         return obj

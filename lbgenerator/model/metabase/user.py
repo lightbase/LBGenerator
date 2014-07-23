@@ -1,5 +1,5 @@
 from ...lib import utils
-from liblightbase.lbbase import genesis
+from liblightbase.lbutils.conv import dict2base
 import datetime
 import traceback
 
@@ -146,7 +146,7 @@ class UserMetaBase():
     def create_base(self, begin_session):
 
         from ..context.base import BaseContextFactory
-        base = genesis.json_to_base(self.structure)
+        base = dict2base(self.structure)
 
         data = dict(
             name = base.metadata.name,

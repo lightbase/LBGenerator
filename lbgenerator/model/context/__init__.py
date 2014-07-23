@@ -98,7 +98,7 @@ class CustomContextFactory(SQLAlchemyORMContext):
         q = q.offset(compiler.offset)
 
         # Return Results
-        if query.get('select') == [ ]:
+        if query.get('select') == [ ] and self.request.method == 'GET':
             return [ ]
         return q.all()
 
