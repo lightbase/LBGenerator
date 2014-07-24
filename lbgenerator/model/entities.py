@@ -11,6 +11,7 @@
 # only when many requests are made. Weird.
 import sqlalchemy
 from sqlalchemy.ext.declarative import declarative_base
+import sqlalchemy.types as dbtypes
 from sqlalchemy.schema import Column, Table
 from sqlalchemy.types import Integer, String, DateTime, Binary, Boolean
 from sqlalchemy.schema import Sequence
@@ -149,7 +150,7 @@ def get_doc_table(__base__, __metadata__, **rel_fields):
         field = rel_fields[rel_field]
 
         # Get sqlalchemy.type object.
-        col_type = field._datatype.__schema__.__dbtype__
+        col_type = getattr(dbtypes, field._datatype.__schema__.__dbtype__)
 
         # Transform columns type to array if necessary.
         if field.__dim__ > 0:
