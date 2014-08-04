@@ -58,12 +58,12 @@ def make_routes(config):
     # Document Routes # 
     #-----------------#
 
-    add_custom_routes('full_document', '{base}/reg/{id:\d+}/full', DocumentContextFactory, DocumentCustomView, [
+    add_custom_routes('full_document', '{base}/doc/{id:\d+}/full', DocumentContextFactory, DocumentCustomView, [
         # Route for full document (with document text)
         {'attr': 'full_document', 'request_method':'GET', 'permission': 'view'}
     ])
 
-    add_custom_routes('path', '{base}/reg/{id:\d+}/{path:.*}', DocumentContextFactory, DocumentCustomView, [
+    add_custom_routes('path', '{base}/doc/{id:\d+}/{path:.*}', DocumentContextFactory, DocumentCustomView, [
         # Restful routes for document path
         {'attr':'get_path', 'request_method':'GET', 'permission': 'view'},
         {'attr':'set_path', 'request_method':'POST', 'permission': 'create'},
@@ -75,9 +75,9 @@ def make_routes(config):
     # Document Routes # 
     #-----------------#
 
-    config.add_route('text', '{base}/doc/{id}/text')
+    config.add_route('text', '{base}/file/{id}/text')
 
-    add_custom_routes('get_doc_column', '{base}/doc/{id}/{path:.*}',
+    add_custom_routes('get_doc_column', '{base}/file/{id}/{path:.*}',
         FileContextFactory, FileCustomView, [
         {'attr':'get_path', 'request_method':'GET', 'permission': 'view'},
         {'attr':'create_path', 'request_method':'POST','permission':'create'},
@@ -93,18 +93,18 @@ def make_routes(config):
     config.add_restful_base_routes()
 
     # Restful routes for base documents.
-    config.add_restful_routes('{base}/reg', DocumentContextFactory, view=DocumentCustomView)
+    config.add_restful_routes('{base}/doc', DocumentContextFactory, view=DocumentCustomView)
 
-    add_custom_routes('document_collection', '{base}/reg', DocumentContextFactory, DocumentCustomView, [
+    add_custom_routes('document_collection', '{base}/doc', DocumentContextFactory, DocumentCustomView, [
         # Restful routes for documents collection
         {'attr':'update_collection', 'request_method': 'PUT', 'permission': 'edit'},
         {'attr':'delete_collection', 'request_method': 'DELETE', 'permission': 'delete'}
     ])
 
     # Restful routes for base files.
-    config.add_restful_routes('{base}/doc', FileContextFactory, view=FileCustomView)
+    config.add_restful_routes('{base}/file', FileContextFactory, view=FileCustomView)
 
-    add_custom_routes('file_collection', '{base}/doc', FileContextFactory, FileCustomView, [
+    add_custom_routes('file_collection', '{base}/file', FileContextFactory, FileCustomView, [
         # Restful routes for files collection
         {'attr':'update_collection', 'request_method': 'PUT', 'permission': 'edit'},
         {'attr':'delete_collection', 'request_method': 'DELETE', 'permission': 'delete'}
