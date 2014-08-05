@@ -34,29 +34,25 @@ class DocumentContextFactory(CustomContextFactory):
 
     def create_files(self, member, files):
         """
-        @param cfiles: List of dictionary (file attributes) to create in 
-        database.
-        Will create files (actually update id_doc, because file already exists)
+        Create files (actually update id_doc, because file already exists)
         in database.
+        @param files: List of file id's to create in database.
         """
-        stmt = update(self.file_entity.__table__).where(
-            self.file_entity.__table__.c.id_file.in_(files))\
-            .values(id_doc=member.id_doc)
-        self.session.execute(stmt)
+        if len(files) > 0:
+            stmt = update(self.file_entity.__table__).where(
+                self.file_entity.__table__.c.id_file.in_(files))\
+                .values(id_doc=member.id_doc)
+            self.session.execute(stmt)
 
     def delete_files(self, member, files):
         """
+        Will delete files that are not present in document.
         @param member: LBDoc_<base> object (mapped ORM entity).
         @param files: List of files ids present in document.
-        Will delete files that are not present in document.
         """
-        file_table = self.file_entity.__table__
-        stmt = delete(file_table).where(
-            and_(
-                file_table.c.id_doc==member.id_doc,
-                file_table.c.id_file.notin_(files)
-            )
-        )
+        stmt = delete(self.file_entity.__table__).where(
+        and_(self.file_entity.__table__.c.id_doc==member.id_doc,
+             self.file_entity.__table__.c.id_file.notin_(files)))
         self.session.execute(stmt)
 
     def create_member(self, data):
@@ -65,46 +61,34 @@ class DocumentContextFactory(CustomContextFactory):
         Receives the data to INSERT at database (table lb_doc_<base>).
         Here the document will be indexed, and files within it will be created.
         """
-        # Create member.
-        member = self.entity(**data) # Fill object.
-        self.session.add(member) # Add object to session.
-        data = self.index.create(data) # Index member. 
-        self.create_files(member, data['__files__']) # Create files. 
-
+        member = self.entity(**data)
+        self.session.add(member)
+        data = self.index.create(data)
+        self.create_files(member, data['__files__'])
         for name in data:
-            setattr(member, name, data[name]) # Update entity object.
-
-        self.session.commit() # COMMIT transaction.
-        self.session.close() # Close session.
-
+            setattr(member, name, data[name])
+        self.session.commit()
+        self.session.close()
         return member
 
     def update_member(self, member, data, index=True):
         """ 
+        Receives the data to UPDATE at database (table lb_doc_<base>). 
+        Here the document will be indexed, files within it will be created,
+        and files that are not in document will be deleted.
         @param member: LBDoc_<base> object (mapped ORM entity).
         @param data: dictionary at the format {column_name: value}.
         @param index: Flag that indicates the need of indexing the
         document. 
-        Receives the data to UPDATE at database (table lb_doc_<base>). 
-        Here the document will be indexed, files within it will be created,
-        and files that are not in document will be deleted.
         """
-
-        # Index member 
         if index:
-            data = self.index.update(member.id_doc, data) # Index document.
-
-        # Normalize files. DELETE files not present in document.
+            data = self.index.update(member.id_doc, data)
         self.delete_files(member, data['__files__'])
-        # INSERT new coming files.
         self.create_files(member, data['__files__'])
-
         for name in data:
-            setattr(member, name, data[name]) # Update entity object.
-
-        self.session.commit() # COMMIT transaction.
-        self.session.close() # Close session.
-
+            setattr(member, name, data[name])
+        self.session.commit()
+        self.session.close()
         return member
 
     def delete_member(self, id):
