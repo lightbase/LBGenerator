@@ -112,15 +112,14 @@ class DocumentCustomView(CustomView):
         if self.request.params.get('path') == '/':
             document = member.document
 
-        elif isinstance(self.request.matchdict['path'], dict):
-            path = self.request.matchdict['path']
+        elif isinstance(self.request.matchdict['path'], list):
+            nodes = self.request.matchdict['path']
             document = member.document
-            for pname in path:
+            for node in nodes:
                 document = self.get_base().put_path(
                     document,
-                    pname.split('/'),
-                    path[pname])
-
+                    node['path'].split('/'),
+                    node['value'])
         else:
             document = self.get_base().put_path(member.document,
                 self.request.matchdict['path'].split('/'),
@@ -201,7 +200,7 @@ class DocumentCustomView(CustomView):
         success, failure = 0, 0
         path = self.request.params['path']
 
-        if path[0] == '{':
+        if path[0] == '[':
             path = utils.json2object(path)
         self.request.matchdict['path'] = path
 
