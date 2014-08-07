@@ -111,11 +111,19 @@ class DocumentCustomView(CustomView):
         # Update path
         if self.request.params.get('path') == '/':
             document = member.document
+
+        elif isinstance(self.request.matchdict['path'], list):
+            nodes = self.request.matchdict['path']
+            document = member.document
+            for node in nodes:
+                document = self.get_base().put_path(
+                    document,
+                    node['path'].split('/'),
+                    node['value'])
         else:
             document = self.get_base().put_path(member.document,
                 self.request.matchdict['path'].split('/'),
-                self.request.params['value']
-                )
+                self.request.params['value'])
 
         # Build data
         data = validate_put_data(self,
@@ -190,11 +198,15 @@ class DocumentCustomView(CustomView):
         """
         collection = self.get_collection(render_to_response=False)
         success, failure = 0, 0
+        path = self.request.params['path']
+
+        if path[0] == '[':
+            path = utils.json2object(path)
+        self.request.matchdict['path'] = path
 
         for member in collection:
             # Override matchdict
-            self.request.matchdict = {'path': self.request.params['path'],
-                                      'id': member.id_doc}
+            self.request.matchdict['id'] = member.id_doc
 
             if not self.context.session.is_active:
                 self.context.session.begin()
