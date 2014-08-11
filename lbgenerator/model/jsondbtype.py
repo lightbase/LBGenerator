@@ -1,6 +1,7 @@
 from sqlalchemy.types import TypeDecorator
 from sqlalchemy.dialects.postgresql import JSON
 from sqlalchemy.types import VARCHAR
+from sqlalchemy.types import CHAR
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.schema import Column
 from ..lib import utils
