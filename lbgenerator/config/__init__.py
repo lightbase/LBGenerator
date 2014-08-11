@@ -3,6 +3,8 @@
 
 from sqlalchemy.engine import create_engine
 from sqlalchemy.schema import MetaData
+from liblightbase.lbutils import object2json
+from liblightbase.lbutils import json2object
 
 def set_globals(**settings):
 
@@ -23,7 +25,10 @@ def set_globals(**settings):
     global ENGINE
     global METADATA
 
-    ENGINE = create_engine(DB_URL, pool_size=POOL_SIZE, max_overflow=MAX_OVERFLOW)
+    ENGINE = create_engine(DB_URL, pool_size=POOL_SIZE, max_overflow=MAX_OVERFLOW,
+        json_serializer=object2json,
+        json_deserializer=json2object
+    )
     #ENGINE = create_engine(DB_URL, pool_size=POOL_SIZE, max_overflow=MAX_OVERFLOW, echo=True)
     METADATA = MetaData(ENGINE)
 

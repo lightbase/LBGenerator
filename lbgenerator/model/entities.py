@@ -18,6 +18,7 @@ from sqlalchemy.schema import Sequence
 from sqlalchemy.schema import MetaData
 from sqlalchemy.dialects.postgresql import ARRAY
 from .jsondbtype import BaseJSON, DocumentJSON, GUID
+from sqlalchemy.dialects.postgresql import JSON
 
 Base = declarative_base()
 
@@ -125,7 +126,8 @@ def get_doc_table(__base__, __metadata__, **rel_fields):
 
         # @column document: JSON encoded data wich represent a base record or 
         # registry. All insertions on this columns must obey the base structure.
-        Column('document', DocumentJSON, nullable=False),
+        #Column('document', DocumentJSON, nullable=False),
+        Column('document', JSON, nullable=False),
 
         # @column dt_doc: The document's creation date (date and time).
         Column('dt_doc', DateTime, nullable=False),
