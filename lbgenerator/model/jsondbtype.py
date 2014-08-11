@@ -1,6 +1,6 @@
 from sqlalchemy.types import TypeDecorator
+from sqlalchemy.dialects.postgresql import JSON
 from sqlalchemy.types import VARCHAR
-from sqlalchemy.types import CHAR
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.schema import Column
 from ..lib import utils
@@ -11,7 +11,7 @@ class BaseJSON(TypeDecorator):
     Represents an immutable structure as a json-encoded string.
     """
 
-    impl = VARCHAR
+    impl = JSON
 
     def process_bind_param(self, value, dialect):
         if value is not None:
@@ -28,7 +28,7 @@ class DocumentJSON(TypeDecorator):
     Represents an immutable structure as a json-encoded string.
     """
 
-    impl = VARCHAR
+    impl = JSON
 
     def process_bind_param(self, value, dialect):
         if value is not None:
