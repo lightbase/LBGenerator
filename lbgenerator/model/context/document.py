@@ -50,9 +50,14 @@ class DocumentContextFactory(CustomContextFactory):
         @param member: LBDoc_<base> object (mapped ORM entity).
         @param files: List of files ids present in document.
         """
-        stmt = delete(self.file_entity.__table__).where(
-        and_(self.file_entity.__table__.c.id_doc==member.id_doc,
-             self.file_entity.__table__.c.id_file.notin_(files)))
+        where_clause = [(self.file_entity.__table__.c.id_doc==member.id_doc)]
+        if len(files) > 0:
+            notin_clause = self.file_entity.__table__.c.id_file.notin_(files)
+            where_clause.append(notin_clause)
+            where_clause = and_(*where_clause)
+            stmt = delete(self.file_entity.__table__).where(where_clause)
+        else:
+            stmt = delete(self.file_entity.__table__).where(*where_clause)
         self.session.execute(stmt)
 
     def create_member(self, data):
