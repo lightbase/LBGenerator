@@ -22,13 +22,21 @@ def make_routes(config):
     from ..views.file import FileCustomView
     from ..model.context.file import FileContextFactory
 
-    config.add_directive('add_restful_base_routes', add_restful_base_routes)
-    config.add_static_view('static', 'static', cache_max_age=3600)
-
     def add_custom_routes(route_name, pattern, factory_class, view_class, views):
         config.add_route(route_name, pattern, factory=factory_class)
         for view_kw in views:
             config.add_view(view=view_class, route_name=route_name, **view_kw)
+
+    from ..views.es import ESCustomView
+    from ..model.context.es import ESContextFactory
+    add_custom_routes('elasticsearch', '{base}/es{path:.*}', ESContextFactory, ESCustomView, [
+        {'attr': 'get_interface', 'request_method': 'GET'},
+        {'attr': 'post_interface', 'request_method': 'POST'},
+    ])
+
+    config.add_directive('add_restful_base_routes', add_restful_base_routes)
+    config.add_static_view('static', 'static', cache_max_age=3600)
+
 
     from ..views.docs import DocsCustomView
     from ..model.context.docs import DocsContextFactory
