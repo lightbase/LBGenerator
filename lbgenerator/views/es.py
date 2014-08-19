@@ -21,10 +21,9 @@ class ESCustomView(CustomView):
         return Response(response.text)
 
     def post_interface(self):
-        params = dict(self.request.params)
         url = self.context.get_base().metadata.idx_exp_url
         path = self.request.matchdict['path']
         if path:
             url += path
-        response = requests.get(url, data=params)
+        response = requests.get(url, data=self.request.body)
         return Response(response.text)
