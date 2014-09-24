@@ -4,7 +4,7 @@ from ..index import Index
 from .. import document_entity
 from .. import file_entity
 from ...lib import utils
-from liblightbase.lbdocument import Tree
+from liblightbase.lbdoc.doctree import DocumentTree
 from sqlalchemy.orm.state import InstanceState
 from sqlalchemy.util import KeyedTuple
 from sqlalchemy import update
@@ -212,7 +212,7 @@ class DocumentContextFactory(CustomContextFactory):
             # Will prune tree nodes.
             # dict_member can be None if method could not find any fileds
             # matching the nodes list.
-            dict_member = Tree(dict_member).prune(nodes=fields)
+            dict_member = DocumentTree(dict_member).prune(nodes=fields)
 
         return dict_member
 

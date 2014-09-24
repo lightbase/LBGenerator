@@ -1,7 +1,7 @@
 
 from .. import utils
 from liblightbase.lbtypes import Matrix
-from liblightbase.lbdocument import DocumentMetadata
+from liblightbase.lbdoc.metadata import DocumentMetadata
 import datetime
 
 def validate_document_data(cls, request, *args):
