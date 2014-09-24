@@ -69,6 +69,7 @@ def notfound_view(request):
 def error_view(exc, request):
     """ Customized Exception View
     """
+    #l = traceback.extract_tb(request.exc_info[2])
     exc_type, exc_obj, exc_tb = sys.exc_info()
     exc_msg = exc_obj.args
     if len(exc_obj.args) > 0:

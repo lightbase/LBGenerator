@@ -27,6 +27,12 @@ def make_routes(config):
         for view_kw in views:
             config.add_view(view=view_class, route_name=route_name, **view_kw)
 
+    from ..views.command import CommandCustomView
+    config.add_route('command', '_command/{command}')
+    config.add_view(view=CommandCustomView, route_name='command',
+        **{'attr': 'execute', 'request_method': 'POST'}
+    )
+
     from ..views.es import ESCustomView
     from ..model.context.es import ESContextFactory
     add_custom_routes('elasticsearch', '{base}/es{path:.*}', ESContextFactory, ESCustomView, [
