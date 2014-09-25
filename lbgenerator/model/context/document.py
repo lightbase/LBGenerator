@@ -90,8 +90,11 @@ class DocumentContextFactory(CustomContextFactory):
             data = self.index.update(member.id_doc, data)
         self.delete_files(member, data['__files__'])
         self.create_files(member, data['__files__'])
-        for name in data:
-            setattr(member, name, data[name])
+        data.pop('__files__')
+        stmt = update(self.entity.__table__).where(
+            self.entity.__table__.c.id_doc == data['id_doc'])\
+            .values(**data)
+        self.session.execute(stmt)
         self.session.commit()
         self.session.close()
         return member

@@ -169,7 +169,11 @@ def get_doc_table(__base__, __metadata__, **rel_fields):
     # already present in the given MetaData.
     table = Table(*COLUMNS, extend_existing=True)
     # Table factory are the default columns used when query object by API.
-    table.__factory__ = [table.c.id_doc, table.c.document]
+    table.__factory__ = [
+        table.c.id_doc,
+        table.c.document,
+        table.c.dt_doc,
+        table.c.dt_del]
 
     return table
 
