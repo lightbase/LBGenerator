@@ -6,8 +6,7 @@ from pyramid.exceptions import HTTPNotFound
 from pyramid.httpexceptions import HTTPFound
 
 def response_callback(request, response):
-    response.headerlist.append(('Access-Control-Allow-Origin',
-         'http://petstore.swagger.wordnik.com'))
+    #response.headerlist.append(('x', 'y'))
     if 'callback' in request.params:
         response.text = request.params['callback'] + '(' + response.text + ')'
 
