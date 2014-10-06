@@ -58,7 +58,7 @@ class CustomView(RESTfulView):
 
     def update_member(self):
         id = self.request.matchdict['id']
-        member = self.context.get_member(id)
+        member = self.context.get_member(id, close_sess=False)
         if member is None:
             raise HTTPNotFound()
         self.context.update_member(member, self._get_data(member))

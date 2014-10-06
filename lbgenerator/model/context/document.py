@@ -109,7 +109,7 @@ class DocumentContextFactory(CustomContextFactory):
         delete it's index and document. In case of failure, will SET all 
         columns to NULL and clear document, leaving only it's metadata.
         """
-        member = self.get_member(id) # Query member.
+        member = self.get_member(id, close_sess=False) # Query member.
         if member is None:
             return None
 
