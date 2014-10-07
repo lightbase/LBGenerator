@@ -8,7 +8,6 @@ CHANGES = open(os.path.join(here, 'CHANGES.md')).read()
 
 requires = [
     'pyramid',
-    'waitress'
     'liblightbase',
     'pyramid_restler',
     'sqlalchemy',
