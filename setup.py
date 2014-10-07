@@ -7,24 +7,19 @@ README = open(os.path.join(here, 'README.md')).read()
 CHANGES = open(os.path.join(here, 'CHANGES.md')).read()
 
 requires = [
-    'alembic',
-    'bcrypt',
-    # 'lbauth',
-    'liblightbase',
-    'psycopg2',
-    'pymongo',
     'pyramid',
-    'pyramid_restler',
-    'pyramid_who',
-    'requests',
-    'sqlalchemy',
-    'voluptuous',
     'waitress'
+    'liblightbase',
+    'pyramid_restler',
+    'sqlalchemy',
+    'psycopg2',
+    'voluptuous',
+    'requests',
     ]
 
 
 setup(name='LBGenerator',
-      version='0.4',
+      version='0.5',
       description='LBGenerator',
       long_description=README + '\n\n' +  CHANGES,
       classifiers=[
