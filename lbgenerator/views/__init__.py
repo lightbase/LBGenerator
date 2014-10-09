@@ -7,6 +7,12 @@ from pyramid.httpexceptions import HTTPFound
 
 def response_callback(request, response):
     #response.headerlist.append(('x', 'y'))
+    try:
+        if request.context.session.is_active:
+            request.context.session.close()
+    except:
+        pass
+
     if 'callback' in request.params:
         response.text = request.params['callback'] + '(' + response.text + ')'
 
