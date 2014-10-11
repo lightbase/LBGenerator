@@ -2,12 +2,22 @@
 from liblightbase.lbtypes.extended import FileMask
 from liblightbase.lbutils.codecs import *
 
+class Accept():
+
+    def best_match(self, *a):
+        return True
+
 class FakeRequest(object):
+
+    accept = Accept()
 
     def __init__(self, params={}, matchdict={}, method='GET'):
         self.params = params
         self.matchdict = matchdict
         self.method = method
+
+    def add_response_callback(self, *a, **kw):
+        pass
 
 def is_integer(i):
     try:

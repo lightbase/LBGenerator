@@ -1,7 +1,7 @@
 
 from .. import utils
 from liblightbase.lbtypes import Matrix
-from liblightbase.lbdocument import DocumentMetadata
+from liblightbase.lbdoc.metadata import DocumentMetadata
 import datetime
 
 def validate_document_data(cls, request, *args):
@@ -65,6 +65,7 @@ def validate_put_data(cls, data, member):
 
         # Parse JSON object
         document = utils.json2object(data['value'])
+        data.pop('value')
 
         dt_idx = document.get('_metadata', { })\
                 .get('dt_idx', None)
@@ -94,7 +95,6 @@ def validate_put_data(cls, data, member):
         # Build database object
         data['document'] = document
         data['__files__'] = files
-        data['__cfiles__'] = cfiles
         data.update(_metadata.__dict__)
         data.update(reldata)
 

@@ -89,7 +89,7 @@ class DocumentCustomView(CustomView):
         member = self.context.update_member(member, data)
         return Response(str(index), content_type='application/json')
 
-    def put_path(self):
+    def put_path(self, member=None):
         """
         Interprets the path, accesses, and update objects. In detail, the query
         path supported in the current implementation allows the navigation of 
@@ -104,32 +104,27 @@ class DocumentCustomView(CustomView):
         name. 
         """
         # Get raw mapped entity object.
-        member = self.context.get_raw_member(self.request.matchdict['id'])
         if member is None:
-            raise HTTPNotFound()
+            member = self.context.get_raw_member(self.request.matchdict['id'])
+            if member is None:
+                raise HTTPNotFound()
 
         # Update path
         if self.request.params.get('path') == '/':
             document = member.document
 
         elif isinstance(self.request.matchdict['path'], list):
-            nodes = self.request.matchdict['path']
-            document = member.document
-            for node in nodes:
-                document = self.get_base().put_path(
-                    document,
-                    node['path'].split('/'),
-                    node['value'])
+            document = self.parse_path_list(member.document)
+
         else:
             document = self.get_base().put_path(member.document,
                 self.request.matchdict['path'].split('/'),
                 self.request.params['value'])
 
-        # Build data
+        # validate data
         data = validate_put_data(self,
-                                dict(value=document),
-                                member
-                                )
+            dict(value=document),
+            member)
 
         if self.request.matchdict['path'] == '_metadata/dt_idx':
             index = False
@@ -211,7 +206,7 @@ class DocumentCustomView(CustomView):
             if not self.context.session.is_active:
                 self.context.session.begin()
             try:
-                self.put_path()
+                self.put_path(member)
                 success = success + 1
 
             except Exception as e:
@@ -261,3 +256,105 @@ class DocumentCustomView(CustomView):
         return Response('{"success": %d, "failure" : %d}'
                         % (success, failure),
                         content_type='application/json')
+
+    def parse_path_list(self, document):
+
+        operations = self.request.matchdict['path']
+        for operation in operations:
+            if 'delete' in operation:
+                operatefn = self.path_delete_op
+            elif 'insert' in operation:
+                operatefn = self.path_insert_op
+            else:
+                operatefn = self.path_update_op
+            document = operatefn(document, operation)
+        return document
+
+    def path_update_op(self, document, operation):
+        """
+        case zero: change value of path.
+        example:
+        [{    
+            "path": "field",   
+            "value": "875.637.971-49"
+        },{    
+            "path": "group/*/field",   
+            "value": "y" 
+        }]
+
+        first case: change only if equals.
+        example:
+        [{    
+            "path": "field",   
+            "equals": "877.756757",
+            "value": "875.637.971-49"
+        },{    
+            "path": "group/*/field",   
+            "equals": "x", 
+            "value": "y" 
+        }]
+        """
+
+        class UpdatePath(object):
+
+            def __init__(self, path, value, **ops):
+                if ops:
+                    self.op_name = list(ops.keys())[0]
+                    self.op_value = list(ops.values())[0]
+                    callfn = getattr(self, '_' + self.op_name)
+                    self._callfn = callfn
+                else:
+                    self._callfn = lambda arg: True
+
+            def __call__(self, *args, **kw):
+                return self._callfn(*args, **kw)
+
+            def _equals(self, value):
+                if value == self.op_value:
+                    return True
+                return False
+
+        updatefn = UpdatePath(**operation)
+        document = self.get_base().put_path(
+            document,
+            operation['path'].split('/'),
+            operation['value'],
+            fn=updatefn)
+
+        return document
+
+    def path_insert_op(self, document, operation):
+        """
+        second case: add repetition to multivalued structure.
+        example:
+        [{    
+            "path": "group",   
+            "insert": {
+                "field1": "value",
+                "field2": "value"
+            }
+        },{    
+            "path": "field",   
+            "insert": "value"
+        }]
+        """
+        zero, document = self.get_base().set_path(
+            document,
+            operation['path'].split('/'),
+            operation['insert'])
+        return document
+
+    def path_delete_op(self, document, operation):
+        """
+
+        third case: delete repetition (if equals) from multivalued structure.
+        example:
+        [{    
+            "path": "field",   
+            "delete": "value"
+        }]
+        """
+        document = self.get_base().delete_path(
+            document,
+            operation['path'].split('/'))
+        return document

@@ -49,10 +49,21 @@ class CustomContextFactory(SQLAlchemyORMContext):
         """
         return model.BASES.set_base(base_json)
 
-    def get_member(self, id):
+    def get_member(self, id, close_sess=True):
         self.single_member = True
         q = self.session.query(self.entity)
-        return q.get(id)
+        member = q.get(id)
+        if close_sess:
+            self.session.close()
+        return member
+
+    def delete_member(self, id):
+        member = self.get_member(id)
+        if member is None:
+            return None
+        self.session.delete(member)
+        self.session.commit()
+        return member
 
     def get_raw_member(self, id):
         return self.session.query(self.entity).get(id)

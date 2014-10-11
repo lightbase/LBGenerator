@@ -6,8 +6,13 @@ from pyramid.exceptions import HTTPNotFound
 from pyramid.httpexceptions import HTTPFound
 
 def response_callback(request, response):
-    response.headerlist.append(('Access-Control-Allow-Origin',
-         'http://petstore.swagger.wordnik.com'))
+    #response.headerlist.append(('x', 'y'))
+    try:
+        if request.context.session.is_active:
+            request.context.session.close()
+    except:
+        pass
+
     if 'callback' in request.params:
         response.text = request.params['callback'] + '(' + response.text + ')'
 
@@ -59,7 +64,7 @@ class CustomView(RESTfulView):
 
     def update_member(self):
         id = self.request.matchdict['id']
-        member = self.context.get_member(id)
+        member = self.context.get_member(id, close_sess=False)
         if member is None:
             raise HTTPNotFound()
         self.context.update_member(member, self._get_data(member))

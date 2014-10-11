@@ -4,7 +4,7 @@ from ..index import Index
 from .. import document_entity
 from .. import file_entity
 from ...lib import utils
-from liblightbase.lbdocument import Tree
+from liblightbase.lbdoc.doctree import DocumentTree
 from sqlalchemy.orm.state import InstanceState
 from sqlalchemy.util import KeyedTuple
 from sqlalchemy import update
@@ -90,8 +90,11 @@ class DocumentContextFactory(CustomContextFactory):
             data = self.index.update(member.id_doc, data)
         self.delete_files(member, data['__files__'])
         self.create_files(member, data['__files__'])
-        for name in data:
-            setattr(member, name, data[name])
+        data.pop('__files__')
+        stmt = update(self.entity.__table__).where(
+            self.entity.__table__.c.id_doc == data['id_doc'])\
+            .values(**data)
+        self.session.execute(stmt)
         self.session.commit()
         self.session.close()
         return member
@@ -106,7 +109,7 @@ class DocumentContextFactory(CustomContextFactory):
         delete it's index and document. In case of failure, will SET all 
         columns to NULL and clear document, leaving only it's metadata.
         """
-        member = self.get_member(id) # Query member.
+        member = self.get_member(id, close_sess=False) # Query member.
         if member is None:
             return None
 
@@ -212,7 +215,7 @@ class DocumentContextFactory(CustomContextFactory):
             # Will prune tree nodes.
             # dict_member can be None if method could not find any fileds
             # matching the nodes list.
-            dict_member = Tree(dict_member).prune(nodes=fields)
+            dict_member = DocumentTree(dict_member).prune(nodes=fields)
 
         return dict_member
 
