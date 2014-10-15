@@ -38,6 +38,8 @@ class ESCustomView(CustomView):
             id_docs = repr(tuple(map(self.map_id_doc, response_json['hits']['hits'])))
             if id_docs[-2] == ',':
                 id_docs = id_docs[:-2] + ')'
+            if id_docs == '())' or id_docs == '(,)' or id_docs == '()':
+                id_docs = '(null)'
             mock_request = FakeRequest(
                 params = {'$$': '{"literal":"id_doc in %s", "limit":null}}' % (id_docs)},
                 matchdict = {'base': self.request.matchdict['base']})
@@ -65,6 +67,8 @@ class ESCustomView(CustomView):
             id_docs = repr(tuple(map(self.map_id_doc, response_json['hits']['hits'])))
             if id_docs[-2] == ',':
                 id_docs = id_docs[:-2] + ')'
+            if id_docs == '())' or id_docs == '(,)' or id_docs == '()':
+                id_docs = '(null)'
             mock_request = FakeRequest(
                 params = {'$$': '{"literal":"id_doc in %s", "limit":null}}' % (id_docs)},
                 matchdict = {'base': self.request.matchdict['base']})
