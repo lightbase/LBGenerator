@@ -10,6 +10,15 @@ from sqlalchemy.orm import mapper
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import engine_from_config
 
+from sqlalchemy import event
+from sqlalchemy.engine import Engine
+
+@event.listens_for(Engine, "connect")
+def connect(dbapi_connection, connection_record):
+    cursor = dbapi_connection.cursor()
+    cursor.execute('set datestyle = "ISO, DMY";')
+    cursor.close()
+
 def begin_session():
     """ Returns Session object """
 
@@ -24,11 +33,6 @@ def begin_session():
 
 def make_restful_app():
     """ Initialize Restfull API """
-
-    session = begin_session()
-    session.execute('ALTER DATABASE \"%s\" SET datestyle TO "ISO, DMY";'
-        % config.DB_NAME)
-    session.close()
 
     global BASES
     global HISTORY
