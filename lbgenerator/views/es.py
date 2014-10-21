@@ -48,7 +48,6 @@ class ESCustomView(CustomView):
             return doc_view.get_collection()
 
         return Response(response.text, content_type='application/json')
-        return Response(response.text + {puto: 'puto'}, content_type='application/json')
 
     def post_interface(self):
         url = self.context.get_base().metadata.idx_exp_url
@@ -81,4 +80,4 @@ class ESCustomView(CustomView):
             doc_view = DocumentCustomView(doc_factory, mock_request)
             return doc_view.get_collection()
 
-        return Response(response.text, content_type='application/json')
+        return Response(response.text + "{puto: 'puto'}", content_type='application/json')
