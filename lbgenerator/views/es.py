@@ -54,7 +54,8 @@ class ESCustomView(CustomView):
         params = dict(self.request.params)
         if 'lbquery' in params:
             params.pop('lbquery')
-            # Note: Seta para que automaticamente o ES retorne só as IDs, no caso do retorno vim do LB! By Questor
+            # Note: Seta para que automaticamente o ES retorne só as IDs, no caso
+            # do retorno vir do LB! By Questor
             params["fields"] = "_metadata.id_doc"
             query_lb = True
         else:
@@ -62,15 +63,11 @@ class ESCustomView(CustomView):
         path = self.request.matchdict['path']
         if path:
             url += path
-        # Note: Verificar se esse retorno está coerente, ou seja, se retorna mesmo
-        # os 10 registros! By Questor
         response = requests.get(url, params=params, data=self.request.body)
-        # return Response(response.text, content_type='application/json')
 
         if query_lb:
             response_json = response.json()
             id_docs = repr(tuple(map(self.map_id_doc, response_json['hits']['hits'])))
-            return Response(str(id_docs))
             if id_docs[-2] == ',':
                 id_docs = id_docs[:-2] + ')'
             if id_docs == '())' or id_docs == '(,)' or id_docs == '()':
