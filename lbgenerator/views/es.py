@@ -65,11 +65,12 @@ class ESCustomView(CustomView):
         # Note: Verificar se esse retorno está coerente, ou seja, se retorna mesmo
         # os 10 registros! By Questor
         response = requests.get(url, params=params, data=self.request.body)
-        return Response(response.text, content_type='application/json')
+        # return Response(response.text, content_type='application/json')
 
         if query_lb:
             response_json = response.json()
             id_docs = repr(tuple(map(self.map_id_doc, response_json['hits']['hits'])))
+            return Response(str(id_docs))
             if id_docs[-2] == ',':
                 id_docs = id_docs[:-2] + ')'
             if id_docs == '())' or id_docs == '(,)' or id_docs == '()':
