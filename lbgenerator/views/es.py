@@ -65,6 +65,7 @@ class ESCustomView(CustomView):
         # Note: Verificar se esse retorno está coerente, ou seja, se retorna mesmo
         # os 10 registros! By Questor
         response = requests.get(url, params=params, data=self.request.body)
+        return Response(response.text, content_type='application/json')
 
         if query_lb:
             response_json = response.json()
@@ -80,4 +81,4 @@ class ESCustomView(CustomView):
             doc_view = DocumentCustomView(doc_factory, mock_request)
             return doc_view.get_collection()
 
-        return Response(response.text + "{puto: 'puto'}", content_type='application/json')
+        return Response(response.text, content_type='application/json')
