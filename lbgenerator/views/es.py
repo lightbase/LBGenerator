@@ -91,9 +91,10 @@ class ESCustomView(CustomView):
             doc_factory = DocumentContextFactory(mock_request)
             doc_view = DocumentCustomView(doc_factory, mock_request)
             return Response(str(dir(doc_view)) + str(dir(doc_view.get_collection())))
-            doc_view_get_collection = doc_view.get_collection()
+            doc_view_get_collection = doc_view.get_collection(False)
             # doc_view_get_collection['offset'] = offset
             # doc_view_get_collection['limit'] = limit
-            return doc_view_get_collection
+            # return doc_view_get_collection
+            return self.render_to_response(doc_view_get_collection)
 
         return Response(response.text, content_type='application/json')
