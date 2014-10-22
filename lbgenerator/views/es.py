@@ -51,7 +51,6 @@ class ESCustomView(CustomView):
                 matchdict = {'base': self.request.matchdict['base']})
             doc_factory = DocumentContextFactory(mock_request)
             doc_view = DocumentCustomView(doc_factory, mock_request)
-            return Response(str(offset) + " " + str(limit))
             doc_view_get_collection = doc_view.get_collection().json()
             doc_view_get_collection['offset'] = offset
             doc_view_get_collection['limit'] = limit
@@ -67,6 +66,9 @@ class ESCustomView(CustomView):
             # Note: Seta para que automaticamente o ES retorne só as IDs, no caso
             # do retorno vir do LB! By Questor
             params["fields"] = "_metadata.id_doc"
+            dict_query = json2object(self.request.body.decode("utf-8"))
+            limit = dict_query['size']
+            offset = dict_query['from']
             query_lb = True
         else:
             query_lb = False
@@ -87,6 +89,9 @@ class ESCustomView(CustomView):
                 matchdict = {'base': self.request.matchdict['base']})
             doc_factory = DocumentContextFactory(mock_request)
             doc_view = DocumentCustomView(doc_factory, mock_request)
-            return doc_view.get_collection()
+            doc_view_get_collection = doc_view.get_collection()
+            doc_view_get_collection['offset'] = offset
+            doc_view_get_collection['limit'] = limit
+            return doc_view_get_collection
 
         return Response(response.text, content_type='application/json')
