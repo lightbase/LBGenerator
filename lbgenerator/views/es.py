@@ -6,7 +6,6 @@ from . import CustomView
 from ..model.context.document import DocumentContextFactory
 from .document import DocumentCustomView
 from ..lib.utils import FakeRequest
-from liblightbase.lbutils.codecs import *
 
 class ESCustomView(CustomView):
 
@@ -53,9 +52,6 @@ class ESCustomView(CustomView):
     def post_interface(self):
         url = self.context.get_base().metadata.idx_exp_url
         params = dict(self.request.params)
-        dict_query = json2object(self.request.body.decode("utf-8"))
-        limit = dict_query['size']
-        offset = dict_query['from']
         if 'lbquery' in params:
             params.pop('lbquery')
             # Note: Seta para que automaticamente o ES retorne só as IDs, no caso
@@ -77,7 +73,7 @@ class ESCustomView(CustomView):
             if id_docs == '())' or id_docs == '(,)' or id_docs == '()':
                 id_docs = '(null)'
             mock_request = FakeRequest(
-                    params = {'$$': '{"literal":"id_doc in {0}", "limit":{1}, "offset":{2}}'.format(id_docs, limit, offset)},
+                params = {'$$': '{"literal":"id_doc in %s", "limit":null}}' % (id_docs)},
                 matchdict = {'base': self.request.matchdict['base']})
             doc_factory = DocumentContextFactory(mock_request)
             doc_view = DocumentCustomView(doc_factory, mock_request)
