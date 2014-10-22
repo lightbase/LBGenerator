@@ -6,6 +6,7 @@ from . import CustomView
 from ..model.context.document import DocumentContextFactory
 from .document import DocumentCustomView
 from ..lib.utils import FakeRequest
+from liblightbase.lbutils.codecs import json2object
 
 class ESCustomView(CustomView):
 
