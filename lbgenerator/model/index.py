@@ -20,7 +20,8 @@ class DeletedIndex():
     """ Represents a successfull response when deleting an index.
     """
     def __init__(self, found, _index, _type, _id, _version):
-        pass
+        if found == False:
+            raise Exception("Index not deleted")
 
 class DeletedRoot():
     """ Represents a successfull response when deleting root index.

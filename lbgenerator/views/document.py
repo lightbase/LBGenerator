@@ -7,6 +7,7 @@ from ..lib import utils
 from ..lib.log import Logger
 from pyramid.response import Response
 from pyramid.exceptions import HTTPNotFound
+from ..lib.path import parse_list_pattern
 
 class DocumentCustomView(CustomView):
 
@@ -74,20 +75,24 @@ class DocumentCustomView(CustomView):
             raise HTTPNotFound()
 
         # Set path
-        index, document = self.get_base().set_path(member.document,
-                                self.request.matchdict['path'].split('/'),
-                                self.request.params['value']
-                                )
+        list_pattern = [{
+            'path': self.request.matchdict['path'],
+            'mode':'insert',
+            'args': [self.request.params['value']]
+        }]
+        document = parse_list_pattern(
+            self.get_base(),
+            member.document,
+            list_pattern)
 
         # Build data
         data = validate_put_data(self,
-                                dict(value=document),
-                                member
-                                )
+            dict(value=document),
+            member)
 
         # Update member
         member = self.context.update_member(member, data)
-        return Response(str(index), content_type='application/json')
+        return Response('OK', content_type='application/json')
 
     def put_path(self, member=None):
         """
@@ -114,12 +119,20 @@ class DocumentCustomView(CustomView):
             document = member.document
 
         elif isinstance(self.request.matchdict['path'], list):
-            document = self.parse_path_list(member.document)
+            document = parse_list_pattern(self.get_base(),
+                member.document,
+                self.request.matchdict['path'])
 
         else:
-            document = self.get_base().put_path(member.document,
-                self.request.matchdict['path'].split('/'),
-                self.request.params['value'])
+            list_pattern = [{
+                'path': self.request.matchdict['path'],
+                'mode':'update',
+                'args': [self.request.params['value']]
+            }]
+            document = parse_list_pattern(
+                self.get_base(),
+                member.document,
+                list_pattern)
 
         # validate data
         data = validate_put_data(self,
@@ -155,14 +168,18 @@ class DocumentCustomView(CustomView):
             raise HTTPNotFound()
 
         # Delete path
-        document = self.get_base().delete_path(member.document,
-            self.request.matchdict['path'].split('/'))
+        list_pattern = [{
+            'path': self.request.matchdict['path'],
+            'mode':'delete'}]
+        document = parse_list_pattern(
+            self.get_base(),
+            member.document,
+            list_pattern)
 
         # Build data
         data = validate_put_data(self,
-                                dict(value=document),
-                                member
-                                )
+            dict(value=document),
+            member)
 
         # Update member
         member = self.context.update_member(member, data)
@@ -257,104 +274,3 @@ class DocumentCustomView(CustomView):
                         % (success, failure),
                         content_type='application/json')
 
-    def parse_path_list(self, document):
-
-        operations = self.request.matchdict['path']
-        for operation in operations:
-            if 'delete' in operation:
-                operatefn = self.path_delete_op
-            elif 'insert' in operation:
-                operatefn = self.path_insert_op
-            else:
-                operatefn = self.path_update_op
-            document = operatefn(document, operation)
-        return document
-
-    def path_update_op(self, document, operation):
-        """
-        case zero: change value of path.
-        example:
-        [{    
-            "path": "field",   
-            "value": "875.637.971-49"
-        },{    
-            "path": "group/*/field",   
-            "value": "y" 
-        }]
-
-        first case: change only if equals.
-        example:
-        [{    
-            "path": "field",   
-            "equals": "877.756757",
-            "value": "875.637.971-49"
-        },{    
-            "path": "group/*/field",   
-            "equals": "x", 
-            "value": "y" 
-        }]
-        """
-
-        class UpdatePath(object):
-
-            def __init__(self, path, value, **ops):
-                if ops:
-                    self.op_name = list(ops.keys())[0]
-                    self.op_value = list(ops.values())[0]
-                    callfn = getattr(self, '_' + self.op_name)
-                    self._callfn = callfn
-                else:
-                    self._callfn = lambda arg: True
-
-            def __call__(self, *args, **kw):
-                return self._callfn(*args, **kw)
-
-            def _equals(self, value):
-                if value == self.op_value:
-                    return True
-                return False
-
-        updatefn = UpdatePath(**operation)
-        document = self.get_base().put_path(
-            document,
-            operation['path'].split('/'),
-            operation['value'],
-            fn=updatefn)
-
-        return document
-
-    def path_insert_op(self, document, operation):
-        """
-        second case: add repetition to multivalued structure.
-        example:
-        [{    
-            "path": "group",   
-            "insert": {
-                "field1": "value",
-                "field2": "value"
-            }
-        },{    
-            "path": "field",   
-            "insert": "value"
-        }]
-        """
-        zero, document = self.get_base().set_path(
-            document,
-            operation['path'].split('/'),
-            operation['insert'])
-        return document
-
-    def path_delete_op(self, document, operation):
-        """
-
-        third case: delete repetition (if equals) from multivalued structure.
-        example:
-        [{    
-            "path": "field",   
-            "delete": "value"
-        }]
-        """
-        document = self.get_base().delete_path(
-            document,
-            operation['path'].split('/'))
-        return document
