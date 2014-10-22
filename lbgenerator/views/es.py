@@ -50,7 +50,7 @@ class ESCustomView(CustomView):
                 params = {'$$': '{"literal":"id_doc in %s", "limit":null}}' % (id_docs)},
                 matchdict = {'base': self.request.matchdict['base']})
             doc_factory = DocumentContextFactory(mock_request)
-            doc_view = DocumentCustomView(doc_factory, mock_request)
+            doc_view = DocumentCustomView(doc_factory, mock_request).json()
             doc_view_get_collection = doc_view.get_collection()
             doc_view_get_collection['offset'] = offset
             doc_view_get_collection['limit'] = limit
