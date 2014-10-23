@@ -78,8 +78,9 @@ class ESCustomView(CustomView):
         else:
             query_lb = False
         path = self.request.matchdict['path']
-        if path:
-            url += path
+        if path: url += path
+
+        # Make the request
         response = requests.get(url, params=params, data=self.request.body)
 
         if query_lb:
@@ -89,19 +90,26 @@ class ESCustomView(CustomView):
                 id_docs = id_docs[:-2] + ')'
             if id_docs == '())' or id_docs == '(,)' or id_docs == '()':
                 id_docs = '(null)'
+
             mock_request = FakeRequest(
                 params = {'$$': '{"literal":"id_doc in %s", "limit":null}}' % (id_docs)},
                 matchdict = {'base': self.request.matchdict['base']})
+
             doc_factory = DocumentContextFactory(mock_request)
             doc_view = DocumentCustomView(doc_factory, mock_request)
-            doc_view_get_special = doc_view.get_collection(False, True)
-            if limit != None:
-                doc_view_get_special[2].default_limit = int(limit)
-            if offset != None:
-                doc_view_get_special[2].default_offset = int(offset)
+
+            collection = doc_view.get_collection(
+                render_to_response=False)
+
+            if limit is not None:
+                doc_factory.default_limit = int(limit)
+            if offset is not None:
+                doc_factory.default_offset = int(offset)
+
             # Note: Serve para setar o total de ocorrências no 
             # retorno do LB qdo a pesquisa vem do ES! By Questor
-            doc_view_get_special[2].total_count = int(response_json['hits']['total'])
-            return doc_view_get_special[1].render_to_response(doc_view_get_special[0])
+            doc_factory.total_count = int(response_json['hits']['total'])
+
+            return doc_view.render_to_response(collection)
 
         return Response(response.text, content_type='application/json')

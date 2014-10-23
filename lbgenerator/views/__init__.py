@@ -36,24 +36,15 @@ class CustomView(RESTfulView):
         """
         return self.context.set_base(base_json)
 
-    def get_collection(self, render_to_response=True, rtn_self=False):
+    def get_collection(self, render_to_response=True):
         """ Search database objects
         """
         params = self.request.params.get('$$', '{}')
         query = utils.json2object(params)
-        get_collection_holder = None
         try:
-            get_collection_holder = self.context.get_collection(query, True)
-            collection = get_collection_holder[0]
+            collection = self.context.get_collection(query)
         except Exception as e:
             raise Exception('SearchError: %s' % e)
-        if rtn_self:
-            # Note: Retornar a instância da classe para poder acessar o 
-            # método "render_to_response()" ficou meio tosco mais foi a 
-            # forma que encontrei de acessar esse método de forma rápida
-            # e sem mudar muita coisa qdo a pesquisa é feita no ES! 
-            # By Questor
-            response = [collection, self, get_collection_holder[1]]
         else:
             if render_to_response:
                 response = self.render_to_response(collection)
