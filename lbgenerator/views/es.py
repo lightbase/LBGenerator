@@ -96,7 +96,7 @@ class ESCustomView(CustomView):
             # doc_view_get_collection['limit'] = limit
             # return doc_view_get_collection
             # [collection, self.]
-            return Response(str(doc_view_get_special[0]))
+            # return Response(str(doc_view_get_special[0]))
             return doc_view_get_special[1].render_to_response(doc_view_get_special[0])
             # return self.render_to_response(doc_view_get_collection)
 
