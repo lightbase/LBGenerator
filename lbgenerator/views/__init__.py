@@ -36,7 +36,7 @@ class CustomView(RESTfulView):
         """
         return self.context.set_base(base_json)
 
-    def get_collection(self, render_to_response=True):
+    def get_collection(self, render_to_response=True, render_to_response_after=False):
         """ Search database objects
         """
         params = self.request.params.get('$$', '{}')
@@ -45,10 +45,13 @@ class CustomView(RESTfulView):
             collection = self.context.get_collection(query)
         except Exception as e:
             raise Exception('SearchError: %s' % e)
-        if render_to_response:
-            response = self.render_to_response(collection)
+        if render_to_response_after:
+            response = [collection, self]
         else:
-            response = collection
+            if render_to_response:
+                response = self.render_to_response(collection)
+            else:
+                response = collection
         return response
 
     def get_member(self):
