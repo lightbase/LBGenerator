@@ -100,8 +100,8 @@ class ESCustomView(CustomView):
             # return doc_view_get_collection
             # [collection, self.]
             # return Response(str(doc_view_get_special[0]))
-            doc_view_get_special[2].default_limit = 1
-            doc_view_get_special[2].default_offset = 10
+            doc_view_get_special[2].default_limit = int(limit)
+            doc_view_get_special[2].default_offset = int(offset)
             doc_view_get_special[2].total_count = int(response_json['hits']['total'])
             return doc_view_get_special[1].render_to_response(doc_view_get_special[0])
             # return self.render_to_response(doc_view_get_collection)
