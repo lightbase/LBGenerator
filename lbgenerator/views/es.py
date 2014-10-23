@@ -18,7 +18,9 @@ class ESCustomView(CustomView):
     @staticmethod
     def map_id_doc(es_hits):
         return es_hits['fields']['_metadata.id_doc'][0]
-
+        
+    # ToDo: Ajustar para que tenha o mesmo comportamento do método "post_interface",
+    # pois do jeito que está vai dar bug! By Questor
     def get_interface(self):
         params = dict(self.request.params)
 
@@ -65,12 +67,13 @@ class ESCustomView(CustomView):
         if 'lbquery' in params:
             params.pop('lbquery')
             # Note: Seta para que automaticamente o ES retorne só as IDs, no caso
-            # do retorno vir do LB! By Questor
+            # do retorno (OL) vir do LB! By Questor
             params["fields"] = "_metadata.id_doc"
-            # Note: Obtém os parâmetros size e from enviados! By Questor
-            # dict_query = json2object(self.request.body.decode("utf-8"))
-            # limit = dict_query['size']
-            # offset = dict_query['from']
+            # Note: Obtém os parâmetros size e from enviados na query ES para 
+            # setar no retorno do LB! By Questor
+            dict_query = json2object(self.request.body.decode("utf-8"))
+            limit = dict_query.get('size', None)
+            offset = dict_query.get('from', None)
             query_lb = True
         else:
             query_lb = False
@@ -92,8 +95,12 @@ class ESCustomView(CustomView):
             doc_factory = DocumentContextFactory(mock_request)
             doc_view = DocumentCustomView(doc_factory, mock_request)
             doc_view_get_special = doc_view.get_collection(False, True)
-            doc_view_get_special[2].default_limit = int(limit)
-            doc_view_get_special[2].default_offset = int(offset)
+            if limit != None:
+                doc_view_get_special[2].default_limit = int(limit)
+            if offset != None:
+                doc_view_get_special[2].default_offset = int(offset)
+            # Note: Serve para setar o total de ocorrências no 
+            # retorno do LB qdo a pesquisa vem do ES! By Questor
             doc_view_get_special[2].total_count = int(response_json['hits']['total'])
             return doc_view_get_special[1].render_to_response(doc_view_get_special[0])
 

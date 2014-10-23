@@ -112,6 +112,11 @@ class CustomContextFactory(SQLAlchemyORMContext):
         if query.get('select') == [ ] and self.request.method == 'GET':
             return [ ]
         if rtn_self:
+            # Note: Retornar a instância da classe para poder acessar os
+            # atributos "default_limit", "default_offset" e "total_count"
+            # ficou meio tosco mais foi a forma que encontrei de setar esses
+            # valores de forma rápida e sem mudar muita coisa qdo a pesquisa
+            # é feita no ES! By Questor
             return [q.all(), self]
         return q.all()
 
