@@ -85,8 +85,11 @@ class ESCustomView(CustomView):
                 id_docs = id_docs[:-2] + ')'
             if id_docs == '())' or id_docs == '(,)' or id_docs == '()':
                 id_docs = '(null)'
+            # mock_request = FakeRequest(
+                # params = {'$$': '{"literal":"id_doc in %s", "limit":10, "offset":1}}' % (id_docs)},
+                # matchdict = {'base': self.request.matchdict['base']})
             mock_request = FakeRequest(
-                params = {'$$': '{"literal":"id_doc in %s", "limit":10, "offset":1}}' % (id_docs)},
+                params = {'$$': '{"literal":"id_doc in %s", "limit":null}}' % (id_docs)},
                 matchdict = {'base': self.request.matchdict['base']})
             doc_factory = DocumentContextFactory(mock_request)
             doc_view = DocumentCustomView(doc_factory, mock_request)
@@ -97,6 +100,8 @@ class ESCustomView(CustomView):
             # return doc_view_get_collection
             # [collection, self.]
             # return Response(str(doc_view_get_special[0]))
+            doc_view_get_special[1].default_limit = 1
+            doc_view_get_special[1].default_offset = 10
             return doc_view_get_special[1].render_to_response(doc_view_get_special[0])
             # return self.render_to_response(doc_view_get_collection)
 
