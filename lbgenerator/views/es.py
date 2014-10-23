@@ -67,9 +67,10 @@ class ESCustomView(CustomView):
             # Note: Seta para que automaticamente o ES retorne só as IDs, no caso
             # do retorno vir do LB! By Questor
             params["fields"] = "_metadata.id_doc"
-            dict_query = json2object(self.request.body.decode("utf-8"))
-            limit = dict_query['size']
-            offset = dict_query['from']
+            # Note: Obtém os parâmetros size e from enviados! By Questor
+            # dict_query = json2object(self.request.body.decode("utf-8"))
+            # limit = dict_query['size']
+            # offset = dict_query['from']
             query_lb = True
         else:
             query_lb = False
@@ -85,25 +86,15 @@ class ESCustomView(CustomView):
                 id_docs = id_docs[:-2] + ')'
             if id_docs == '())' or id_docs == '(,)' or id_docs == '()':
                 id_docs = '(null)'
-            # mock_request = FakeRequest(
-                # params = {'$$': '{"literal":"id_doc in %s", "limit":10, "offset":1}}' % (id_docs)},
-                # matchdict = {'base': self.request.matchdict['base']})
             mock_request = FakeRequest(
                 params = {'$$': '{"literal":"id_doc in %s", "limit":null}}' % (id_docs)},
                 matchdict = {'base': self.request.matchdict['base']})
             doc_factory = DocumentContextFactory(mock_request)
             doc_view = DocumentCustomView(doc_factory, mock_request)
-            # return Response(str(dir(doc_view)) + str(dir(doc_view.get_collection())))
             doc_view_get_special = doc_view.get_collection(False, True)
-            # doc_view_get_collection['offset'] = offset
-            # doc_view_get_collection['limit'] = limit
-            # return doc_view_get_collection
-            # [collection, self.]
-            # return Response(str(doc_view_get_special[0]))
             doc_view_get_special[2].default_limit = int(limit)
             doc_view_get_special[2].default_offset = int(offset)
             doc_view_get_special[2].total_count = int(response_json['hits']['total'])
             return doc_view_get_special[1].render_to_response(doc_view_get_special[0])
-            # return self.render_to_response(doc_view_get_collection)
 
         return Response(response.text, content_type='application/json')
