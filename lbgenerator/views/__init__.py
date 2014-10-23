@@ -48,7 +48,7 @@ class CustomView(RESTfulView):
         except Exception as e:
             raise Exception('SearchError: %s' % e)
         if render_to_response_after:
-            response = [collection, self, get_collection_holder]
+            response = [collection, self, get_collection_holder[1]]
         else:
             if render_to_response:
                 response = self.render_to_response(collection)
