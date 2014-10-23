@@ -118,12 +118,19 @@ class CustomContextFactory(SQLAlchemyORMContext):
         limit = 0 if self.default_limit is None else self.default_limit
         offset = 0 if self.default_offset is None else self.default_offset
 
+        # return dict(
+            # results = obj,
+            # result_count = self.total_count,
+            # limit = limit,
+            # offset = offset
+        # )
+
         return dict(
             results = obj,
             result_count = self.total_count,
-            limit = limit,
-            offset = offset
-        )
+            limit = 10,
+            offset = 10
+        )        
 
     def get_member_id_as_string(self, member):
         id = self.get_member_id(member)
