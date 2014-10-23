@@ -86,7 +86,7 @@ class ESCustomView(CustomView):
             if id_docs == '())' or id_docs == '(,)' or id_docs == '()':
                 id_docs = '(null)'
             mock_request = FakeRequest(
-                params = {'$$': '{"literal":"id_doc in %s", "limit":null}}' % (id_docs)},
+                params = {'$$': '{"literal":"id_doc in %s", "limit":10, "offset":0}}' % (id_docs)},
                 matchdict = {'base': self.request.matchdict['base']})
             doc_factory = DocumentContextFactory(mock_request)
             doc_view = DocumentCustomView(doc_factory, mock_request)
