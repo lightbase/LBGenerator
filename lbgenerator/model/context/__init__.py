@@ -68,7 +68,7 @@ class CustomContextFactory(SQLAlchemyORMContext):
     def get_raw_member(self, id):
         return self.session.query(self.entity).get(id)
 
-    def get_collection(self, query):
+    def get_collection(self, query, rtn_self=False):
         """ Search database objects based on query
         """
         self._query = query
@@ -111,6 +111,8 @@ class CustomContextFactory(SQLAlchemyORMContext):
         # Return Results
         if query.get('select') == [ ] and self.request.method == 'GET':
             return [ ]
+        if rtn_self:
+            return [q.all(), self]
         return q.all()
 
     def wrap_json_obj(self, obj):
@@ -118,19 +120,12 @@ class CustomContextFactory(SQLAlchemyORMContext):
         limit = 0 if self.default_limit is None else self.default_limit
         offset = 0 if self.default_offset is None else self.default_offset
 
-        # return dict(
-            # results = obj,
-            # result_count = self.total_count,
-            # limit = limit,
-            # offset = offset
-        # )
-
         return dict(
             results = obj,
             result_count = self.total_count,
-            limit = 10,
-            offset = 10
-        )        
+            limit = limit,
+            offset = offset
+        )
 
     def get_member_id_as_string(self, member):
         id = self.get_member_id(member)

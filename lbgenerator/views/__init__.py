@@ -41,12 +41,14 @@ class CustomView(RESTfulView):
         """
         params = self.request.params.get('$$', '{}')
         query = utils.json2object(params)
+        get_collection_holder = None
         try:
-            collection = self.context.get_collection(query)
+            get_collection_holder = self.context.get_collection(query, True)
+            collection = get_collection_holder[0]
         except Exception as e:
             raise Exception('SearchError: %s' % e)
         if render_to_response_after:
-            response = [collection, self]
+            response = [collection, self, get_collection_holder]
         else:
             if render_to_response:
                 response = self.render_to_response(collection)
