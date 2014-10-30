@@ -75,7 +75,7 @@ class Index():
         """ Creates index 
         """
         if not self.is_indexable:
-            return data
+            return False, data
 
         document = utils.object2json(data['document'], ensure_ascii=True)
 
@@ -83,8 +83,8 @@ class Index():
         url = self.to_url(self.INDEX_URL, str(data['id_doc']))
         try:
             response = requests.post(url,
-                                    data=document,
-                                    timeout=self.TIMEOUT).json()
+                data=document,
+                timeout=self.TIMEOUT).json()
         except:
             response = None
 
@@ -94,7 +94,7 @@ class Index():
             data['dt_idx'] = None
 
         self.sync_metadata(data) # Syncronize document metadata.
-        return data
+        return True, data
 
     def update(self, id, data):
         """ Updates index 
@@ -112,8 +112,8 @@ class Index():
 
         try:
             response = requests.put(url,
-                                    data=document,
-                                    timeout=self.TIMEOUT).json()
+                data=document,
+                timeout=self.TIMEOUT).json()
         except:
             response = None
 

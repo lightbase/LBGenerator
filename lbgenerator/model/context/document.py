@@ -1,16 +1,17 @@
 
-from . import CustomContextFactory
-from ..index import Index
-from .. import document_entity
-from .. import file_entity
+import datetime
+import threading
 from ...lib import utils
-from liblightbase.lbdoc.doctree import DocumentTree
-from sqlalchemy.orm.state import InstanceState
-from sqlalchemy.util import KeyedTuple
+from ..index import Index
+from .. import file_entity
+from sqlalchemy import and_
 from sqlalchemy import update
 from sqlalchemy import delete
-from sqlalchemy import and_
-import datetime
+from .. import document_entity
+from . import CustomContextFactory
+from sqlalchemy.util import KeyedTuple
+from sqlalchemy.orm.state import InstanceState
+from liblightbase.lbdoc.doctree import DocumentTree
 
 class DocumentContextFactory(CustomContextFactory):
 
@@ -68,13 +69,38 @@ class DocumentContextFactory(CustomContextFactory):
         """
         member = self.entity(**data)
         self.session.add(member)
-        data = self.index.create(data)
         self.create_files(member, data['__files__'])
         for name in data:
             setattr(member, name, data[name])
         self.session.commit()
         self.session.close()
+
+        t = threading.Thread(
+            target=self.create_async_member,
+            args=(data, ))
+        t.start()
         return member
+
+    def create_async_member(self, data):
+        """ 
+        Called as a thread. This method will update dt_idx in case of
+        success while asyncronous indexing.
+        """
+        ok, data = self.index.create(data)
+        if ok:
+            document = data['document']
+            dt_idx = data['dt_idx']
+            id_doc = data['id_doc']
+            data.clear()
+            data['document'] = document
+            data['dt_idx'] = dt_idx
+            stmt = update(self.entity.__table__).where(
+                self.entity.__table__.c.id_doc == id_doc)\
+                .values(**data)
+            self.session.begin()
+            self.session.execute(stmt)
+            self.session.commit()
+            self.session.close()
 
     def update_member(self, member, data, index=True):
         """ 
