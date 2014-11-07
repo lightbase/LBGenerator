@@ -43,26 +43,21 @@ class BaseCustomView(CustomView):
         """
         base = self.request.matchdict['base']
         PATH = self.request.matchdict['column'].split('/')
-        column = PATH.pop(0)
+        base = self.context.get_base()
+        value = base.asdict
 
-        member = self.context.get_member(base)
-        if member is None:
-            raise HTTPNotFound()
-
-        if type(member) is list: member = member[0]
-        try: value = getattr(member, column)
-        except: raise Exception('Could not find column %s' % column)
-
-        try: value = utils.json2object(value)
-        except: pass
-
-        if PATH:
-            for path_name in PATH:
-                try: path_name = int(path_name)
-                except: pass
-                try: value = value[path_name]
-                except:
-                    raise Exception('Invalid attribute "%s"' % path_name)
+        for path_name in PATH:
+            try: path_name = int(path_name)
+            except: pass
+            try:
+                if isinstance(value, list) and isinstance(path_name, int):
+                    value = value[path_name]
+                elif path_name in value:
+                    value = value[path_name]
+                else:
+                    value = base.get_struct(path_name).asdict
+            except Exception as e:
+                raise Exception(e)
 
         value = utils.object2json(value)
         return Response(value, content_type='application/json')

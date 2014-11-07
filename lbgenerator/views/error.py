@@ -17,6 +17,10 @@ class JsonErrorMessage():
             'status': self.code,
             'type': self.request.exc_info[0].__name__,
             'error_message': self._error_message,
+            #'traceback': traceback.format_exception(
+            #    self.request.exc_info[0],
+            #    self.request.exc_info[1],
+            #    self.request.exc_info[2]),
             'request':{
                 'client_addr': self.request.client_addr,
                 'user_agent': self.request.user_agent,
