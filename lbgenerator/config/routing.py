@@ -27,11 +27,21 @@ def make_routes(config):
         for view_kw in views:
             config.add_view(view=view_class, route_name=route_name, **view_kw)
 
+    from ..views.index_error import IndexErrorCustomView
+    from ..model.context.index_error import IndexErrorContextFactory
+
+
+    config.add_restful_routes('_index_error', IndexErrorContextFactory, view=IndexErrorCustomView)
+    add_custom_routes('index_error', '_index_error', IndexErrorContextFactory, IndexErrorCustomView, [
+        {'attr': 'delete_collection', 'request_method': 'DELETE'},
+    ])
+
     from ..views.command import CommandCustomView
     config.add_route('command', '_command/{command}')
     config.add_view(view=CommandCustomView, route_name='command',
         **{'attr': 'execute', 'request_method': 'POST'}
     )
+
 
     from ..views.es import ESCustomView
     from ..model.context.es import ESContextFactory
@@ -42,7 +52,6 @@ def make_routes(config):
 
     config.add_directive('add_restful_base_routes', add_restful_base_routes)
     config.add_static_view('static', 'static', cache_max_age=3600)
-
 
     from ..views.docs import DocsCustomView
     from ..model.context.docs import DocsContextFactory
@@ -216,7 +225,8 @@ def add_restful_routes(self, name, factory, view=RESTfulView,
 
     subs = dict(
         name=name,
-        slug=name.replace('_', '-'),
+        #slug=name.replace('_', '-'),
+        slug=name,
         #id='{id:\d+}',
         id='{id}',
         renderer='{renderer}')

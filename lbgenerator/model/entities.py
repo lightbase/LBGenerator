@@ -273,3 +273,30 @@ class LB_Users(Base):
     dt_cad = Column(DateTime, nullable=False)
     in_active = Column(Boolean, nullable=False)
 
+class LBIndexError(Base):
+    """
+    Documents Error Object-Relational Mapping. 
+    """
+    __tablename__ = 'lb_index_error'
+
+    # @column id_error: The primary key for this table and uniquely identify
+    # each error.
+    id_error = Column(Integer, Sequence('lb_index_error_seq'), primary_key=True)
+
+    # @column name: The base name. Should accept values from lb_base.name 
+    base = Column(String, nullable=False)
+
+    # @column id_doc: The document identifier.
+    id_doc = Column(Integer, nullable=False)
+
+    # @column dt_error: The document creation date.
+    dt_error = Column(DateTime, nullable=False)
+
+    # @column msg_error: The produced error message.
+    msg_error = Column(String)
+
+# Table factory are the default columns used when query object by API.
+LBIndexError.__table__.__factory__ = LBIndexError.__table__.c
+
+
+

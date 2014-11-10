@@ -1,14 +1,16 @@
 
-import datetime
-import threading
+from ... import config
 from ...lib import utils
 from ..index import Index
 from .. import file_entity
 from sqlalchemy import and_
+from sqlalchemy import insert
 from sqlalchemy import update
 from sqlalchemy import delete
 from .. import document_entity
 from . import CustomContextFactory
+from ..entities import LBIndexError
+from multiprocessing import Process
 from sqlalchemy.util import KeyedTuple
 from sqlalchemy.orm.state import InstanceState
 from liblightbase.lbdoc.doctree import DocumentTree
@@ -74,33 +76,30 @@ class DocumentContextFactory(CustomContextFactory):
             setattr(member, name, data[name])
         self.session.commit()
         self.session.close()
-
-        t = threading.Thread(
-            target=self.create_async_member,
-            args=(data, ))
-        t.start()
+        if self.index.is_indexable:
+            Process(target=self.async_create_member,
+                args=(data,)).start()
         return member
 
-    def create_async_member(self, data):
+    def async_create_member(self, data):
         """ 
-        Called as a thread. This method will update dt_idx in case of
+        Called as a process. This method will update dt_idx in case of
         success while asyncronous indexing.
         """
         ok, data = self.index.create(data)
         if ok:
-            document = data['document']
-            dt_idx = data['dt_idx']
-            id_doc = data['id_doc']
+            engine = config.create_new_engine()
+            datacopy = data.copy()
             data.clear()
-            data['document'] = document
-            data['dt_idx'] = dt_idx
+            data['document'] = datacopy['document']
+            data['dt_idx'] = datacopy['dt_idx']
             stmt = update(self.entity.__table__).where(
-                self.entity.__table__.c.id_doc == id_doc)\
+                self.entity.__table__.c.id_doc == datacopy['id_doc'])\
                 .values(**data)
-            self.session.begin()
-            self.session.execute(stmt)
-            self.session.commit()
-            self.session.close()
+            conn = engine.connect()
+            try: conn.execute(stmt)
+            except: pass
+            conn.close()
 
     def update_member(self, member, data, index=True):
         """ 
@@ -112,8 +111,6 @@ class DocumentContextFactory(CustomContextFactory):
         @param index: Flag that indicates the need of indexing the
         document. 
         """
-        if index:
-            data = self.index.update(member.id_doc, data)
         self.delete_files(member, data['__files__'])
         self.create_files(member, data['__files__'])
         data.pop('__files__')
@@ -123,7 +120,32 @@ class DocumentContextFactory(CustomContextFactory):
         self.session.execute(stmt)
         self.session.commit()
         self.session.close()
+        if index and self.index.is_indexable:
+            Process(target=self.async_update_member,
+                args=(data['id_doc'], data)).start()
         return member
+
+    def async_update_member(self, id, data):
+        """ 
+        Called as a process. This method will update dt_idx in case of
+        success while asyncronous indexing.
+        """
+        engine = config.create_new_engine()
+        session = config.create_scoped_session(engine)
+        ok, data = self.index.update(id, data, session)
+        if ok:
+            datacopy = data.copy()
+            data.clear()
+            data['document'] = datacopy['document']
+            data['dt_idx'] = datacopy['dt_idx']
+            stmt = update(self.entity.__table__).where(
+                self.entity.__table__.c.id_doc == datacopy['id_doc'])\
+                .values(**data)
+            session.begin()
+            session.execute(stmt)
+            try: session.commit()
+            except: pass
+        session.close()
 
     def delete_member(self, id):
         """ 
@@ -135,74 +157,48 @@ class DocumentContextFactory(CustomContextFactory):
         delete it's index and document. In case of failure, will SET all 
         columns to NULL and clear document, leaving only it's metadata.
         """
-        member = self.get_member(id, close_sess=False) # Query member.
-        if member is None:
-            return None
+        stmt1 = delete(self.entity.__table__).where(
+            self.entity.__table__.c.id_doc == id)
+        stmt2 = delete(self.file_entity.__table__).where(
+            self.file_entity.__table__.c.id_doc == id)
 
-        if member.dt_del is not None:
-            self.session.delete(member) # DELETE document.
-
-        elif self.index.delete(id): # Try to remove index.
-            self.session.delete(member) # DELETE document.
-
-        else:
-            member = self.clear_del_data(member) # Clear document.
-
-        self.delete_files_by_document(id) # DELETE referenced files.
-
+        self.session.execute(stmt1)
+        self.session.execute(stmt2)
         self.session.commit() # COMMIT transaction.
         self.session.close() # Close session.
 
-        return member
+        if self.index.is_indexable:
+            Process(target=self.async_delete_member,
+                args=(id, )).start()
+        return True
 
-    def clear_del_data(self, member):
-        """ 
-        @param member: LBDoc_<base> object (mapped ORM entity).
+    def async_delete_member(self, id):
+        error, data = self.index.delete(id)
+        if error:
+            engine = config.create_new_engine()
+            stmt = insert(LBIndexError.__table__).values(**data)
+            conn = engine.connect()
+            try: conn.execute(stmt)
+            except: pass
+            conn.close()
 
-        This method should be called when index deletion was not possible.
-        Will SET NULL to all columns leaving only document's metatada, and
-        `dt_del`. 
-        """
-        document = utils.json2object(member.document)
-        dt_del = datetime.datetime.now()
-        document['_metadata']['dt_del'] = dt_del
-        cleared_document = {'_metadata':document['_metadata']}
-
-        for attr in member.__dict__:
-            static_attrs = isinstance(member.__dict__[attr], InstanceState)\
-            or attr in document['_metadata'].keys()
-            if not static_attrs:
-                setattr(member, attr, None)
-        setattr(member, 'dt_del', dt_del)
-        setattr(member, 'document', cleared_document)
-        return member
-
-    def delete_files_by_document(self, id):
-        """ All docs are relationated with a document.
-            This method deletes all docs referenced by param: id
-        """
-        self.session.query(self.file_entity)\
-            .filter_by(id_doc = id).delete()
-
-    def get_full_document(self, document, close_session=True):
+    def get_full_document(self, document, session=None):
         """ This method will return the document with files texts
             within it.
         """
+        if session is None:
+            session = self.session
         id = document['_metadata']['id_doc']
         file_cols = (
            self.file_entity.id_file,
            self.file_entity.filetext,
-           self.file_entity.dt_ext_text
-        )
-        dbfiles = self.session.query(*file_cols).filter_by(id_doc= id).all()
-        if close_session:
-            self.session.close()
+           self.file_entity.dt_ext_text)
+        dbfiles = session.query(*file_cols).filter_by(id_doc= id).all()
+        session.close()
         files = { }
         if dbfiles:
             for dbfile in dbfiles:
-                files[dbfile.id_file] = dict(
-                    filetext=dbfile.filetext,
-                )
+                files[dbfile.id_file] = dict(filetext=dbfile.filetext)
         return self.put_doc_text(document, files)
 
     def put_doc_text(self, document, files):

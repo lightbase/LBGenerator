@@ -1,8 +1,9 @@
 
-from ..lib import utils
-from .. import config
-import requests, datetime
 import copy
+from .. import config
+from ..lib import utils
+import requests, datetime
+from requests.exceptions import Timeout
 
 class CreatedIndex():
     """ Represents a successfull response when creating an index.
@@ -20,8 +21,7 @@ class DeletedIndex():
     """ Represents a successfull response when deleting an index.
     """
     def __init__(self, found, _index, _type, _id, _version):
-        if found == False:
-            raise Exception("Index not deleted")
+        pass
 
 class DeletedRoot():
     """ Represents a successfull response when deleting root index.
@@ -92,23 +92,25 @@ class Index():
             data['dt_idx'] = datetime.datetime.now()
         else:
             data['dt_idx'] = None
+            return False, data
 
         self.sync_metadata(data) # Syncronize document metadata.
         return True, data
 
-    def update(self, id, data):
+    def update(self, id, data, session):
         """ Updates index 
         """
         if not self.is_indexable:
-            return data
+            return False, data
 
         document_copy = copy.deepcopy(data['document'])
 
         # Get full document
-        full_document = self.get_full_document(document_copy, close_session=False)
+        full_document = self.get_full_document(document_copy, session)
 
         # IMPORTANT: This time we dont have ensure_ascii=False
         document = utils.object2json(full_document, ensure_ascii=True)
+        url = self.to_url(self.INDEX_URL, str(data['id_doc']))
 
         try:
             response = requests.put(url,
@@ -123,23 +125,42 @@ class Index():
             data['dt_idx'] = None
 
         self.sync_metadata(data) # Syncronize document metadata.
-        return data
+        return True, data
 
     def delete(self, id):
         """ Deletes index 
         """
         if not self.is_indexable:
-            return True
+            # index does not exist, error = false
+            return False, None
 
         url = self.to_url(self.INDEX_URL, str(id))
-        try: response = requests.delete(url, timeout=self.TIMEOUT).json()
-        except : response = None
+
+        try:
+            response = requests.delete(url, timeout=self.TIMEOUT)
+        except Exception as e:
+            response = None
+            msg_error = str(e)
+        else:
+            msg_error = response.text
+
+        try:
+            response = response.json()
+        except Exception as e:
+            response = None
 
         if self.is_deleted(response):
-            response = True
+            # index is deleted, error = false 
+            return False, None
         else:
-            response = False
-        return response
+            # index is not deleted, error = true 
+            data = dict(
+                base = self.base.metadata.name,
+                id_doc = id,
+                dt_error = datetime.datetime.now(),
+                msg_error = msg_error)
+
+            return True, data
 
     def delete_root(self):
         """ Deletes root type

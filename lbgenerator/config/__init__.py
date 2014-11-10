@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 # config
 
-from sqlalchemy.engine import create_engine
 from sqlalchemy.schema import MetaData
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import scoped_session
+from sqlalchemy.engine import create_engine
 from liblightbase.lbutils import object2json
 from liblightbase.lbutils import json2object
 
@@ -48,5 +50,17 @@ def set_globals(**settings):
     AUTH_INCLUDE_IP = bool(int(settings['auth.include_ip']))
     ADMIN_USER = settings['auth.admin_user']
     ADMIN_PASSWD = settings['auth.admin_passwd']
+
+def create_new_engine():
+    return create_engine(globals()['DB_URL'],
+        pool_size=globals()['POOL_SIZE'],
+        max_overflow=globals()['MAX_OVERFLOW'],
+        json_serializer=object2json,
+        json_deserializer=json2object)
+
+def create_scoped_session(engine):
+    return scoped_session(
+        sessionmaker(bind=engine,
+        autocommit=True))
 
 

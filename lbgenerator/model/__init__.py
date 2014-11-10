@@ -49,6 +49,10 @@ def make_restful_app():
     USER = UserMetaBase()
     USER.create_base(begin_session)
 
+    Sequence('lb_index_error_seq').create(bind=config.ENGINE)
+    config.METADATA.create_all(bind=config.ENGINE,
+        tables=[LBIndexError.__table__])
+
 def base_next_id():
     """ Get next value from sequence """
 
