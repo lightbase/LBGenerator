@@ -1,3 +1,7 @@
+
+import socket
+import fcntl
+import struct
 from ..model import BASES
 from .. import config
 from pyramid.response import Response
@@ -12,10 +16,7 @@ class CommandCustomView():
     def execute(self):
 
         command = self.request.matchdict['command']
-        try:
-            return getattr(self, command)()
-        except:
-            raise Exception('Command Not Found')
+        return getattr(self, command)()
 
     def reset(self):
         BASES.bases = dict()
@@ -41,4 +42,15 @@ class CommandCustomView():
         return Response(config.DB_URL)
 
     def rest_url(self):
-        return Response(self.request.host_url)
+        return Response(get_ip_address(b'eth0'))
+
+
+def get_ip_address(ifname):
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    return socket.inet_ntoa(fcntl.ioctl(
+        s.fileno(),
+        0x8915,  # SIOCGIFADDR
+        struct.pack('256s', ifname[:15])
+    )[20:24])
+
+
