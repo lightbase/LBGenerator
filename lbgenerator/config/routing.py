@@ -48,6 +48,8 @@ def make_routes(config):
     add_custom_routes('elasticsearch', '{base}/es{path:.*}', ESContextFactory, ESCustomView, [
         {'attr': 'get_interface', 'request_method': 'GET'},
         {'attr': 'post_interface', 'request_method': 'POST'},
+        {'attr': 'delete_interface', 'request_method': 'DELETE'},
+
     ])
 
     config.add_directive('add_restful_base_routes', add_restful_base_routes)

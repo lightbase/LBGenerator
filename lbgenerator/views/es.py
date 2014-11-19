@@ -113,3 +113,12 @@ class ESCustomView(CustomView):
             return doc_view.render_to_response(collection)
 
         return Response(response.text, content_type='application/json')
+
+    def delete_interface(self):
+        params = dict(self.request.params)
+        url = self.context.get_base().metadata.idx_exp_url
+        path = self.request.matchdict['path']
+        if path:
+            url += path
+        response = requests.delete(url, params=params, data=self.request.body)
+        return Response(response.text, content_type='application/json')
