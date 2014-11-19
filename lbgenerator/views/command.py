@@ -1,5 +1,6 @@
 from ..model import BASES
 from pyramid.response import Response
+from liblightbase.lbutils import object2json
 
 class CommandCustomView():
 
@@ -24,6 +25,13 @@ class CommandCustomView():
 
     def version(self):
         import pkg_resources
-        v1 = pkg_resources.get_distribution('lbgenerator').version
-        v2 = pkg_resources.get_distribution('liblightbase').version
-        return Response('%s + %s' % (v1, v2))
+        lbg = pkg_resources.get_distribution('lbgenerator')
+        versions = { }
+        for requirement in lbg.requires():
+            try:
+                req_name = requirement.project_name
+                req_version = pkg_resources.get_distribution(req_name).version
+                versions[req_name] = req_version
+            except: pass
+        versions['lbgenerator'] = lbg.version
+        return Response(object2json(versions), content_type='application/json')
