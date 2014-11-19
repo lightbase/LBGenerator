@@ -21,3 +21,9 @@ class CommandCustomView():
 
     def base_mem(self):
         return Response(str(list(BASES.bases.keys())))
+
+    def version(self):
+        import pkg_resources
+        v1 = pkg_resources.get_distribution('lbgenerator').version
+        v2 = pkg_resources.get_distribution('liblightbase').version
+        return Response('%s + %s' % (v1, v2))
