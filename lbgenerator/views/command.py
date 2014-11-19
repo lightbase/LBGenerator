@@ -1,4 +1,5 @@
 from ..model import BASES
+from .. import config
 from pyramid.response import Response
 from liblightbase.lbutils import object2json
 
@@ -35,3 +36,9 @@ class CommandCustomView():
             except: pass
         versions['lbgenerator'] = lbg.version
         return Response(object2json(versions), content_type='application/json')
+
+    def db_url(self):
+        return Response(config.DB_URL)
+
+    def rest_url(self):
+        return Response(self.request.host_url)
