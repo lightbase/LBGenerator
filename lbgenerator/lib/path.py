@@ -37,6 +37,11 @@ class DeleteOnPathFunctions(PathFunctions):
             return True
         return False
 
+    def _attr_equals(self, match):
+        if match.value.get(self._args[0]) == self._args[1]:
+            return True
+        return False
+
 def get_path_fn(path, mode, fn=None, args=[]):
     """
     Path Operation Examples:
