@@ -91,7 +91,7 @@ class CustomContextFactory(SQLAlchemyORMContext):
                 for i in compiler.order_by[o]: q = q.order_by(order(i))
 
         if compiler.distinct:
-            q = q.distinct("document->>'%s'" % compiler.distinct)
+            q = q.distinct(compiler.distinct)
 
         # Set total count for pagination 
         self.total_count = q.count()
