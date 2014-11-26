@@ -38,8 +38,10 @@ class DeleteOnPathFunctions(PathFunctions):
         return False
 
     def _attr_equals(self, match):
-        if match.value.get(self._args[0]) == self._args[1]:
-            return True
+        try:
+            if match.value[self._args[0]] == self._args[1]:
+                return True
+        except: pass
         return False
 
 def get_path_fn(path, mode, fn=None, args=[]):
