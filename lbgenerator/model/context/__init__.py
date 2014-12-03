@@ -77,6 +77,9 @@ class CustomContextFactory(SQLAlchemyORMContext):
         compiler = JsonQuery(self, **query)
 
         # Build query as SQL 
+        if self.request.method == 'DELETE':
+            self.entity.__table__.__factory__ = [self.entity.__table__.c.id_doc]
+
         results = self.session.query(*self.entity.__table__.__factory__)
 
         # Query results and close session
