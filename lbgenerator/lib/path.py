@@ -28,7 +28,7 @@ class UpdateOnPathFunctions(PathFunctions):
         return (False, None)
 
     def _starts_with(self, match):
-        if match.value.startswith(self.args[0])
+        if match.value.startswith(self._args[0]):
             return (True, self._args[1])
         return (False, None)
 
