@@ -27,6 +27,11 @@ class UpdateOnPathFunctions(PathFunctions):
             return (True, self._args[1])
         return (False, None)
 
+    def _starts_with(self, match):
+        if match.value.startswith(self.args[0])
+            return (True, self._args[1])
+        return (False, None)
+
 class DeleteOnPathFunctions(PathFunctions):
 
     def _standard(self, match):
