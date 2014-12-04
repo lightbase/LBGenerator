@@ -33,7 +33,7 @@ class UpdateOnPathFunctions(PathFunctions):
         return (False, None)
 
     def _replace(self, match):
-        new_value =  match.value.replace(*self.args)
+        new_value =  match.value.replace(*self._args)
         return (True, new_value)
 
 
