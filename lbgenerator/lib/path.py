@@ -32,6 +32,12 @@ class UpdateOnPathFunctions(PathFunctions):
             return (True, self._args[1])
         return (False, None)
 
+    def _replace(self, match):
+        new_value =  match.value.replace(*self._args)
+        return (True, new_value)
+
+
+
 class DeleteOnPathFunctions(PathFunctions):
 
     def _standard(self, match):
