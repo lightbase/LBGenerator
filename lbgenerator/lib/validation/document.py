@@ -12,6 +12,7 @@ def validate_document_data(cls, request, *args):
     valid_fields = (
         'value',
         'dt_idx',
+        'validate'
         )
 
     data = utils.filter_params(params, valid_fields)
@@ -24,6 +25,11 @@ def validate_document_data(cls, request, *args):
         return validate_put_data(cls, data, member)
 
 def validate_post_data(cls, data):
+
+    validate = True
+
+    if 'validate' in data and data['validate'] == '0':
+        validate = False
 
     if 'value' in data:
         # Get Base object
@@ -43,7 +49,7 @@ def validate_post_data(cls, data):
         reldata, # Relational data.
         files, # All existent files within document.
         cfiles # All non-existent (will be created) files within document.
-        ) = base.validate(document, _metadata)
+        ) = base.validate(document, _metadata, validate)
 
         # Normlize relational data
         [fix_matrix(reldata[field]) for field in reldata if isinstance(reldata[field], Matrix)]
