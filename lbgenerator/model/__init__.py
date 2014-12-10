@@ -63,7 +63,7 @@ def base_next_id():
     session.close()
     return _next
 
-def document_entity(base_name, **custom_cols):
+def document_entity(base_name, next_id_fn=None, **custom_cols):
     """
     @param base_name: The base name to build a table object
     @return: Mapped entity, can be used for orm operations.
@@ -84,7 +84,10 @@ def document_entity(base_name, **custom_cols):
 
     class DocumentMappedEntity(LBDocument):
         __table__ =  _table
-        next_id = _next_id
+        if next_id_fn is not None:
+            next_id = next_id_fn
+        else:
+            next_id = _next_id
 
     DocumentMappedEntity.__name__ = 'LBDoc_%s' %(base_name)
     mapper(DocumentMappedEntity, _table)

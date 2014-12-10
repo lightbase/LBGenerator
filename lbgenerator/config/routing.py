@@ -22,6 +22,14 @@ def make_routes(config):
     from ..views.file import FileCustomView
     from ..model.context.file import FileContextFactory
 
+    from ..views.migration import _import, _export
+
+    config.add_route('importation', '{base}/_import')
+    config.add_view(view=_import, route_name='importation')
+
+    config.add_route('exportation', '{base}/_export')
+    config.add_view(view=_export, route_name='exportation')
+
     def add_custom_routes(route_name, pattern, factory_class, view_class, views):
         config.add_route(route_name, pattern, factory=factory_class)
         for view_kw in views:

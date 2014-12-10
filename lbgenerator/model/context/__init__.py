@@ -1,18 +1,18 @@
 
-from ... import model
-from ...model import begin_session
-from ...lib import utils
-from ...lib.query import JsonQuery
-from pyramid.compat import string_types
-from pyramid_restler.model import SQLAlchemyORMContext
-from pyramid.security import Allow
-from pyramid.security import Everyone
-from pyramid.security import Deny
-from pyramid.security import ALL_PERMISSIONS
-from pyramid.security import Authenticated
 import sqlalchemy
-from sqlalchemy.util import KeyedTuple
+from ... import model
+from ...lib import utils
 from sqlalchemy import asc, desc
+from pyramid.security import Deny
+from pyramid.security import Allow
+from ...lib.query import JsonQuery
+from ...model import begin_session
+from pyramid.security import Everyone
+from sqlalchemy.util import KeyedTuple
+from pyramid.compat import string_types
+from pyramid.security import Authenticated
+from pyramid.security import ALL_PERMISSIONS
+from pyramid_restler.model import SQLAlchemyORMContext
 
 class CustomContextFactory(SQLAlchemyORMContext):
 
@@ -37,6 +37,8 @@ class CustomContextFactory(SQLAlchemyORMContext):
     def session_factory(self):
         """ Connect to database and begin transaction
         """
+        if getattr(self, 'overwrite_session', False) is True:
+            return self.__session__
         return begin_session()
 
     def get_base(self):
@@ -97,7 +99,8 @@ class CustomContextFactory(SQLAlchemyORMContext):
             q = q.distinct(compiler.distinct)
 
         # Set total count for pagination 
-        self.total_count = q.count()
+        if not self.request.params.get('result_count') in ('false', '0'):
+            self.total_count = q.count()
 
         if not 'limit' in query:
             compiler.limit = 10
@@ -120,13 +123,13 @@ class CustomContextFactory(SQLAlchemyORMContext):
 
         limit = 0 if self.default_limit is None else self.default_limit
         offset = 0 if self.default_offset is None else self.default_offset
-
-        return dict(
+        wrapped = dict(
             results = obj,
-            result_count = self.total_count,
             limit = limit,
-            offset = offset
-        )
+            offset = offset)
+        if hasattr(self, 'total_count'):
+            wrapped.update(result_count = self.total_count)
+        return wrapped
 
     def get_member_id_as_string(self, member):
         id = self.get_member_id(member)

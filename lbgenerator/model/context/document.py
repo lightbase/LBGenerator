@@ -20,14 +20,16 @@ class DocumentContextFactory(CustomContextFactory):
     """ Document Factory Methods.
     """
 
-    def __init__(self, request):
+    def __init__(self, request, next_id_fn=None):
         super(DocumentContextFactory, self).__init__(request)
 
         # liblightbase.lbbase.Base object
         base = self.get_base()
 
         # LBDoc_<base> object (mapped ORM entity).
-        self.entity = document_entity(self.base_name, **base.relational_fields)
+        self.entity = document_entity(self.base_name,
+            next_id_fn=next_id_fn,
+            **base.relational_fields)
 
         # LBFile_<base> object (mapped ORM entity).
         self.file_entity = file_entity(self.base_name)
