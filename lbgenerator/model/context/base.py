@@ -122,9 +122,7 @@ class BaseContextFactory(CustomContextFactory):
         if not isinstance(member, KeyedTuple):
             member = self.member2KeyedTuple(member)
 
-        dict_member = utils.json2object(
-            member._asdict()[self.entity.__table__.__factory__[1].name]
-        )
+        dict_member = utils.json2object(member._asdict()['struct'])
 
         fields = getattr(self,'_query', {}).get('select')
         if fields and not '*' in fields:

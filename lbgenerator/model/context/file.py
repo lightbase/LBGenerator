@@ -61,12 +61,7 @@ class FileContextFactory(CustomContextFactory):
             fields = self.default_fields
         if not isinstance(value, Iterable):
             value = [value]
-        # Need to filter files that don't have a doc associated yet.
-        obj = [self.member_to_dict(m, fields) for m in value\
-            if m.id_doc is not None]
-        # total count without unliked files
-        if hasattr(self, 'total_count'):
-            self.total_count -= (len(value) - len(obj))
+        obj = [self.member_to_dict(m, fields) for m in value]
         if wrap:
             obj = self.wrap_json_obj(obj)
         return obj

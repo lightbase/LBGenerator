@@ -230,8 +230,7 @@ class DocumentContextFactory(CustomContextFactory):
             member = self.member2KeyedTuple(member)
 
         # Get document as dictionary object.
-        factory = self.entity.__table__.__factory__[1].name
-        dict_member = member._asdict()[factory]
+        dict_member = member._asdict()['document']
 
         fields = getattr(self,'_query', {}).get('select')
         if fields and not '*' in fields:

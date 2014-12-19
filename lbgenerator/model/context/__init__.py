@@ -10,9 +10,11 @@ from ...model import begin_session
 from pyramid.security import Everyone
 from sqlalchemy.util import KeyedTuple
 from pyramid.compat import string_types
+from sqlalchemy.sql.expression import func
 from pyramid.security import Authenticated
 from pyramid.security import ALL_PERMISSIONS
 from pyramid_restler.model import SQLAlchemyORMContext
+
 
 class CustomContextFactory(SQLAlchemyORMContext):
 
@@ -82,6 +84,13 @@ class CustomContextFactory(SQLAlchemyORMContext):
         if self.request.method == 'DELETE':
             self.entity.__table__.__factory__ = [self.entity.__table__.c.id_doc]
 
+        self.total_count = None
+        if not self.request.params.get('result_count') in ('false', '0'):
+            self.total_count = 0
+            self.count_over = func.count().over()
+            self.entity.__table__.__factory__ = [
+                self.count_over] + self.entity.__table__.__factory__
+
         results = self.session.query(*self.entity.__table__.__factory__)
 
         # Query results and close session
@@ -90,6 +99,9 @@ class CustomContextFactory(SQLAlchemyORMContext):
         # Filter results
         q = compiler.filter(results)
 
+        if self.entity.__table__.name.startswith('lb_file_'):
+            q = q.filter('id_doc is not null')
+
         if compiler.order_by is not None:
             for o in compiler.order_by:
                 order = getattr(sqlalchemy, o)
@@ -97,10 +109,6 @@ class CustomContextFactory(SQLAlchemyORMContext):
 
         if compiler.distinct:
             q = q.distinct(compiler.distinct)
-
-        # Set total count for pagination 
-        if not self.request.params.get('result_count') in ('false', '0'):
-            self.total_count = q.count()
 
         if not 'limit' in query:
             compiler.limit = 10
@@ -114,10 +122,17 @@ class CustomContextFactory(SQLAlchemyORMContext):
         q = q.limit(compiler.limit)
         q = q.offset(compiler.offset)
 
+        feedback = q.all()
+
+        if len(feedback) > 0 and hasattr(self, 'count_over'):
+            # The count must be the first column on each row
+            self.total_count = int(feedback[0][0])
+
         # Return Results
         if query.get('select') == [ ] and self.request.method == 'GET':
             return [ ]
-        return q.all()
+
+        return feedback
 
     def wrap_json_obj(self, obj):
 
