@@ -49,7 +49,16 @@ class DeleteOnPathFunctions(PathFunctions):
         return False
 
     def _attr_equals(self, match):
-        if len(self._args) is 3 and self._args[2] is True:
+        """
+        args: ["field_in_group", "value_to_compare", boolean]
+        if boolean is true, will delete path if "field_in_group"
+        exists or matches "value".
+        if bolean is not true will delete path only if "field_in_group"
+        value exists and matches "value".
+        """
+
+        if len(self._args) is 3 and (self._args[2] == True or\
+        self._args[2] == 'true'):
             if not self._args[0] in list(match.value.keys()):
                 return True
             try:
