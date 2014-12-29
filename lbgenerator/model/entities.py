@@ -296,7 +296,7 @@ class LBIndexError(Base):
     msg_error = Column(String)
 
 # Table factory are the default columns used when query object by API.
-LBIndexError.__table__.__factory__ = LBIndexError.__table__.c
+LBIndexError.__table__.__factory__ = list(LBIndexError.__table__.c)
 
 
 

@@ -208,6 +208,7 @@ class DocumentCustomView(CustomView):
         objects, and update each path to the new object. Return count of
         successes and failures.
         """
+        self.context.result_count = False
         collection = self.get_collection(render_to_response=False)
         success, failure = 0, 0
         path = self.request.params['path']
@@ -246,6 +247,7 @@ class DocumentCustomView(CustomView):
         each path (deleting the respective path). Return count of successes and 
         failures.
         """
+        self.context.result_count = False
         collection = self.get_collection(render_to_response=False)
         success, failure = 0, 0
 

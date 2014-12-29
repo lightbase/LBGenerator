@@ -81,11 +81,13 @@ class CustomContextFactory(SQLAlchemyORMContext):
         compiler = JsonQuery(self, **query)
 
         # Build query as SQL 
-        if self.request.method == 'DELETE':
+        if self.request.method == 'DELETE' \
+        and self.entity.__table__.name.startswith('lb_doc_'):
             self.entity.__table__.__factory__ = [self.entity.__table__.c.id_doc]
 
         self.total_count = None
-        if not self.request.params.get('result_count') in ('false', '0'):
+        if not self.request.params.get('result_count') in ('false', '0') \
+        and getattr(self, 'result_count', True) is not False:
             self.total_count = 0
             self.count_over = func.count().over()
             self.entity.__table__.__factory__ = [
