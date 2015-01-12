@@ -1,0 +1,1 @@
+-e git+http://git.lightbase.cc/liblightbase.git#egg=liblightbase
