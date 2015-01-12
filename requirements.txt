@@ -1,4 +1,4 @@
--e git+http://git.lightbase.cc/liblightbase.git#egg=liblightbase
+-e git+http://github.com/lightbase/liblightbase.git#egg=liblightbase
 pyramid
 pyramid_restler
 sqlalchemy
