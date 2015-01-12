@@ -1,1 +1,9 @@
 -e git+http://git.lightbase.cc/liblightbase.git#egg=liblightbase
+pyramid
+liblightbase
+pyramid_restler
+sqlalchemy
+psycopg2
+voluptuous
+requests
+alembic
