@@ -28,10 +28,14 @@ def set_globals(**settings):
     POOL_SIZE = os.environ.get('SQLALCHEMY_POOL_SIZE', None)
     if POOL_SIZE is None:
         POOL_SIZE = int(settings['sqlalchemy.pool_size'])
+    else:
+        POOL_SIZE = int(POOL_SIZE)
 
     MAX_OVERFLOW = os.environ.get('SQLALCHEMY_MAX_OVERFLOW', None)
     if MAX_OVERFLOW is None:
         MAX_OVERFLOW = int(settings['sqlalchemy.max_overflow'])
+    else:
+        MAX_OVERFLOW = int(MAX_OVERFLOW)
 
     TMP_DIR = os.environ.get('STORAGE_TMP_DIR', None)
     if TMP_DIR is None:
@@ -45,6 +49,8 @@ def set_globals(**settings):
     REQUESTS_TIMEOUT = os.environ.get('REQUESTS_TIMEOUT', None)
     if REQUESTS_TIMEOUT is None:
         REQUESTS_TIMEOUT = int(settings['requests.timeout'])
+    else:
+        REQUESTS_TIMEOUT = int(REQUESTS_TIMEOUT)
 
     global ENGINE
     global METADATA
@@ -71,10 +77,14 @@ def set_globals(**settings):
     AUTH_ENABLED = os.environ.get('AUTH_ENABLED', None)
     if AUTH_ENABLED is None:
         AUTH_ENABLED = bool(int(settings['auth.enabled']))
+    else:
+        AUTH_ENABLED = bool(int(AUTH_ENABLED))
 
     AUTH_INCLUDE_IP = os.environ.get('AUTH_INCLUDE_IP', None)
     if AUTH_INCLUDE_IP is None:
         AUTH_INCLUDE_IP = bool(int(settings['auth.include_ip']))
+    else:
+        AUTH_INCLUDE_IP = bool(int(AUTH_INCLUDE_IP))
 
     ADMIN_USER = os.environ.get('AUTH_ADMIN_USER', None)
     if ADMIN_USER is None:
