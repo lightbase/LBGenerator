@@ -6,3 +6,4 @@ psycopg2
 voluptuous
 requests
 alembic
+waitress
