@@ -20,7 +20,7 @@ def set_globals(**settings):
     global REQUESTS_TIMEOUT
 
     # Add configuration as environment vars
-    DB_URL = os.environ.get('SQLALCHEMY_URL', None)
+    DB_URL = os.environ.get('DATABASE_URL', None)
     if DB_URL is None:
         DB_URL = settings['sqlalchemy.url']
     DB_NAME = DB_URL.split('/')[-1]
