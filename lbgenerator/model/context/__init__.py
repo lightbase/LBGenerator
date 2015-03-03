@@ -100,7 +100,8 @@ class CustomContextFactory(SQLAlchemyORMContext):
 
         # Impede a explosão infinita de cláusula over
         if factory is None:
-            results = self.session.query(self.entity.__table__.__factory__)
+            log.debug("Teste sem factory definido: \n%s", self.entity.__table__.__factory__)
+            results = self.session.query(*self.entity.__table__.__factory__)
         else:
             log.debug("Teste do query factory com explode de over: \n%s", factory)
             results = self.session.query(*factory)
