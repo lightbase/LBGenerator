@@ -66,3 +66,7 @@ class FileContextFactory(CustomContextFactory):
             obj = self.wrap_json_obj(obj)
         return obj
 
+    def get_raw_member(self, id):
+        return self.session.query(self.entity).filter(
+            self.entity.__table__.c.id_file == id
+        ).first()
