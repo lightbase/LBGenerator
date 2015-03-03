@@ -1,5 +1,7 @@
-
+#!/bin/env python
+# -*- coding: utf-8 -*-
 import sqlalchemy
+import logging
 from ... import model
 from ...lib import utils
 from sqlalchemy import asc, desc
@@ -15,6 +17,8 @@ from pyramid.security import Authenticated
 from pyramid.security import ALL_PERMISSIONS
 from pyramid_restler.model import SQLAlchemyORMContext
 
+
+log = logging.getLogger()
 
 class CustomContextFactory(SQLAlchemyORMContext):
 
@@ -82,18 +86,23 @@ class CustomContextFactory(SQLAlchemyORMContext):
 
         # Build query as SQL 
         if self.request.method == 'DELETE' \
-        and self.entity.__table__.name.startswith('lb_doc_'):
+                and self.entity.__table__.name.startswith('lb_doc_'):
             self.entity.__table__.__factory__ = [self.entity.__table__.c.id_doc]
 
         self.total_count = None
+        factory = None
         if not self.request.params.get('result_count') in ('false', '0') \
-        and getattr(self, 'result_count', True) is not False:
+                and getattr(self, 'result_count', True) is not False:
             self.total_count = 0
-            self.count_over = func.count().over()
-            self.entity.__table__.__factory__ = [
-                self.count_over] + self.entity.__table__.__factory__
+            count_over = func.count().over()
+            factory = [count_over] + self.entity.__table__.__factory__
 
-        results = self.session.query(*self.entity.__table__.__factory__)
+        # Impede a explosão infinita de cláusula over
+        if factory is None:
+            results = self.session.query(self.entity.__table__.__factory__)
+        else:
+            log.debug("Teste do query factory com explode de over: \n%s", factory)
+            results = self.session.query(*factory)
 
         # Query results and close session
         self.session.close()
