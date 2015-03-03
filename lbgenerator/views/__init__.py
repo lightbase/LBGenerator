@@ -1,9 +1,11 @@
-
+#!/bin/env python
+# -*- coding: utf-8 -*-
 from ..lib import utils
 from pyramid_restler.view import RESTfulView
 from pyramid.response import Response
 from pyramid.exceptions import HTTPNotFound
 from pyramid.httpexceptions import HTTPFound
+
 
 def response_callback(request, response):
     #response.headerlist.append(('x', 'y'))
@@ -15,6 +17,7 @@ def response_callback(request, response):
 
     if 'callback' in request.params:
         response.text = request.params['callback'] + '(' + response.text + ')'
+
 
 class CustomView(RESTfulView):
 

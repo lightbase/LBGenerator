@@ -1,6 +1,8 @@
-
+#!/bin/env python
+# -*- coding: utf-8 -*-
 from . import utils
 from liblightbase.lbutils.conv import json2base
+
 
 class BaseMemory():
 

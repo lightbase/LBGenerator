@@ -4,6 +4,7 @@ from ..model import BASES
 from pyramid.response import Response
 from sqlalchemy import delete
 
+
 class IndexErrorCustomView(CustomView):
 
     def __init__(self, context, request):
