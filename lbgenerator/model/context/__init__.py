@@ -91,6 +91,7 @@ class CustomContextFactory(SQLAlchemyORMContext):
 
         self.total_count = None
         factory = None
+        count_over = None
         if not self.request.params.get('result_count') in ('false', '0') \
                 and getattr(self, 'result_count', True) is not False:
             self.total_count = 0
@@ -135,7 +136,7 @@ class CustomContextFactory(SQLAlchemyORMContext):
 
         feedback = q.all()
 
-        if len(feedback) > 0 and hasattr(self, 'count_over'):
+        if len(feedback) > 0 and count_over is not None:
             # The count must be the first column on each row
             self.total_count = int(feedback[0][0])
 
