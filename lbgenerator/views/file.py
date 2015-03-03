@@ -91,6 +91,8 @@ class FileCustomView(CustomView):
         if disposition and disposition in ('inline', 'attachment'):
             content_disposition = disposition + ';' + content_disposition
 
+        content_disposition = content_disposition.encode('latin-1', 'ignore').decode('utf-8', 'ignore')
+
         return Response(
             content_type=member.mimetype,
             content_disposition=content_disposition,
