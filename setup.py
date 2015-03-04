@@ -14,6 +14,7 @@ requires = [
     'psycopg2',
     'voluptuous',
     'requests',
+    'pyramid_beaker',
     'alembic'
     ]
 
