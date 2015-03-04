@@ -5,6 +5,8 @@ from ..lib import utils
 from pyramid.response import Response
 from pyramid.exceptions import HTTPNotFound
 from beaker.cache import cache_region
+from ..lib import cache
+
 
 class BaseCustomView(CustomView):
 
@@ -35,12 +37,14 @@ class BaseCustomView(CustomView):
         else:
             return Response('UPDATED', charset='utf-8', status=200, content_type='')
 
-    @cache_region('long_term')
     def delete_member(self):
         base = self.request.matchdict['base']
         member = self.context.delete_member(base)
         if member is None:
             raise HTTPNotFound()
+
+        # Clear cache
+        cache.clear_cache()
         return Response('DELETED', charset='utf-8', status=200, content_type='')
 
     @cache_region('long_term')
