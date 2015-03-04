@@ -18,7 +18,10 @@ def main(global_config, **settings):
 
     from . import config as global_config
 
-    secret =  str(uuid.uuid4())
+    secret = str(uuid.uuid4())
+
+    # Beaker include
+    config.include('pyramid_beaker')
 
     if global_config.AUTH_ENABLED is True:
 
