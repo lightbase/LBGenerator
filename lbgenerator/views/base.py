@@ -13,20 +13,17 @@ class BaseCustomView(CustomView):
     def __init__(self, context, request):
         super(BaseCustomView, self).__init__(context, request)
 
-    @cache_region('long_term')
     def _get_data(self):
         """ Get all valid data from (request) POST or PUT.
         """
         return validate_base_data(self, self.request)
 
-    @cache_region('long_term')
     def get_member(self):
         self.wrap = False
         base = self.request.matchdict['base']
         member = self.context.get_member(base)
         return self.render_to_response(member)
 
-    @cache_region('long_term')
     def update_member(self):
         base = self.request.matchdict['base']
         member = self.context.update_member(base, self._get_data())
@@ -35,7 +32,6 @@ class BaseCustomView(CustomView):
         else:
             return Response('UPDATED', charset='utf-8', status=200, content_type='')
 
-    @cache_region('long_term')
     def delete_member(self):
         base = self.request.matchdict['base']
         member = self.context.delete_member(base)
@@ -43,7 +39,6 @@ class BaseCustomView(CustomView):
             raise HTTPNotFound()
         return Response('DELETED', charset='utf-8', status=200, content_type='')
 
-    @cache_region('long_term')
     def get_column(self):
         """ Get column value
         """
