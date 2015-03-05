@@ -28,7 +28,6 @@ class BaseCustomView(CustomView):
         member = self.context.get_member(base)
         return self.render_to_response(member)
 
-    @cache_region('long_term')
     def update_member(self):
         base = self.request.matchdict['base']
         member = self.context.update_member(base, self._get_data())
@@ -37,7 +36,6 @@ class BaseCustomView(CustomView):
         else:
             return Response('UPDATED', charset='utf-8', status=200, content_type='')
 
-    @cache_region('long_term')
     def delete_member(self):
         base = self.request.matchdict['base']
         member = self.context.delete_member(base)
