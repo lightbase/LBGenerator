@@ -4,7 +4,7 @@ from ..lib.validation.base import validate_base_data
 from ..lib import utils
 from pyramid.response import Response
 from pyramid.exceptions import HTTPNotFound
-from beaker.cache import cache_region
+# from beaker.cache import cache_region
 from ..lib import cache
 
 
@@ -15,13 +15,13 @@ class BaseCustomView(CustomView):
     def __init__(self, context, request):
         super(BaseCustomView, self).__init__(context, request)
 
-    @cache_region('long_term')
+#    @cache_region('long_term')
     def _get_data(self):
         """ Get all valid data from (request) POST or PUT.
         """
         return validate_base_data(self, self.request)
 
-    @cache_region('long_term')
+#    @cache_region('long_term')
     def get_member(self):
         self.wrap = False
         base = self.request.matchdict['base']
