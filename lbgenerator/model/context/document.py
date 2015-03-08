@@ -1,4 +1,5 @@
-
+#!/bin/env python
+# -*- coding: utf-8 -*-
 from ... import config
 from ...lib import utils
 from ..index import Index
@@ -14,6 +15,11 @@ from ..entities import LBIndexError
 from sqlalchemy.util import KeyedTuple
 from sqlalchemy.orm.state import InstanceState
 from liblightbase.lbdoc.doctree import DocumentTree
+from ...lib import cache
+import logging
+
+log = logging.getLogger()
+
 
 class DocumentContextFactory(CustomContextFactory):
 
@@ -101,8 +107,10 @@ class DocumentContextFactory(CustomContextFactory):
             try:
                 session.execute(stmt)
                 session.commit()
-            except: pass
-            finally: session.close()
+            except:
+                pass
+            finally:
+                session.close()
 
     def update_member(self, member, data, index=True):
         """ 
@@ -126,6 +134,12 @@ class DocumentContextFactory(CustomContextFactory):
         if index and self.index.is_indexable:
             Thread(target=self.async_update_member,
                 args=(data['id_doc'], data, self.session)).start()
+
+        # Clear cache
+        log.debug("Realizando limpeza de cache para a base %s", self.base_name)
+        #cache.clear_document_cache(self.base_name, data['id_doc'])
+        cache.clear_collection_cache(self.base_name)
+
         return member
 
     def async_update_member(self, id, data, session):
@@ -146,8 +160,10 @@ class DocumentContextFactory(CustomContextFactory):
             try:
                 session.execute(stmt)
                 session.commit()
-            except: pass
-            finally: session.close()
+            except:
+                pass
+            finally:
+                session.close()
 
     def delete_member(self, id):
         """ 
@@ -170,6 +186,10 @@ class DocumentContextFactory(CustomContextFactory):
         if self.index.is_indexable:
             Thread(target=self.async_delete_member,
                 args=(id, self.session)).start()
+
+        # Clear cache
+        cache.clear_collection_cache(self.base_name)
+
         return True
 
     def async_delete_member(self, id, session):
@@ -180,8 +200,10 @@ class DocumentContextFactory(CustomContextFactory):
             try:
                 session.execute(stmt)
                 session.commit()
-            except: pass
-            finally: session.close()
+            except:
+                pass
+            finally:
+                session.close()
 
     def get_full_document(self, document, session=None):
         """ This method will return the document with files texts
@@ -270,4 +292,3 @@ class DocumentContextFactory(CustomContextFactory):
             files[file_.id_file] = file_.filetext
 
         return files
-

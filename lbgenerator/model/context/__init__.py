@@ -16,9 +16,13 @@ from sqlalchemy.sql.expression import func
 from pyramid.security import Authenticated
 from pyramid.security import ALL_PERMISSIONS
 from pyramid_restler.model import SQLAlchemyORMContext
+from beaker.cache import cache_region
+from beaker.cache import region_invalidate
+from ...lib import cache
 
 
 log = logging.getLogger()
+
 
 class CustomContextFactory(SQLAlchemyORMContext):
 
@@ -71,6 +75,10 @@ class CustomContextFactory(SQLAlchemyORMContext):
             return None
         self.session.delete(member)
         self.session.commit()
+
+        # Clear all caches on this case
+        cache.clear_cache()
+
         return member
 
     def get_raw_member(self, id):
@@ -142,21 +150,26 @@ class CustomContextFactory(SQLAlchemyORMContext):
             self.total_count = int(feedback[0][0])
 
         # Return Results
-        if query.get('select') == [ ] and self.request.method == 'GET':
-            return [ ]
+        if query.get('select') == [] and self.request.method == 'GET':
+            return []
 
         return feedback
 
     def wrap_json_obj(self, obj):
+        """
+        Wrap the object as JSON
 
+        :param obj: Object dict
+        :return: wrapped object
+        """
         limit = 0 if self.default_limit is None else self.default_limit
         offset = 0 if self.default_offset is None else self.default_offset
         wrapped = dict(
-            results = obj,
-            limit = limit,
-            offset = offset)
+            results=obj,
+            limit=limit,
+            offset=offset)
         if hasattr(self, 'total_count'):
-            wrapped.update(result_count = self.total_count)
+            wrapped.update(result_count=self.total_count)
         return wrapped
 
     def get_member_id_as_string(self, member):
@@ -180,3 +193,80 @@ class CustomContextFactory(SQLAlchemyORMContext):
             del keys[i]
             del values[i]
         return KeyedTuple(values, labels=keys)
+
+    def get_collection_cached(self,
+                              query,
+                              cache_key,
+                              cache_type='default_term',
+                              invalidate=False):
+        """
+        Get cached results collection
+
+        :param query: Search query
+        :param cache_key: Key concerning cache expire time
+            short_term: 60 seconds
+            default_term: 300 seconds
+            long_term: 3600 seconds
+        :param invalidate: invalidate cache or not
+        :return: Collection JSON
+        """
+        if invalidate:
+            region_invalidate(_get_collection_cached, None, query)
+
+        @cache_region(cache_type, cache_key)
+        def _get_collection_cached(query):
+            """
+            Return cached collection
+
+            :param query: Query to be executed against function mode
+            :return: result
+            """
+            response = {
+                'results': self.get_collection(query),
+                'limit': self.default_limit,
+                'offset': self.default_offset,
+                'total_count': self.total_count
+            }
+            return response
+
+        response = _get_collection_cached(query)
+
+        # Fix parameters
+        self.default_limit = response['limit']
+        self.default_offset = response['offset']
+        self.total_count = response['total_count']
+
+        # Return results
+        return response['results']
+
+    def get_member_cached(self,
+                          id,
+                          cache_key,
+                          close_sess=True,
+                          cache_type='default_term',
+                          invalidate=False):
+        """
+        Get member cached function
+
+        :param id: Object instance ID for cache
+        :param close_sess: Session close after execution
+        :param cache_key: Key concerning cache expire time
+            short_term: 60 seconds
+            default_term: 300 seconds
+            long_term: 3600 seconds
+        :param invalidate: Invalidate this cache
+        """
+        if invalidate:
+            region_invalidate(_get_member_cached, None, id, close_sess)
+
+        @cache_region(cache_type, cache_key)
+        def _get_member_cached(id, close_sess):
+            """
+            Execute when there's no cache
+            """
+            log.debug("Creating cache for region %s and key %s", cache_type, cache_key)
+            return self.get_member(id, close_sess)
+
+        self.single_member = True
+
+        return _get_member_cached(id, close_sess)

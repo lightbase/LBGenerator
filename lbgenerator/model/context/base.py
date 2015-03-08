@@ -1,4 +1,5 @@
-
+#!/bin/env python
+# -*- coding: utf-8 -*-
 import datetime
 from . import CustomContextFactory
 from ..entities import *
@@ -7,6 +8,7 @@ from ... import model
 from ... import config
 from ...lib import utils
 from sqlalchemy.util import KeyedTuple
+
 
 class BaseContextFactory(CustomContextFactory):
 

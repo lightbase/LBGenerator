@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from pyramid_restler.view import RESTfulView
 
+
 def make_routes(config):
     """
     Cria rotas para aplicação do gerador de bases
@@ -22,37 +23,50 @@ def make_routes(config):
     from ..views.file import FileCustomView
     from ..model.context.file import FileContextFactory
 
+    # Migration views
     from ..views.migration import _import, _export
 
+    # ES Rules
+    from ..views.index_error import IndexErrorCustomView
+    from ..model.context.index_error import IndexErrorContextFactory
+
+    # Command rules
+    from ..views.command import CommandCustomView
+
+    # ES Rules
+    from ..views.es import ESCustomView
+    from ..model.context.es import ESContextFactory
+
+    # Documentation views
+    from ..views.docs import DocsCustomView
+    from ..model.context.docs import DocsContextFactory
+
+    # Custom routes
+    def add_custom_routes(route_name, pattern, factory_class, view_class, views):
+        config.add_route(route_name, pattern, factory=factory_class)
+        for view_kw in views:
+            config.add_view(view=view_class, route_name=route_name, **view_kw)
+
+    # Import/export routes
     config.add_route('importation', '{base}/_import')
     config.add_view(view=_import, route_name='importation')
 
     config.add_route('exportation', '{base}/_export')
     config.add_view(view=_export, route_name='exportation')
 
-    def add_custom_routes(route_name, pattern, factory_class, view_class, views):
-        config.add_route(route_name, pattern, factory=factory_class)
-        for view_kw in views:
-            config.add_view(view=view_class, route_name=route_name, **view_kw)
-
-    from ..views.index_error import IndexErrorCustomView
-    from ..model.context.index_error import IndexErrorContextFactory
-
-
+    # Index error routes
     config.add_restful_routes('_index_error', IndexErrorContextFactory, view=IndexErrorCustomView)
     add_custom_routes('index_error', '_index_error', IndexErrorContextFactory, IndexErrorCustomView, [
         {'attr': 'delete_collection', 'request_method': 'DELETE'},
     ])
 
-    from ..views.command import CommandCustomView
+    # Command routes
     config.add_route('command', '_command/{command}')
     config.add_view(view=CommandCustomView, route_name='command',
         **{'attr': 'execute', 'request_method': 'POST'}
     )
 
-
-    from ..views.es import ESCustomView
-    from ..model.context.es import ESContextFactory
+    # ES routes
     add_custom_routes('elasticsearch', '{base}/es{path:.*}', ESContextFactory, ESCustomView, [
         {'attr': 'get_interface', 'request_method': 'GET'},
         {'attr': 'post_interface', 'request_method': 'POST'},
@@ -63,14 +77,12 @@ def make_routes(config):
     config.add_directive('add_restful_base_routes', add_restful_base_routes)
     config.add_static_view('static', 'static', cache_max_age=3600)
 
-    from ..views.docs import DocsCustomView
-    from ..model.context.docs import DocsContextFactory
-
+    # Documentation routes
     add_custom_routes('api_docs', 'api-docs', DocsContextFactory, DocsCustomView, [
-        {'attr': 'api_docs', 'request_method': 'GET'},
+        {'attr': 'api_docs', 'request_method': 'GET', 'renderer': 'json'},
     ])
     add_custom_routes('base_docs', 'api-docs/{x:.*}', DocsContextFactory, DocsCustomView, [
-        {'attr': 'api_docs', 'request_method': 'GET'},
+        {'attr': 'api_docs', 'request_method': 'GET', 'renderer': 'json'},
     ])
 
     #----------------#
@@ -201,6 +213,7 @@ def add_restful_base_routes(self, name='base'):
     # Delete member
     add_route('delete_{name}', '/{base}', 'delete_member', 'DELETE', permission='delete')
 
+
 def add_restful_routes(self, name, factory, view=RESTfulView,
                        route_kw=None, view_kw=None):
     """Add a set of RESTful routes for an entity.
@@ -267,6 +280,14 @@ def add_restful_routes(self, name, factory, view=RESTfulView,
     add_route(
         'get_{name}_collection_rendered', '/{slug}.{renderer}',
         'get_collection', 'GET')
+
+    # Cached routes
+    add_route(
+        'get_{name}_collection_cached', '/cached/{slug}', 'get_collection_cached', 'GET')
+
+    add_route('get_{name}_cached', '/cached/{slug}/{id}', 'get_member_cached', 'GET')
+
+    # Regular routes
     add_route(
         'get_{name}_collection', '/{slug}', 'get_collection', 'GET')
 
@@ -283,6 +304,3 @@ def add_restful_routes(self, name, factory, view=RESTfulView,
 
     # Delete member
     add_route('delete_{name}', '/{slug}/{id}', 'delete_member', 'DELETE')
-
-
-

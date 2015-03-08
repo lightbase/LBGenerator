@@ -91,7 +91,38 @@ class CustomView(RESTfulView):
         else:
             return Response(default_response, charset='utf-8', status=200, content_type='')
 
+    def get_collection_cached(self, render_to_response=True):
+        """
+        Return document collection in cache
 
+        :param render_to_response: Should we render or return JSON
+        :return: Document HTML or JSON
+        """
+        params = self.request.params.get('$$', '{}')
 
+        # Cache key concerning expiring time
+        cache_type = self.request.params.get('cache_key', 'default_term')
+        cache_key = self.request.current_route_path()
+        query = utils.json2object(params)
+        try:
+            collection = self.context.get_collection_cached(query, cache_key, cache_type)
+        except Exception as e:
+            raise Exception('SearchError: %s' % e)
+        else:
+            if render_to_response:
+                response = self.render_to_response(collection)
+            else:
+                response = collection
+        return response
 
-
+    def get_member_cached(self):
+        """
+        Get member cached
+        :return:
+        """
+        id = self.request.matchdict['id']
+        cache_key = self.request.current_route_path()
+        self.wrap = False
+        # Get cached member
+        member = self.context.get_member_cached(id, cache_key)
+        return self.render_to_response(member)
