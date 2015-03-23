@@ -248,8 +248,13 @@ class DocumentContextFactory(CustomContextFactory):
         Python's dictionary. Will also prune the dictionary member, if
         user send some nodes on query.
         """
-        if not isinstance(member, KeyedTuple):
-            member = self.member2KeyedTuple(member)
+        try:
+            dict_member = member._asdict()
+        except AttributeError as e:
+            # Continue parsing
+            log.debug("Error parsing as dict!\n%s", e)
+            if not isinstance(member, KeyedTuple):
+                member = self.member2KeyedTuple(member)
 
         # Get document as dictionary object.
         dict_member = member._asdict()['document']
