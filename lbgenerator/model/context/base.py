@@ -1,6 +1,7 @@
 #!/bin/env python
 # -*- coding: utf-8 -*-
 import datetime
+import logging
 from . import CustomContextFactory
 from ..entities import *
 from ..index import Index
@@ -8,6 +9,8 @@ from ... import model
 from ... import config
 from ...lib import utils
 from sqlalchemy.util import KeyedTuple
+
+log = logging.getLogger()
 
 
 class BaseContextFactory(CustomContextFactory):
@@ -121,8 +124,14 @@ class BaseContextFactory(CustomContextFactory):
         return member
 
     def member_to_dict(self, member, fields=None):
-        if not isinstance(member, KeyedTuple):
-            member = self.member2KeyedTuple(member)
+
+        try:
+            dict_member = member._asdict()
+        except AttributeError as e:
+            # Continue parsing
+            log.debug("Error parsing as dict!\n%s", e)
+            if not isinstance(member, KeyedTuple):
+                member = self.member2KeyedTuple(member)
 
         dict_member = utils.json2object(member._asdict()['struct'])
 
