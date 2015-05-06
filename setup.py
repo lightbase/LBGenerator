@@ -7,16 +7,16 @@ README = open(os.path.join(here, 'README.md')).read()
 CHANGES = open(os.path.join(here, 'CHANGES.md')).read()
 
 requires = [
-    'pyramid',
+    'pyramid == 1.5.4',
     'liblightbase',
-    'pyramid_restler',
-    'sqlalchemy',
-    'psycopg2',
-    'voluptuous',
-    'requests',
-    'pyramid_beaker',
-    'alembic',
-    'waitress'
+    'pyramid_restler == 0.1a4',
+    'sqlalchemy == 0.9.8',
+    'psycopg2 == 2.6',
+    'voluptuous == 0.8.7',
+    'requests == 2.5.3',
+    'pyramid_beaker == 0.8',
+    'alembic == 0.7.4',
+    'waitress == 0.8.9'
     ]
 
 
