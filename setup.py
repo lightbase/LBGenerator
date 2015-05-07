@@ -7,16 +7,25 @@ README = open(os.path.join(here, 'README.md')).read()
 CHANGES = open(os.path.join(here, 'CHANGES.md')).read()
 
 requires = [
-    'pyramid == 1.5.4',
-    'liblightbase',
-    'pyramid_restler == 0.1a4',
-    'sqlalchemy == 0.9.8',
-    'psycopg2 == 2.6',
-    'voluptuous == 0.8.7',
-    'requests == 2.5.3',
-    'pyramid_beaker == 0.8',
-    'alembic == 0.7.4',
-    'waitress == 0.8.9'
+	'liblightbase',
+	'alembic == 0.6.7',
+	'Beaker == 1.7.0.dev0',
+	'Mako == 1.0.1',
+	'PasteDeploy == 1.5.2',
+	'psycopg2 == 2.5.3',
+	'pyramid == 1.5.1',
+	'pyramid-beaker == 0.8',
+	'pyramid-restler == 0.1a4',
+	'repoze.lru == 0.6',
+	'requests == 2.3.0',
+	'SQLAlchemy == 0.9.4',
+	'translationstring == 1.1',
+	'venusian == 1.0a8',
+	'voluptuous == 0.8.7',
+	'waitress == 0.8.9',
+	'WebOb == 1.4',
+	'zope.deprecation == 4.1.1',
+	'zope.interface == 4.1.1'
     ]
 
 
