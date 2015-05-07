@@ -9,7 +9,7 @@ CHANGES = open(os.path.join(here, 'CHANGES.md')).read()
 requires = [
 	'liblightbase',
 	'alembic == 0.6.7',
-	'Beaker == 1.7.0.dev0',
+	'Beaker == 1.7.0',
 	'Mako == 1.0.1',
 	'PasteDeploy == 1.5.2',
 	'psycopg2 == 2.5.3',
