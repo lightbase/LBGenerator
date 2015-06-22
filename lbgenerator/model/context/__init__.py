@@ -88,43 +88,57 @@ class CustomContextFactory(SQLAlchemyORMContext):
         """ Search database objects based on query
         """
         self._query = query
-
+        print("query = ", self._query)
         # Instanciate the query compiler 
         compiler = JsonQuery(self, **query)
-
-        # Build query as SQL 
+        print("compiler = ", compiler)
+        # Build query as SQL
         if self.request.method == 'DELETE' \
                 and self.entity.__table__.name.startswith('lb_doc_'):
             self.entity.__table__.__factory__ = [self.entity.__table__.c.id_doc]
+            print("Oi entrei no if DELETE")
+            print("entity table = ",self.entity.__table__.__factory__)
 
         self.total_count = None
         factory = None
         count_over = None
+        print("total_count,count_over, factory = ",self.total_count, count_over,factory)
+
         if not self.request.params.get('result_count') in ('false', '0') \
                 and getattr(self, 'result_count', True) is not False:
+            print("Entrei no get do result_count")
             self.total_count = 0
+            print("total_count",self.total_count)
             count_over = func.count().over()
+            print("count over = ",count_over)
             factory = [count_over] + self.entity.__table__.__factory__
+            print("factory =", factory)
 
         # Impede a explosão infinita de cláusula over
         if factory is None:
+            print("entrei no if do factory is none")
             log.debug("Teste sem factory definido: \n%s", self.entity.__table__.__factory__)
             results = self.session.query(*self.entity.__table__.__factory__)
+            print("results",results)
         else:
+            print("entrei no else do factory is none")
             log.debug("Teste do query factory com explode de over: \n%s", factory)
             results = self.session.query(*factory)
+            print("results",results)
 
         # Query results and close session
         self.session.close()
 
         # Filter results
         q = compiler.filter(results)
-
+        print("print do q = compiler", q)
         if self.entity.__table__.name.startswith('lb_file_'):
             q = q.filter('id_doc is not null')
 
         if compiler.order_by is not None:
+            print("entrei no compiler.order_by")
             for o in compiler.order_by:
+                print("")
                 order = getattr(sqlalchemy, o)
                 for i in compiler.order_by[o]: q = q.order_by(order(i))
 
@@ -144,7 +158,7 @@ class CustomContextFactory(SQLAlchemyORMContext):
         q = q.offset(compiler.offset)
 
         feedback = q.all()
-
+        print("q.all ", q.all)
         if len(feedback) > 0 and count_over is not None:
             # The count must be the first column on each row
             self.total_count = int(feedback[0][0])
@@ -153,6 +167,7 @@ class CustomContextFactory(SQLAlchemyORMContext):
         if query.get('select') == [] and self.request.method == 'GET':
             return []
 
+        print("feedback",feedback)
         return feedback
 
     def wrap_json_obj(self, obj):
