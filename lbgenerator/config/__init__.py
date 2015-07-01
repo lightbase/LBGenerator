@@ -112,5 +112,3 @@ def create_scoped_session(engine):
             autocommit=True
         )
     )
-
-

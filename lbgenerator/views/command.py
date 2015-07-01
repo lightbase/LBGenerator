@@ -6,6 +6,7 @@ from ..model import BASES
 from .. import config
 from pyramid.response import Response
 from liblightbase.lbutils import object2json
+from sqlalchemy import create_engine
 
 class CommandCustomView():
 
@@ -19,8 +20,11 @@ class CommandCustomView():
         return getattr(self, command)()
 
     def reset(self):
-        BASES.bases = dict()
-        return Response('OK')
+        try:
+            BASES.bases = dict()
+            return Response('OK')
+        except:
+            return Response("Erro na Operação")
 
     def base_mem(self):
         return Response(str(list(BASES.bases.keys())))
@@ -43,7 +47,6 @@ class CommandCustomView():
 
     def rest_url(self):
         return Response(get_ip_address(b'eth0'))
-
 
 def get_ip_address(ifname):
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
