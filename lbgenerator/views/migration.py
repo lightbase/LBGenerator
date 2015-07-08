@@ -72,6 +72,7 @@ def _import(request):
 
     os.remove(filepath)
 
+    # TO DO: Specify a definition for the variables: success and failure.
     return Response('{"success": %d, "failure" : %d}' % (success, failure),
         content_type='application/json')
 
