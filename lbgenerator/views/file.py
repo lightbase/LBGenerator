@@ -1,3 +1,4 @@
+#coding: utf-8
 from pyramid.response import Response
 from pyramid.exceptions import HTTPNotFound
 from . import CustomView
@@ -5,10 +6,11 @@ from .. import config
 from ..lib.validation.file import validate_file_data
 from ..lib import utils
 
-class FileCustomView(CustomView):
 
+class FileCustomView(CustomView):
     """ Documents Customized View Methods
     """
+
     def __init__(self, context, request):
         self.context = context
         self.request = request
@@ -29,8 +31,8 @@ class FileCustomView(CustomView):
         data, filemask = self._get_data()
         member = self.context.create_member(data)
         return Response(filemask,
-            content_type='application/json',
-            status=201)
+                        content_type='application/json',
+                        status=201)
 
     def update_member(self):
         raise NotImplementedError('NOT IMPLEMENTED')
@@ -67,8 +69,8 @@ class FileCustomView(CustomView):
 
         # Get raw mapped entity object.
         column = self.context.entity.__table__.c.get(path)
-        member = self.context.session.query(column).filter(self.context.entity\
-            .id_file==id_file).first()
+        member = self.context.session.query(column).filter(self.context.entity \
+                                                           .id_file == id_file).first()
 
         if member is None:
             raise HTTPNotFound()
@@ -85,8 +87,8 @@ class FileCustomView(CustomView):
         member = self.context.get_raw_member(id)
         if member is None:
             raise HTTPNotFound()
-
-        content_disposition = 'filename=' + member.filename
+        member_encoded = member.filename.encode('latin-1', 'ignore').decode('utf-8', 'ignore')
+        content_disposition = 'filename=' + member_encoded
         disposition = self.request.params.get('disposition')
         if disposition and disposition in ('inline', 'attachment'):
             content_disposition = disposition + ';' + content_disposition
