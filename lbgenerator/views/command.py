@@ -1,4 +1,4 @@
-
+import os
 import socket
 import fcntl
 import struct
@@ -20,11 +20,13 @@ class CommandCustomView():
         return getattr(self, command)()
 
     def reset(self):
-        try:
             BASES.bases = dict()
-            return Response('OK')
-        except:
-            return Response("Erro na Operação")
+            try:
+                os.system('/etc/init.d/apache2 restart')
+                return Response('OK')
+            except:
+                os.system('/etc/init.d/httpd restart')
+                return('OK')
 
     def base_mem(self):
         return Response(str(list(BASES.bases.keys())))
