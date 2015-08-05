@@ -26,7 +26,7 @@ class CommandCustomView():
                 return Response('OK')
             except:
                 os.system('/etc/init.d/httpd restart')
-                return('OK')
+                return Response('OK')
 
     def base_mem(self):
         return Response(str(list(BASES.bases.keys())))
