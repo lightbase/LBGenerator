@@ -23,10 +23,6 @@ def make_routes(config):
     from ..views.file import FileCustomView
     from ..model.context.file import FileContextFactory
 
-    # Import filesNull controller and context factory
-    from ..views.file_null import FileNullCustonView
-    from ..model.context.file_null import FileNullContextFactory
-
     # Migration views
     from ..views.migration import _import, _export
 
@@ -134,14 +130,6 @@ def make_routes(config):
         {'attr':'delete_path', 'request_method':'DELETE', 'permission': 'delete'}
     ])
 
-    #-----------------#
-    # FileNull Routes #
-    #-----------------#
-
-    add_custom_routes('get_null_file', '{base}/file/null',
-        FileNullContextFactory, FileNullCustonView, [
-        {'attr': 'get_file_null', 'request_method': 'Get', 'permission': 'view'}
-        ])
 
     #-------------#
     # Base Routes # 
