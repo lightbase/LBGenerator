@@ -109,3 +109,4 @@ class FileCustomView(CustomView):
 
     def delete_path(self):
         raise NotImplementedError('Delete file path operation is not possible')
+
