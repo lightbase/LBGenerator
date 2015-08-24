@@ -88,35 +88,36 @@ class CustomContextFactory(SQLAlchemyORMContext):
     def get_collection(self, query):
         """ Search database objects based on query
         """
+        self._query = query
+        # Instanciate the query compiler
+        compiler = JsonQuery(self, **query)
+        # Build query as SQL
+        if self.request.method == 'DELETE' \
+                and self.entity.__table__.name.startswith('lb_doc_'):
+            self.entity.__table__.__factory__ = [self.entity.__table__.c.id_doc]
+
+        self.total_count = None
+        factory = None
+        count_over = None
+
+        if not self.request.params.get('result_count') in ('false', '0') \
+                and getattr(self, 'result_count', True) is not False:
+            self.total_count = 0
+            count_over = func.count().over()
+            factory = [count_over] + self.entity.__table__.__factory__
+
+        # Impede a explosão infinita de cláusula over
+        if factory is None:
+            log.debug("Teste sem factory definido: \n%s", self.entity.__table__.__factory__)
+            results = self.session.query(*self.entity.__table__.__factory__)
+        else:
+            log.debug("Teste do query factory com explode de over: \n%s", factory)
+            results = self.session.query(*factory)
+
+        # Query results and close session
+        self.session.close()
+
         try:
-            self._query = query
-            # Instanciate the query compiler
-            compiler = JsonQuery(self, **query)
-            # Build query as SQL
-            if self.request.method == 'DELETE' \
-                    and self.entity.__table__.name.startswith('lb_doc_'):
-                self.entity.__table__.__factory__ = [self.entity.__table__.c.id_doc]
-
-            self.total_count = None
-            factory = None
-            count_over = None
-
-            if not self.request.params.get('result_count') in ('false', '0') \
-                    and getattr(self, 'result_count', True) is not False:
-                self.total_count = 0
-                count_over = func.count().over()
-                factory = [count_over] + self.entity.__table__.__factory__
-
-            # Impede a explosão infinita de cláusula over
-            if factory is None:
-                log.debug("Teste sem factory definido: \n%s", self.entity.__table__.__factory__)
-                results = self.session.query(*self.entity.__table__.__factory__)
-            else:
-                log.debug("Teste do query factory com explode de over: \n%s", factory)
-                results = self.session.query(*factory)
-
-            # Query results and close session
-            self.session.close()
             lit = self.request.params['filter']
             if lit == '{"id_doc=null"}':
                 # Filter results
@@ -126,103 +127,43 @@ class CustomContextFactory(SQLAlchemyORMContext):
                 q = compiler.filter(results)
                 if self.entity.__table__.name.startswith('lb_file_'):
                     q = q.filter('id_doc is not null')
-
-            if compiler.order_by is not None:
-                for o in compiler.order_by:
-                    order = getattr(sqlalchemy, o)
-                    for i in compiler.order_by[o]: q = q.order_by(order(i))
-
-            if compiler.distinct:
-                q = q.distinct(compiler.distinct)
-
-            if not 'limit' in query:
-                compiler.limit = 10
-            if not 'offset' in query:
-                compiler.offset = 0
-
-            self.default_limit = compiler.limit
-            self.default_offset = compiler.offset
-
-            # limit and offset results
-            q = q.limit(compiler.limit)
-            q = q.offset(compiler.offset)
-
-            feedback = q.all()
-            if len(feedback) > 0 and count_over is not None:
-                # The count must be the first column on each row
-                self.total_count = int(feedback[0][0])
-
-            # Return Results
-            if query.get('select') == [] and self.request.method == 'GET':
-                return []
-
-            return feedback
-
         except:
-            self._query = query
-            # Instanciate the query compiler
-            compiler = JsonQuery(self, **query)
-            # Build query as SQL
-            if self.request.method == 'DELETE' \
-                    and self.entity.__table__.name.startswith('lb_doc_'):
-                self.entity.__table__.__factory__ = [self.entity.__table__.c.id_doc]
-
-            self.total_count = None
-            factory = None
-            count_over = None
-
-            if not self.request.params.get('result_count') in ('false', '0') \
-                    and getattr(self, 'result_count', True) is not False:
-                self.total_count = 0
-                count_over = func.count().over()
-                factory = [count_over] + self.entity.__table__.__factory__
-
-            # Impede a explosão infinita de cláusula over
-            if factory is None:
-                log.debug("Teste sem factory definido: \n%s", self.entity.__table__.__factory__)
-                results = self.session.query(*self.entity.__table__.__factory__)
-            else:
-                log.debug("Teste do query factory com explode de over: \n%s", factory)
-                results = self.session.query(*factory)
-
-            # Query results and close session
-            self.session.close()
-
             # Filter results
             q = compiler.filter(results)
             if self.entity.__table__.name.startswith('lb_file_'):
                 q = q.filter('id_doc is not null')
 
-            if compiler.order_by is not None:
-                for o in compiler.order_by:
-                    order = getattr(sqlalchemy, o)
-                    for i in compiler.order_by[o]: q = q.order_by(order(i))
 
-            if compiler.distinct:
-                q = q.distinct(compiler.distinct)
+        if compiler.order_by is not None:
+            for o in compiler.order_by:
+                order = getattr(sqlalchemy, o)
+                for i in compiler.order_by[o]: q = q.order_by(order(i))
 
-            if not 'limit' in query:
-                compiler.limit = 10
-            if not 'offset' in query:
-                compiler.offset = 0
+        if compiler.distinct:
+            q = q.distinct(compiler.distinct)
 
-            self.default_limit = compiler.limit
-            self.default_offset = compiler.offset
+        if not 'limit' in query:
+            compiler.limit = 10
+        if not 'offset' in query:
+            compiler.offset = 0
 
-            # limit and offset results
-            q = q.limit(compiler.limit)
-            q = q.offset(compiler.offset)
+        self.default_limit = compiler.limit
+        self.default_offset = compiler.offset
 
-            feedback = q.all()
-            if len(feedback) > 0 and count_over is not None:
-                # The count must be the first column on each row
-                self.total_count = int(feedback[0][0])
+        # limit and offset results
+        q = q.limit(compiler.limit)
+        q = q.offset(compiler.offset)
 
-            # Return Results
-            if query.get('select') == [] and self.request.method == 'GET':
-                return []
+        feedback = q.all()
+        if len(feedback) > 0 and count_over is not None:
+            # The count must be the first column on each row
+            self.total_count = int(feedback[0][0])
 
-            return feedback
+        # Return Results
+        if query.get('select') == [] and self.request.method == 'GET':
+            return []
+
+        return feedback
 
     def wrap_json_obj(self, obj):
         """

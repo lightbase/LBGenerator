@@ -1,4 +1,5 @@
 #coding: utf-8
+import requests
 from pyramid.response import Response
 from pyramid.exceptions import HTTPNotFound
 from . import CustomView
@@ -44,7 +45,8 @@ class FileCustomView(CustomView):
         raise NotImplementedError('NOT IMPLEMENTED')
 
     def delete_collection(self):
-        raise NotImplementedError('NOT IMPLEMENTED')
+
+        return Response("ok")
 
     __paths__ = [
         "id_file",
