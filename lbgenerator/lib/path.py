@@ -27,6 +27,24 @@ class UpdateOnPathFunctions(PathFunctions):
             return (True, self._args[1])
         return (False, None)
 
+    def _attr_equals(self, match):
+        """
+        args: ["field_in_group_to_compare", "value_to_compare", "group_to_update"]
+        update the fields of group if "field_in_group_to_compare" equal "value_to_compare"
+        """
+        if len(self._args) is 3:
+            try:
+                if type(self._args[2]) is dict:
+                    new_value = match.value
+                    for key in self._args[2]:
+                        new_value[key] = self._args[2][key]
+                    return (True, new_value)
+                else:
+                    if match.value == self._args[1]:
+                        return (True, self._args[2])
+            except: pass
+        return (False, None)
+
     def _starts_with(self, match):
         if match.value.startswith(self._args[0]):
             return (True, self._args[1])
