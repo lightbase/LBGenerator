@@ -2,6 +2,16 @@ from sqlalchemy.util import KeyedTuple
 from . import CustomContextFactory
 from .. import file_entity
 from collections import Iterable
+from sqlalchemy import and_
+from threading import Thread
+from sqlalchemy import insert
+from sqlalchemy import update
+from sqlalchemy import delete
+from sqlalchemy.util import KeyedTuple
+from sqlalchemy.orm.state import InstanceState
+from liblightbase.lbdoc.doctree import DocumentTree
+import logging
+
 
 class FileContextFactory(CustomContextFactory):
 
@@ -70,3 +80,13 @@ class FileContextFactory(CustomContextFactory):
         return self.session.query(self.entity).filter(
             self.entity.__table__.c.id_file == id
         ).first()
+
+
+    def delete_collection(self, base):
+        table = 'lb_file_'+base
+        stmt1 = delete(table).where('id_doc is null')
+        self.session.execute(stmt1)
+        self.session.commit()
+        self.session.close()
+
+        return 1

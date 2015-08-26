@@ -6,6 +6,7 @@ from . import CustomView
 from .. import config
 from ..lib.validation.file import validate_file_data
 from ..lib import utils
+from ..model.context.file import FileContextFactory
 
 
 class FileCustomView(CustomView):
@@ -45,8 +46,11 @@ class FileCustomView(CustomView):
         raise NotImplementedError('NOT IMPLEMENTED')
 
     def delete_collection(self):
+        base = self.request.matchdict['base']
+        b = FileContextFactory(self.request).delete_collection(base)
+        print(b)
 
-        return Response("ok")
+        return Response("Deleted")
 
     __paths__ = [
         "id_file",
