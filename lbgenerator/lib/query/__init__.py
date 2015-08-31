@@ -20,7 +20,24 @@ class JsonQuery():
         self.from_ = from_
         self.select = SelectQuery(context, select, alias=alias)
 
+
+
+        print("str(self.select) >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+        print(str(self.select))
+        print("str(self.select) <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
+
+
+
         if literal:
+
+
+
+            print("str(literal) >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+            print(str(literal))
+            print("str(literal) <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
+
+
+
             self.where = FilterQuery(context, literal)
         else:
             self.where = FilterQuery(context, where)
@@ -116,6 +133,20 @@ class QueryCache():
     def build_subqueries(self, from_clause):
 
         query = JsonQuery(self.context, **from_clause).build_query()
+
+
+
+
+
+
+        print("JsonQuery(self.context, **from_clause).build_query() >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+        print(str(query))
+        print("JsonQuery(self.context, **from_clause).build_query() <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
+
+
+
+
+
         alias = from_clause.get('alias', None)
 
         subquery = self.context.session.query(*query).subquery(alias)

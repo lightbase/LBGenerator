@@ -11,7 +11,7 @@ from sqlalchemy.util import KeyedTuple
 from sqlalchemy.orm.state import InstanceState
 from liblightbase.lbdoc.doctree import DocumentTree
 import logging
-
+from ...lib import cache
 
 class FileContextFactory(CustomContextFactory):
 
@@ -81,12 +81,21 @@ class FileContextFactory(CustomContextFactory):
             self.entity.__table__.c.id_file == id
         ).first()
 
+    def delete_member(self, id):
+        """ 
+        @param id: primary key (int) of document.
 
-    def delete_collection(self, base):
-        table = 'lb_file_'+base
-        stmt1 = delete(table).where('id_doc is null')
-        self.session.execute(stmt1)
+        Delete a "file type" record. Normally these records are linked
+        to "doc type" records. However, there are cases where these
+        records ("file type") are not associated with any "doc type",
+        so we've used this method to delete them.
+        """
+        stmt = delete(self.entity.__table__).where(
+            self.entity.__table__.c.id_doc == id)
+        self.session.execute(stmt)
         self.session.commit()
         self.session.close()
 
-        return 1
+        # Clear cache
+        cache.clear_collection_cache(self.base_name)
+        return True
