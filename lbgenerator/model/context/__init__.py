@@ -1,6 +1,7 @@
 #!/bin/env python
 # -*- coding: utf-8 -*-
 import sqlalchemy
+import json
 import logging
 from ... import model
 from ...lib import utils
@@ -116,10 +117,22 @@ class CustomContextFactory(SQLAlchemyORMContext):
         # Query results and close session
         self.session.close()
 
-        # Filter results
-        q = compiler.filter(results)
-        if self.entity.__table__.name.startswith('lb_file_'):
-            q = q.filter('id_doc is not null')
+        try:
+            lit = self.request.params['filter']
+            if lit == '{"id_doc=null"}':
+                # Filter results
+                q = compiler.filter(results)
+            else:
+                # Filter results
+                q = compiler.filter(results)
+                if self.entity.__table__.name.startswith('lb_file_'):
+                    q = q.filter('id_doc is not null')
+        except:
+            # Filter results
+            q = compiler.filter(results)
+            if self.entity.__table__.name.startswith('lb_file_'):
+                q = q.filter('id_doc is not null')
+
 
         if compiler.order_by is not None:
             for o in compiler.order_by:

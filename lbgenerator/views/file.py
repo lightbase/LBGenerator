@@ -1,10 +1,12 @@
 #coding: utf-8
+import requests
 from pyramid.response import Response
 from pyramid.exceptions import HTTPNotFound
 from . import CustomView
 from .. import config
 from ..lib.validation.file import validate_file_data
 from ..lib import utils
+from ..model.context.file import FileContextFactory
 
 
 class FileCustomView(CustomView):
@@ -44,7 +46,11 @@ class FileCustomView(CustomView):
         raise NotImplementedError('NOT IMPLEMENTED')
 
     def delete_collection(self):
-        raise NotImplementedError('NOT IMPLEMENTED')
+        base = self.request.matchdict['base']
+        b = FileContextFactory(self.request).delete_collection(base)
+        print(b)
+
+        return Response("Deleted")
 
     __paths__ = [
         "id_file",
@@ -109,3 +115,4 @@ class FileCustomView(CustomView):
 
     def delete_path(self):
         raise NotImplementedError('Delete file path operation is not possible')
+

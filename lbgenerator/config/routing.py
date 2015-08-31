@@ -130,6 +130,7 @@ def make_routes(config):
         {'attr':'delete_path', 'request_method':'DELETE', 'permission': 'delete'}
     ])
 
+
     #-------------#
     # Base Routes # 
     #-------------#
