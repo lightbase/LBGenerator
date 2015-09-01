@@ -90,8 +90,15 @@ class FileContextFactory(CustomContextFactory):
         records ("file type") are not associated with any "doc type",
         so we've used this method to delete them.
         """
-        stmt = delete(self.entity.__table__).where(
-            self.entity.__table__.c.id_doc == id)
+        if isinstance(id, int):
+            # Quando a operação DELETE envolve id_doc!
+            stmt = delete(self.entity.__table__).where(
+                self.entity.__table__.c.id_doc == id)
+        else:
+            # Quando a operação DELETE envolve id_file!
+            stmt = delete(self.entity.__table__).where(
+                self.entity.__table__.c.id_file == id)
+
         self.session.execute(stmt)
         self.session.commit()
         self.session.close()

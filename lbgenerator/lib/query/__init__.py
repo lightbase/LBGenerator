@@ -20,24 +20,7 @@ class JsonQuery():
         self.from_ = from_
         self.select = SelectQuery(context, select, alias=alias)
 
-
-
-        print("str(self.select) >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-        print(str(self.select))
-        print("str(self.select) <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
-
-
-
         if literal:
-
-
-
-            print("str(literal) >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-            print(str(literal))
-            print("str(literal) <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
-
-
-
             self.where = FilterQuery(context, literal)
         else:
             self.where = FilterQuery(context, where)
@@ -46,7 +29,7 @@ class JsonQuery():
         self.limit = limit
         self.offset = offset
 
-        # TODO: GET RID OF IT
+        # TODO: Get rid of it!
         self.order_by = order_by
         self.distinct = distinct
 
@@ -133,22 +116,7 @@ class QueryCache():
     def build_subqueries(self, from_clause):
 
         query = JsonQuery(self.context, **from_clause).build_query()
-
-
-
-
-
-
-        print("JsonQuery(self.context, **from_clause).build_query() >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-        print(str(query))
-        print("JsonQuery(self.context, **from_clause).build_query() <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
-
-
-
-
-
         alias = from_clause.get('alias', None)
-
         subquery = self.context.session.query(*query).subquery(alias)
 
         for column in subquery.c:
@@ -171,6 +139,3 @@ class QueryCache():
 
     def add_order(self, col):
         self.__order_by__.append(col)
-
-
-

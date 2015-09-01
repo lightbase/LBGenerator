@@ -90,21 +90,6 @@ class CustomContextFactory(SQLAlchemyORMContext):
         """
         self._query = query
 
-
-
-
-
-
-
-        print("self._query = query >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-        print(str(query))
-        print("self._query = query <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
-
-
-
-
-
-
         # Instanciate the query compiler
         compiler = JsonQuery(self, **query)
         # Build query as SQL
@@ -132,48 +117,7 @@ class CustomContextFactory(SQLAlchemyORMContext):
 
         # Query results and close session
         self.session.close()
-
-        # try:
-            # lit = self.request.params['filter']
-            # if lit == '{"id_doc=null"}':
-                # # Filter results
-                # q = compiler.filter(results)
-            # else:
-                # # Filter results
-                # q = compiler.filter(results)
-                # # if self.entity.__table__.name.startswith('lb_file_'):
-                    # # q = q.filter('id_doc is not null')
-
-
-
-
-
-                # # print("q = compiler.filter(results) >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-                # # print(str(q))
-                # # print("q = compiler.filter(results) <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
-
-
-
-
-
-        # except:
-            # # Filter results
-            # q = compiler.filter(results)
-            # if self.entity.__table__.name.startswith('lb_file_'):
-                # q = q.filter('id_doc is not null')
-
-
-
         q = compiler.filter(results)
-
-
-
-        # print("q = compiler.filter(results) >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-        # print(str(q))
-        # print("q = compiler.filter(results) <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
-
-
-
 
         if compiler.order_by is not None:
             for o in compiler.order_by:
