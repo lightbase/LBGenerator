@@ -29,7 +29,7 @@ class JsonQuery():
         self.limit = limit
         self.offset = offset
 
-        # TODO: GET RID OF IT
+        # TODO: Get rid of it!
         self.order_by = order_by
         self.distinct = distinct
 
@@ -117,7 +117,6 @@ class QueryCache():
 
         query = JsonQuery(self.context, **from_clause).build_query()
         alias = from_clause.get('alias', None)
-
         subquery = self.context.session.query(*query).subquery(alias)
 
         for column in subquery.c:
@@ -140,6 +139,3 @@ class QueryCache():
 
     def add_order(self, col):
         self.__order_by__.append(col)
-
-
-

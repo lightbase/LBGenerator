@@ -2,6 +2,16 @@ from sqlalchemy.util import KeyedTuple
 from . import CustomContextFactory
 from .. import file_entity
 from collections import Iterable
+from sqlalchemy import and_
+from threading import Thread
+from sqlalchemy import insert
+from sqlalchemy import update
+from sqlalchemy import delete
+from sqlalchemy.util import KeyedTuple
+from sqlalchemy.orm.state import InstanceState
+from liblightbase.lbdoc.doctree import DocumentTree
+import logging
+from ...lib import cache
 
 class FileContextFactory(CustomContextFactory):
 
@@ -70,3 +80,29 @@ class FileContextFactory(CustomContextFactory):
         return self.session.query(self.entity).filter(
             self.entity.__table__.c.id_file == id
         ).first()
+
+    def delete_member(self, id):
+        """ 
+        @param id: primary key (int) of document.
+
+        Delete a "file type" record. Normally these records are linked
+        to "doc type" records. However, there are cases where these
+        records ("file type") are not associated with any "doc type",
+        so we've used this method to delete them.
+        """
+        if isinstance(id, int):
+            # Quando a operação DELETE envolve id_doc!
+            stmt = delete(self.entity.__table__).where(
+                self.entity.__table__.c.id_doc == id)
+        else:
+            # Quando a operação DELETE envolve id_file!
+            stmt = delete(self.entity.__table__).where(
+                self.entity.__table__.c.id_file == id)
+
+        self.session.execute(stmt)
+        self.session.commit()
+        self.session.close()
+
+        # Clear cache
+        cache.clear_collection_cache(self.base_name)
+        return True

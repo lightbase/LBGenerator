@@ -6,6 +6,7 @@ from . import CustomView
 from .. import config
 from ..lib.validation.file import validate_file_data
 from ..lib import utils
+from ..model.context.file import FileContextFactory
 
 
 class FileCustomView(CustomView):
@@ -38,15 +39,44 @@ class FileCustomView(CustomView):
     def update_member(self):
         raise NotImplementedError('NOT IMPLEMENTED')
 
-    def delete_member(self):
-        raise NotImplementedError('NOT IMPLEMENTED')
-
     def update_collection(self):
         raise NotImplementedError('NOT IMPLEMENTED')
 
     def delete_collection(self):
+        """ 
+        Delete database collection of objects. This method needs a valid JSON
+        query and a valid query path . Will query database objects, and update 
+        each path (deleting the respective path). Return count of successes and 
+        failures.
+        """
+        self.context.result_count = False
+        collection = self.get_collection(render_to_response=False)
+        success, failure = 0, 0
 
-        return Response("ok")
+        for member in collection:
+            # Override matchdict
+            self.request.matchdict = {'path': self.request.params.get('path'),
+                                      'id': member.id_doc}
+
+            if not self.context.session.is_active:
+                self.context.session.begin()
+            try:
+                if self.request.matchdict['path'] is None:
+                    self.context.delete_member(member.id_doc)
+                else:
+                    self.delete_path()
+                success = success + 1
+
+            except Exception as e:
+                failure = failure + 1
+
+            finally:
+                if self.context.session.is_active:
+                    self.context.session.close()
+
+        return Response('{"success": %d, "failure" : %d}'
+                        % (success, failure),
+                        content_type='application/json')
 
     __paths__ = [
         "id_file",
