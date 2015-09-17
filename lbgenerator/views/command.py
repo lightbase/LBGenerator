@@ -22,6 +22,7 @@ class CommandCustomView():
 
     def reset(self):
             BASES.bases = dict()
+            #comando mata toas as conexões com o banco de dados
             config.ENGINE.dispose()
             return Response('OK')
 
