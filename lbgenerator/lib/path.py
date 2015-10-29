@@ -35,10 +35,11 @@ class UpdateOnPathFunctions(PathFunctions):
         if len(self._args) is 3:
             try:
                 if type(self._args[2]) is dict:
-                    new_value = match.value
-                    for key in self._args[2]:
-                        new_value[key] = self._args[2][key]
-                    return (True, new_value)
+                    if self._args[1] == match.value[self._args[0]]:
+                        new_value = match.value
+                        for key in self._args[2]:
+                            new_value[key] = self._args[2][key]
+                        return (True, new_value)
                 else:
                     if match.value == self._args[1]:
                         return (True, self._args[2])

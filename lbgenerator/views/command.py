@@ -7,6 +7,7 @@ from .. import config
 from pyramid.response import Response
 from liblightbase.lbutils import object2json
 from sqlalchemy import create_engine
+from ..model.context.file import FileContextFactory
 
 class CommandCustomView():
 
@@ -21,12 +22,9 @@ class CommandCustomView():
 
     def reset(self):
             BASES.bases = dict()
-            try:
-                os.system('/etc/init.d/apache2 restart')
-                return Response('OK')
-            except:
-                os.system('/etc/init.d/httpd restart')
-                return Response('OK')
+            #comando mata toas as conexões com o banco de dados
+            config.ENGINE.dispose()
+            return Response('OK')
 
     def base_mem(self):
         return Response(str(list(BASES.bases.keys())))
