@@ -1,17 +1,18 @@
 from .. import config
-from .entities import *
-from .metabase.history import HistoryMetaBase
-from .metabase.user import UserMetaBase
-from ..lib.generator import BaseMemory
-from ..lib.provider import AuthProvider
 from sqlalchemy.schema import Sequence
 from sqlalchemy.orm import scoped_session
 from sqlalchemy.orm import mapper
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import engine_from_config
-
 from sqlalchemy import event
 from sqlalchemy.engine import Engine
+
+from .entities import *
+from .metabase.history import HistoryMetaBase
+from .metabase.user import UserMetaBase
+from ..lib.generator import BaseMemory
+from ..lib.provider import AuthProvider
+
 
 @event.listens_for(Engine, "connect")
 def connect(dbapi_connection, connection_record):

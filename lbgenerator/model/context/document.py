@@ -18,8 +18,8 @@ from liblightbase.lbdoc.doctree import DocumentTree
 from ...lib import cache
 import logging
 
-log = logging.getLogger()
 
+log = logging.getLogger()
 
 class DocumentContextFactory(CustomContextFactory):
 
@@ -143,7 +143,7 @@ class DocumentContextFactory(CustomContextFactory):
         return member
 
     def async_update_member(self, id, data, session):
-        """ 
+        """
         Called as a process. This method will update dt_idx in case of
         success while asyncronous indexing.
         """
@@ -166,6 +166,8 @@ class DocumentContextFactory(CustomContextFactory):
                 session.close()
 
     def delete_member(self, id):
+
+        # TODO: Revere o comportamento descrito abaixo...
         """ 
         @param id: primary key (int) of document.
 
@@ -189,9 +191,9 @@ class DocumentContextFactory(CustomContextFactory):
 
         # Clear cache
         cache.clear_collection_cache(self.base_name)
-
         return True
 
+    # Deleta no ES.
     def async_delete_member(self, id, session):
         error, data = self.index.delete(id)
         if error:
@@ -219,6 +221,8 @@ class DocumentContextFactory(CustomContextFactory):
         dbfiles = session.query(*file_cols).filter_by(id_doc= id).all()
         session.close()
         files = { }
+
+        # Obtendo a lista de arquivos?
         if dbfiles:
             for dbfile in dbfiles:
                 files[dbfile.id_file] = dict(filetext=dbfile.filetext)

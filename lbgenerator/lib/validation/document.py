@@ -66,7 +66,9 @@ def validate_put_data(cls, data, member):
 
     if 'value' in data:
 
-        # Get Base object
+        # Recupera a estrutura (json) da base no formato dict.
+        # Get Base object (CustomView <- DocumentContextFactory <-
+        # CustomContextFactory <- BaseMemory <- get_base())
         base = cls.get_base()
 
         # Parse JSON object

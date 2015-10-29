@@ -164,15 +164,20 @@ class DocumentCustomView(CustomView):
         every Node represents a collection, or an object identifier, or a field 
         name. 
         """
-        # Get raw mapped entity object.
+
+        # Obtêm o registro do banco de dados
         member = self.context.get_raw_member(self.request.matchdict['id'])
         if member is None:
             raise HTTPNotFound()
 
-        # Delete path
+        # Aqui define o caminho e a operação dentro de tuplas em um 
+        # array.
         list_pattern = [{
             'path': self.request.matchdict['path'],
             'mode':'delete'}]
+
+        # Define a operação x caminho e as funções executantes da tarefa via
+        # delegate.
         document = parse_list_pattern(
             self.get_base(),
             member.document,

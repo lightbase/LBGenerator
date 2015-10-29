@@ -10,6 +10,9 @@ import traceback
 from ..lib import utils
 import sys
 
+from ..lib.lb_exception import LbException
+from ..lib.utils import LbUseful
+
 class JsonErrorMessage():
 
     def get_error(self):
@@ -35,7 +38,6 @@ class JsonErrorMessage():
 class JsonHTTPServerError(HTTPInternalServerError, JsonErrorMessage):
 
     def __init__(self, request, _error_message):
-        print(traceback.format_exc())
         self._error_message = _error_message
         self.request = request
         Response.__init__(self, self.get_error(), status=self.code)
@@ -80,3 +82,14 @@ def error_view(exc, request):
         exc_msg = exc_obj.args[0]
     return JsonHTTPServerError(request, str(exc_msg))
 
+@view_config(context=LbException)
+def lbexception_view(exc, request):
+    """
+    Trata-se de um view customizada para os erros do LightBase.
+    """
+    exc_type, exc_obj, exc_tb = sys.exc_info()
+    exc_msg = exc_obj.args
+    if len(exc_obj.args) > 0:
+        exc_msg = exc_obj.args[0]
+    # return JsonHTTPServerError(request, str(exc_msg) + str(LbUseful().excep_useful()))
+    return JsonHTTPServerError(request, str(exc_msg))

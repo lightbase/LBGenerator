@@ -54,9 +54,8 @@ class UpdateOnPathFunctions(PathFunctions):
         new_value =  match.value.replace(*self._args)
         return (True, new_value)
 
-
-
 class DeleteOnPathFunctions(PathFunctions):
+    # O construtor está na classe PathFunctions.
 
     def _standard(self, match):
         return True
@@ -75,8 +74,10 @@ class DeleteOnPathFunctions(PathFunctions):
         value exists and matches "value".
         """
 
+        # Essa lógica tá meio dúbia e aparentemente redundante. O
+        # que ela faz?
         if len(self._args) is 3 and (self._args[2] == True or\
-        self._args[2] == 'true'):
+                self._args[2] == 'true'):
             if not self._args[0] in list(match.value.keys()):
                 return True
             try:
@@ -100,24 +101,34 @@ def get_path_fn(path, mode, fn=None, args=[]):
         "args": ["875.637.971-49"]
     }
     """
-    modefns ={
+
+    # Defione a classe conforme a operação solicitada.
+    modefns = {
         'insert': InsertOnPathFunctions,
         'update': UpdateOnPathFunctions,
         'delete': DeleteOnPathFunctions}
 
     try:
+        # Passa os parâmetros para o contrutor de uma das classes
+        # logo acima que está na classe "PathFunctions".
+        # Em "fn" é definida a função a realizar a tarefa mais os
+        # argumentos em "args". Se nenhuma função for definida em
+        # "fn" uma função padrão é executada!
         return path.split('/'), modefns[mode](fn, args)
     except KeyError:
         raise KeyError('Mode must be %s' % str(set(modes.keys())))
 
-
+# Define a operação x caminho e as funções executantes da tarefa via
+# delegate.
 def parse_list_pattern(base, document, pattern):
 
-    mapping ={
+    # Define métodos conforme a operação solicitada.
+    mapping = {
         'insert': base.set_path,
         'update': base.put_path,
         'delete': base.delete_path}
 
+    # Itera no conjunto de operações definidas em pattern.
     for operation in pattern:
         path, fn = get_path_fn(**operation)
         method = mapping[operation['mode']]

@@ -6,6 +6,7 @@ from .filter import FilterQuery
 
 class JsonQuery():
 
+    # Trata um query no formato json!
     def __init__(self, context, select = None, from_ = None, where = None, having = None,
             literal = None, limit=None, offset=None, alias=None,
             order_by=None, distinct=None): # TAKE THIS OUT
@@ -20,6 +21,7 @@ class JsonQuery():
         self.from_ = from_
         self.select = SelectQuery(context, select, alias=alias)
 
+        # Uso do "context" setado!
         if literal:
             self.where = FilterQuery(context, literal)
         else:
@@ -39,7 +41,7 @@ class JsonQuery():
         return self.select.column_list()
 
     def filter(self, results):
-        """ Filter results
+        """ Apply a filter over the query
         """
         results = self.where.filter(results)
 

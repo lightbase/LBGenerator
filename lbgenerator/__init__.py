@@ -33,6 +33,7 @@ def main(global_config, **settings):
         config.set_authorization_policy(authz_policy)
 
     model.make_restful_app()
+
     routing.make_routes(config)
     config.scan()
 

@@ -1,19 +1,14 @@
-#!/bin/env python
-# -*- coding: utf-8 -*-
-import sqlalchemy
 import json
+
+import sqlalchemy
 import logging
-from ... import model
-from ...lib import utils
+from sqlalchemy.sql.expression import func
+from sqlalchemy.util import KeyedTuple
 from sqlalchemy import asc, desc
 from pyramid.security import Deny
 from pyramid.security import Allow
-from ...lib.query import JsonQuery
-from ...model import begin_session
 from pyramid.security import Everyone
-from sqlalchemy.util import KeyedTuple
 from pyramid.compat import string_types
-from sqlalchemy.sql.expression import func
 from pyramid.security import Authenticated
 from pyramid.security import ALL_PERMISSIONS
 from pyramid_restler.model import SQLAlchemyORMContext
@@ -21,12 +16,16 @@ from beaker.cache import cache_region
 from beaker.cache import region_invalidate
 from ...lib import cache
 
+from ... import model
+from ...lib import utils
+from ...lib.query import JsonQuery
+from ...model import begin_session
+from ...lib.cache_master import CacheMaster
 
 log = logging.getLogger()
 
 
-class CustomContextFactory(SQLAlchemyORMContext):
-
+class CustomContextFactory(SQLAlchemyORMContext, CacheMaster):
     """ Default Factory Methods
     """
 
@@ -41,9 +40,13 @@ class CustomContextFactory(SQLAlchemyORMContext):
         (Deny, Everyone, ALL_PERMISSIONS),
     ]
 
-    def __init__(self, request):
+    def __init__(self, request, target_field=None):
         self.request = request
         self.base_name = self.request.matchdict.get('base')
+
+        # NOTE: P/ uso da classe "CacheMaster" que é herdada pela 
+        # classe atual! By Questor
+        self.target_field = target_field
 
     def session_factory(self):
         """ Connect to database and begin transaction
@@ -55,6 +58,17 @@ class CustomContextFactory(SQLAlchemyORMContext):
     def get_base(self):
         """ Return Base object
         """
+
+        '''
+        NOTE: O seguinte tipo é o que consta em "model.BASES"!
+        <lbgenerator.lib.generator.BaseMemory object>
+
+        Retorna a estrutura da base (json) convertida para dict.
+        Essa base pode vir do banco de dados ou da memória. Essas
+        estruras são guardadas em memória "on demand", ou seja,
+        na primeira vez que determinada estrutura de base é
+        requerida esse processo acontece! By Questor
+        '''
         return model.BASES.get_base(self.base_name)
 
     def set_base(self, base_json):
@@ -77,7 +91,7 @@ class CustomContextFactory(SQLAlchemyORMContext):
         self.session.delete(member)
         self.session.commit()
 
-        # Clear all caches on this case
+        # Clear all caches on this case.
         cache.clear_cache()
 
         return member
@@ -88,15 +102,32 @@ class CustomContextFactory(SQLAlchemyORMContext):
     def get_collection(self, query):
         """ Search database objects based on query
         """
+
+        # NOTE: Seta a query na instância da classe.
         self._query = query
 
-        # Instanciate the query compiler
+        # NOTE: Instanciate the query compiler.
         compiler = JsonQuery(self, **query)
-        # Build query as SQL
+
+        # NOTE: Build query as SQL.
         if self.request.method == 'DELETE' \
                 and self.entity.__table__.name.startswith('lb_doc_'):
+
+            '''
+            NOTE: Seta que a lista de ocorrência terá apenas o campo 
+            "id_doc" p/ os registros! By Questor
+            '''
             self.entity.__table__.__factory__ = [self.entity.__table__.c.id_doc]
 
+        '''
+        NOTE: "__factory__" em "self.entity.__table__.__factory__", 
+        pode ser, a princípio, entendido como um "place holder" que vai 
+        acomodar cada registro conforme o modelo definido neste. Esse 
+        modelo vem originalmente do método "get_doc_table(__base__, 
+        __metadata__, **rel_fields)" do arquivo "lbgenerator/model/
+        entities.py", mas pode ser modificado conforme logo acima... 
+        By Questor
+        '''
         self.total_count = None
         factory = None
         count_over = None
@@ -107,44 +138,66 @@ class CustomContextFactory(SQLAlchemyORMContext):
             count_over = func.count().over()
             factory = [count_over] + self.entity.__table__.__factory__
 
-        # Impede a explosão infinita de cláusula over
+        # NOTE: Impede a explosão infinita de cláusula over.
         if factory is None:
-            log.debug("Teste sem factory definido: \n%s", self.entity.__table__.__factory__)
-            results = self.session.query(*self.entity.__table__.__factory__)
+            q = self.session.query(*self.entity.__table__.__factory__)
         else:
-            log.debug("Teste do query factory com explode de over: \n%s", factory)
-            results = self.session.query(*factory)
+            q = self.session.query(*factory)
 
-        # Query results and close session
+        '''
+        NOTE: Query "q" e feche a sessão. Aqui é disparada a busca 
+        conforme o factory acima! By Questor
+        '''
         self.session.close()
-        q = compiler.filter(results)
 
+        '''
+        NOTE: "Compiler.filter()" faz a chamada "self.where.filter()" que 
+        assim como "self.session.query()" fazem parte! By Questor
+        '''
+        q = compiler.filter(q)
+
+        # NOTE: Ordena busca se for o caso.
         if compiler.order_by is not None:
             for o in compiler.order_by:
                 order = getattr(sqlalchemy, o)
                 for i in compiler.order_by[o]: q = q.order_by(order(i))
 
+        '''
+        NOTE: In a table, a column may contain many duplicate values; 
+        and sometimes you only want to list the different (distinct) 
+        values. The DISTINCT keyword can be used to return only 
+        distinct (different) values! By Questor
+        '''
         if compiler.distinct:
             q = q.distinct(compiler.distinct)
 
+        # NOTE: Obtêm limit e offset e seta no "compiler"! By Questor
         if not 'limit' in query:
             compiler.limit = 10
         if not 'offset' in query:
             compiler.offset = 0
 
+        # TODO: Pq limit e offset default? Tá meio ezquisito isso 
+        # aqui... By Questor
         self.default_limit = compiler.limit
         self.default_offset = compiler.offset
 
-        # limit and offset results
+        # NOTE: Seta limit e offset em "q"! By Questor
         q = q.limit(compiler.limit)
         q = q.offset(compiler.offset)
 
+        '''
+        NOTE: "q" é um objeto q contêm a query de busca setada e 
+        herda funcionalidades do SQLAlchemy.
+        '''
+        # NOTE: "feedback" contêm os registros localizados! By Questor
         feedback = q.all()
         if len(feedback) > 0 and count_over is not None:
-            # The count must be the first column on each row
+            # NOTE: The count must be the first column on each 
+            # row! By Questor
             self.total_count = int(feedback[0][0])
 
-        # Return Results
+        # NOTE: Caso não seja localizado nenhum registro.
         if query.get('select') == [] and self.request.method == 'GET':
             return []
 

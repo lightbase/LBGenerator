@@ -1,9 +1,12 @@
+import datetime
+import json
 
 from .. import utils
 from liblightbase.lbutils.conv import dict2base
-import datetime
+
 
 def validate_base_data(cls, request):
+
     params, method = utils.split_request(request)
     valid_fields = (
         'json_base',
@@ -20,6 +23,7 @@ def validate_base_data(cls, request):
 
         base = dict2base(json_base)
 
+        # Estrutura na tabela.
         data = dict(
             id_base = base.metadata.id_base,
             dt_base = base.metadata.dt_base,
@@ -29,7 +33,8 @@ def validate_base_data(cls, request):
             idx_exp_url = base.metadata.idx_exp_url,
             idx_exp_time= base.metadata.idx_exp_time,
             file_ext = base.metadata.file_ext,
-            file_ext_time = base.metadata.file_ext_time
+            file_ext_time = base.metadata.file_ext_time,
+            txt_mapping = base.metadata.txt_mapping
         )
 
     if method == 'PUT':
@@ -42,7 +47,6 @@ def validate_base_data(cls, request):
 
         json_base['metadata']['id_base'] = member.id_base
         json_base['metadata']['dt_base'] = member.dt_base
-
         base = cls.set_base(json_base)
 
         data = dict(
@@ -52,7 +56,8 @@ def validate_base_data(cls, request):
             idx_exp_url = base.metadata.idx_exp_url,
             idx_exp_time= base.metadata.idx_exp_time,
             file_ext = base.metadata.file_ext,
-            file_ext_time = base.metadata.file_ext_time
+            file_ext_time = base.metadata.file_ext_time,
+            txt_mapping = base.txt_mapping_json
         )
 
     return data

@@ -25,7 +25,6 @@ def clear_cache(name=None):
 
     return True
 
-
 def clear_collection_cache(base):
     """
     Clear all cache for the base

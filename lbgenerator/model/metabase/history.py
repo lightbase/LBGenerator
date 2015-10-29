@@ -102,7 +102,6 @@ class HistoryMetaBase():
             ]
         }
 
-
     def create_base(self, begin_session):
 
         from ..context.base import BaseContextFactory
@@ -116,8 +115,10 @@ class HistoryMetaBase():
             idx_exp_url = base.metadata.idx_exp_url,
             idx_exp_time= base.metadata.idx_exp_time,
             file_ext = base.metadata.file_ext,
-            file_ext_time = base.metadata.file_ext_time
+            file_ext_time = base.metadata.file_ext_time,
+            txt_mapping = base.txt_mapping_json
         )
+
         request = utils.FakeRequest(method = 'POST')
         base_context = BaseContextFactory(request)
         query = dict(

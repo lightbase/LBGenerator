@@ -18,14 +18,22 @@ def response_callback(request, response):
     if 'callback' in request.params:
         response.text = request.params['callback'] + '(' + response.text + ')'
 
-
 class CustomView(RESTfulView):
 
     """ Default Customized View Methods
     """
     def __init__(self, context, request):
+
         self.context = context
+
+        # Eis o modelo do que "request" recebe!
+        # GET /lbgenerator/log_lbindex HTTP/1.1\r
+        # Accept: */*\r
+        # Accept-Encoding: gzip, deflate\r
+        # Host: 127.0.0.1\r
+        # User-Agent: python-requests/2.3.0 CPython/2.6.6 Linux/2.6.32-431.el6.x86_64
         self.request = request
+
         self.request.add_response_callback(response_callback)
         self.base_name = self.request.matchdict.get('base')
 
@@ -42,6 +50,7 @@ class CustomView(RESTfulView):
     def get_collection(self, render_to_response=True):
         """ Search database objects
         """
+
         params = self.request.params.get('$$', '{}')
         query = utils.json2object(params)
         try:
@@ -50,8 +59,23 @@ class CustomView(RESTfulView):
             raise Exception('SearchError: %s' % e)
         else:
             if render_to_response:
+                '''
+                NOTE: "collection" está dentro de um padrão de 
+                "RESTfulView" que é herdado!
+                '''
+
+                '''
+                NOTE: Se já não houver nada definido na requizição p/ 
+                a renderização, redenderiza uma resposta de "acordo" 
+                com o que for possível definir (um "best_match") conforme 
+                o header da requizição privilegiando o formato 
+                'application/json' e depois 'application/xml'.
+                '''
+
+                # Renderizar p/ a resposta html...
                 response = self.render_to_response(collection)
             else:
+                # Sem renderizar p/ a resposta html...
                 response = collection
         return response
 

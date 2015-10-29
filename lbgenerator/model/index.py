@@ -36,12 +36,15 @@ class Index():
     def __init__(self, base, get_full_document):
         self.base = base
         self.get_full_document = get_full_document
+
         self.is_indexable = self.base.metadata.idx_exp
+
         self.INDEX_URL = self.base.metadata.idx_exp_url
         if self.is_indexable:
             self._host = self.INDEX_URL.split('/')[2]
             self._index = self.INDEX_URL.split('/')[3]
             self._type = self.INDEX_URL.split('/')[4]
+
         self.TIMEOUT = config.REQUESTS_TIMEOUT
 
     def to_url(self, *args):
@@ -62,6 +65,8 @@ class Index():
     def is_deleted(self, msg):
         """ Ensures index is deleted
         """
+        # TODO: Essa verificação de erro pela mensagem se limita
+        # ao formato do retorno do json. Tá meio tosco!
         try: DeletedIndex(**msg); return True
         except: return False
 
