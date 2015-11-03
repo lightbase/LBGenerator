@@ -1,8 +1,9 @@
+import datetime
 
 from .. import utils
 from liblightbase.lbtypes import Matrix
 from liblightbase.lbdoc.metadata import DocumentMetadata
-import datetime
+
 
 def validate_document_data(cls, request, *args):
 
@@ -117,4 +118,3 @@ def fix_matrix(mat):
             if len(mat[i]) < max(inner_lens):
                 [mat[i].append(None) for _ in range(max(inner_lens)-len(mat[i]))]
             fix_matrix(mat[i])
-

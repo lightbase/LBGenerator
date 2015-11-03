@@ -124,11 +124,14 @@ class TxtIdxContextFactory(CustomContextFactory):
         finally:
             self.session.close()
 
-    def get_member(self):
+    def get_member(self, nm_idx=None):
 
         # Note: Obtêm o nome do índice textual na rota submetida! 
         # By Questor
-        nm_idx = self.request.matchdict['nm_idx']
+
+        if nm_idx is None:
+            nm_idx = self.request.matchdict['nm_idx']
+
         self.single_member = True
 
         try:
@@ -153,7 +156,8 @@ class TxtIdxContextFactory(CustomContextFactory):
         finally:
             self.session.close()
 
-    def member_to_dict(self, member, fields=None):
+    # def member_to_dict(self, member, fields=None):
+    def member_to_dict(self, member):
 
         '''
         TODO: Não consegui entender pq o sempre verifica se há o método 
@@ -167,10 +171,11 @@ class TxtIdxContextFactory(CustomContextFactory):
 
         dict_member = utils.json2object(member._asdict()['struct'])
 
-        fields = getattr(self,'_query', {}).get('select')
-        if fields and not '*' in fields:
-            return {'settings':
-                {field: dict_member['settings'][field] for field in fields}
-            }
+        # TODO: Qual o uso disso aqui? Remover! By Questor
+        # fields = getattr(self,'_query', {}).get('select')
+        # if fields and not '*' in fields:
+            # return {'settings':
+                # {field: dict_member['settings'][field] for field in fields}
+            # }
 
         return dict_member

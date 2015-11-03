@@ -1,20 +1,19 @@
-#!/bin/env python
-# -*- coding: utf-8 -*-
+from pyramid.response import Response
+from pyramid.exceptions import HTTPNotFound
+
 from . import CustomView
 from ..lib.validation.document import validate_document_data
 from ..lib.validation.document import validate_put_data
 from ..lib.validation.path import validate_path_data
 from ..lib import utils
 from ..lib.log import Logger
-from pyramid.response import Response
-from pyramid.exceptions import HTTPNotFound
 from ..lib.path import parse_list_pattern
 
 
 class DocumentCustomView(CustomView):
-
     """ Registry Customized View Methods.
     """
+
     def __init__(self, context, request):
         super(DocumentCustomView, self).__init__(context, request)
         self.logger = Logger(__name__)
@@ -282,4 +281,3 @@ class DocumentCustomView(CustomView):
         return Response('{"success": %d, "failure" : %d}'
                         % (success, failure),
                         content_type='application/json')
-

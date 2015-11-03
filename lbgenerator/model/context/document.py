@@ -1,28 +1,28 @@
-#!/bin/env python
-# -*- coding: utf-8 -*-
+from threading import Thread
+
+from sqlalchemy import and_
+from sqlalchemy import insert
+from sqlalchemy import update
+from sqlalchemy import delete
+from sqlalchemy.util import KeyedTuple
+from sqlalchemy.orm.state import InstanceState
+
 from ... import config
 from ...lib import utils
 from ..index import Index
 from .. import file_entity
-from sqlalchemy import and_
-from threading import Thread
-from sqlalchemy import insert
-from sqlalchemy import update
-from sqlalchemy import delete
 from .. import document_entity
 from . import CustomContextFactory
 from ..entities import LBIndexError
-from sqlalchemy.util import KeyedTuple
-from sqlalchemy.orm.state import InstanceState
 from liblightbase.lbdoc.doctree import DocumentTree
 from ...lib import cache
+from ...lib.lb_exception import LbException
 import logging
-
 
 log = logging.getLogger()
 
-class DocumentContextFactory(CustomContextFactory):
 
+class DocumentContextFactory(CustomContextFactory):
     """ Document Factory Methods.
     """
 
@@ -90,11 +90,17 @@ class DocumentContextFactory(CustomContextFactory):
         return member
 
     def async_create_member(self, data, session):
-        """ 
-        Called as a process. This method will update dt_idx in case of
-        success while asyncronous indexing.
+        """ Called as a process. This method will update dt_idx in case 
+        of success while asyncronous indexing.
         """
-        ok, data = self.index.create(data)
+
+        ok = False
+        try:
+            ok, data = self.index.create(data)
+        except Exception as e:
+            # print(str(e))
+            log.debug("Problem creating in the index!\n%s", e)
+
         if ok:
             datacopy = data.copy()
             data.clear()
@@ -147,7 +153,15 @@ class DocumentContextFactory(CustomContextFactory):
         Called as a process. This method will update dt_idx in case of
         success while asyncronous indexing.
         """
-        ok, data = self.index.update(id, data, session)
+
+        ok = False
+        try:
+            ok, data = self.index.update(id, data, session)
+            # ok, data = self.index.create(data)
+        except Exception as e:
+            # print(str(e))
+            log.debug("Problem updating in the index!\n%s", e)
+
         if ok:
             datacopy = data.copy()
             data.clear()
@@ -195,8 +209,15 @@ class DocumentContextFactory(CustomContextFactory):
 
     # Deleta no ES.
     def async_delete_member(self, id, session):
-        error, data = self.index.delete(id)
-        if error:
+
+        ok = False
+        try:
+            ok, data = self.index.delete(id)
+        except Exception as e:
+            # print(str(e))
+            log.debug("Problem deleting in the index!\n%s", e)
+
+        if ok:
             stmt = insert(LBIndexError.__table__).values(**data)
             session.begin()
             try:
