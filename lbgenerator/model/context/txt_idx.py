@@ -156,8 +156,7 @@ class TxtIdxContextFactory(CustomContextFactory):
         finally:
             self.session.close()
 
-    # def member_to_dict(self, member, fields=None):
-    def member_to_dict(self, member):
+    def member_to_dict(self, member, fields=None):
 
         '''
         TODO: Não consegui entender pq o sempre verifica se há o método 
@@ -171,7 +170,7 @@ class TxtIdxContextFactory(CustomContextFactory):
 
         dict_member = utils.json2object(member._asdict()['struct'])
 
-        # TODO: Qual o uso disso aqui? Remover! By Questor
+        # TODO: Qual o uso disso aqui? Remover? By Questor
         # fields = getattr(self,'_query', {}).get('select')
         # if fields and not '*' in fields:
             # return {'settings':
