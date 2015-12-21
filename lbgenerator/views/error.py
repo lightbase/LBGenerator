@@ -16,14 +16,11 @@ from ..lib.utils import LbUseful
 class JsonErrorMessage():
 
     def get_error(self):
+
         json_error = {
             'status': self.code,
             'type': self.request.exc_info[0].__name__,
             'error_message': self._error_message,
-            #'traceback': traceback.format_exception(
-            #    self.request.exc_info[0],
-            #    self.request.exc_info[1],
-            #    self.request.exc_info[2]),
             'request':{
                 'client_addr': self.request.client_addr,
                 'user_agent': self.request.user_agent,
@@ -75,7 +72,6 @@ def notfound_view(request):
 def error_view(exc, request):
     """ Customized Exception View
     """
-    #l = traceback.extract_tb(request.exc_info[2])
     exc_type, exc_obj, exc_tb = sys.exc_info()
     exc_msg = exc_obj.args
     if len(exc_obj.args) > 0:
@@ -91,5 +87,4 @@ def lbexception_view(exc, request):
     exc_msg = exc_obj.args
     if len(exc_obj.args) > 0:
         exc_msg = exc_obj.args[0]
-    # return JsonHTTPServerError(request, str(exc_msg) + str(LbUseful().excep_useful()))
     return JsonHTTPServerError(request, str(exc_msg))

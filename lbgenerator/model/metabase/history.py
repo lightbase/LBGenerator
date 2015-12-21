@@ -107,6 +107,11 @@ class HistoryMetaBase():
         from ..context.base import BaseContextFactory
         base = dict2base(self.structure)
 
+
+        print(str(base))
+        print(str(dir(base)))
+
+
         data = dict(
             name = base.metadata.name,
             struct = base.json,

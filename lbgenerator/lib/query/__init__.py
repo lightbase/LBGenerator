@@ -1,4 +1,3 @@
-#!/bin/env python
 # -*- coding: utf-8 -*-
 from .select import SelectQuery
 from .filter import FilterQuery

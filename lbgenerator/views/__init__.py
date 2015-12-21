@@ -1,4 +1,3 @@
-#!/bin/env python
 # -*- coding: utf-8 -*-
 from ..lib import utils
 from pyramid_restler.view import RESTfulView
@@ -124,7 +123,7 @@ class CustomView(RESTfulView):
         """
         params = self.request.params.get('$$', '{}')
 
-        # Cache key concerning expiring time
+        # Cache key concerning expiring time.
         cache_type = self.request.params.get('cache_key', 'default_term')
         cache_key = self.request.current_route_path()
         query = utils.json2object(params)
@@ -147,6 +146,7 @@ class CustomView(RESTfulView):
         id = self.request.matchdict['id']
         cache_key = self.request.current_route_path()
         self.wrap = False
-        # Get cached member
+
+        # Get cached member.
         member = self.context.get_member_cached(id, cache_key)
         return self.render_to_response(member)
