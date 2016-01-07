@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
-from ..lib import utils
-from pyramid_restler.view import RESTfulView
 from pyramid.response import Response
 from pyramid.exceptions import HTTPNotFound
+from pyramid_restler.view import RESTfulView
 from pyramid.httpexceptions import HTTPFound
 
+from ..lib import utils
 
 def response_callback(request, response):
-    #response.headerlist.append(('x', 'y'))
     try:
         if request.context.session.is_active:
             request.context.session.close()
@@ -17,10 +16,11 @@ def response_callback(request, response):
     if 'callback' in request.params:
         response.text = request.params['callback'] + '(' + response.text + ')'
 
-class CustomView(RESTfulView):
 
-    """ Default Customized View Methods
+class CustomView(RESTfulView):
+    """Default Customized View Methods.
     """
+
     def __init__(self, context, request):
 
         self.context = context
@@ -37,17 +37,22 @@ class CustomView(RESTfulView):
         self.base_name = self.request.matchdict.get('base')
 
     def get_base(self):
-        """ Return Base object
+        """Return Base object
         """
+
         return self.context.get_base()
 
     def set_base(self, base_json):
-        """ Set Base object
+        """Set Base object
         """
+
         return self.context.set_base(base_json)
 
     def get_collection(self, render_to_response=True):
-        """ Search database objects
+        """Search database objects.
+
+        @param render_to_response: Se deseja que a saída seja 
+        renderizada.
         """
 
         params = self.request.params.get('$$', '{}')
@@ -58,23 +63,22 @@ class CustomView(RESTfulView):
             raise Exception('SearchError: %s' % e)
         else:
             if render_to_response:
-                '''
-                NOTE: "collection" está dentro de um padrão de 
-                "RESTfulView" que é herdado!
-                '''
 
-                '''
-                NOTE: Se já não houver nada definido na requizição p/ 
-                a renderização, redenderiza uma resposta de "acordo" 
-                com o que for possível definir (um "best_match") conforme 
-                o header da requizição privilegiando o formato 
-                'application/json' e depois 'application/xml'.
-                '''
+                # NOTE: "collection" está dentro de um padrão de 
+                # "RESTfulView" que é herdado! By Questor
 
-                # Renderizar p/ a resposta html...
+                # NOTE: Se já não houver nada definido na requizição p/ 
+                # a renderização, redenderiza uma resposta de "acordo" 
+                # com o que for possível definir (um "best_match") 
+                # conforme o header da requizição privilegiando o 
+                # formato 'application/json' e depois 'application/xml'!
+                # By Questor
+
+                # NOTE: Renderizar p/ a resposta html... By Questor
                 response = self.render_to_response(collection)
             else:
-                # Sem renderizar p/ a resposta html...
+
+                # NOTE: Sem renderizar p/ a resposta html... By Questor
                 response = collection
         return response
 
@@ -115,15 +119,15 @@ class CustomView(RESTfulView):
             return Response(default_response, charset='utf-8', status=200, content_type='')
 
     def get_collection_cached(self, render_to_response=True):
-        """
-        Return document collection in cache
+        """Return document collection in cache
 
         :param render_to_response: Should we render or return JSON
         :return: Document HTML or JSON
         """
+
         params = self.request.params.get('$$', '{}')
 
-        # Cache key concerning expiring time.
+        # NOTE: Cache key concerning expiring time!
         cache_type = self.request.params.get('cache_key', 'default_term')
         cache_key = self.request.current_route_path()
         query = utils.json2object(params)
@@ -139,14 +143,13 @@ class CustomView(RESTfulView):
         return response
 
     def get_member_cached(self):
+        """Get member cached.
         """
-        Get member cached
-        :return:
-        """
+
         id = self.request.matchdict['id']
         cache_key = self.request.current_route_path()
         self.wrap = False
 
-        # Get cached member.
+        # NOTE: Get cached member!
         member = self.context.get_member_cached(id, cache_key)
         return self.render_to_response(member)

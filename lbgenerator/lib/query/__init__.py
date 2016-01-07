@@ -5,10 +5,10 @@ from .filter import FilterQuery
 
 class JsonQuery():
 
-    # Trata um query no formato json!
-    def __init__(self, context, select = None, from_ = None, where = None, having = None,
-            literal = None, limit=None, offset=None, alias=None,
-            order_by=None, distinct=None): # TAKE THIS OUT
+    # NOTE: Trata um query no formato "json"! By Questor
+    def __init__(self, context, select = None, from_ = None, where = None, 
+            having = None, literal = None, limit = None, offset = None, 
+            alias = None, order_by = None, distinct = None, full_reg = False):
 
         self.context = context
 
@@ -20,7 +20,6 @@ class JsonQuery():
         self.from_ = from_
         self.select = SelectQuery(context, select, alias=alias)
 
-        # Uso do "context" setado!
         if literal:
             self.where = FilterQuery(context, literal)
         else:
@@ -29,10 +28,9 @@ class JsonQuery():
         self.having = having
         self.limit = limit
         self.offset = offset
-
-        # TODO: Get rid of it!
         self.order_by = order_by
         self.distinct = distinct
+        self.full_reg = full_reg
 
     def build_query(self):
         """ Build the SELECT list as SQL

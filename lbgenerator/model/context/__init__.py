@@ -91,7 +91,7 @@ class CustomContextFactory(SQLAlchemyORMContext, CacheMaster):
         self.session.delete(member)
         self.session.commit()
 
-        # Clear all caches on this case.
+        # NOTE: Clear all caches on this case! By Questor
         cache.clear_cache()
 
         return member
@@ -100,7 +100,9 @@ class CustomContextFactory(SQLAlchemyORMContext, CacheMaster):
         return self.session.query(self.entity).get(id)
 
     def get_collection(self, query):
-        """ Search database objects based on query
+        """Search database objects based on query.
+
+        @param query: Query de busca.
         """
 
         # NOTE: Seta a query na instância da classe.
@@ -186,13 +188,16 @@ class CustomContextFactory(SQLAlchemyORMContext, CacheMaster):
         q = q.limit(compiler.limit)
         q = q.offset(compiler.offset)
 
-        '''
-        NOTE: "q" é um objeto q contêm a query de busca setada e 
-        herda funcionalidades do SQLAlchemy.
-        '''
-        # NOTE: "feedback" contêm os registros localizados! By Questor
+
+        # NOTE: "q" é um objeto q contêm a query de busca setada e 
+        # herda funcionalidades do SQLAlchemy.
+
+        # NOTE: "feedback" contêm os registros localizados. O método 
+        # ".all()" dispara a busca por fim! By Questor
         feedback = q.all()
+
         if len(feedback) > 0 and count_over is not None:
+
             # NOTE: The count must be the first column on each 
             # row! By Questor
             self.total_count = int(feedback[0][0])
@@ -201,7 +206,27 @@ class CustomContextFactory(SQLAlchemyORMContext, CacheMaster):
         if query.get('select') == [] and self.request.method == 'GET':
             return []
 
+        if compiler.full_reg:
+            # NOTE: Como "feedback" é um tipo referência nos apropriamos 
+            # naturalmente dessa qualidade para poupar memória! By Questor
+            self.full_documents(feedback)
+
         return feedback
+
+    def full_documents(self, members):
+        """À partir de uma lista de ocorrências dada insere os textos 
+        extraídos dos arquivos, se houverem, na mesma!
+
+        @param members: Saída de uma consulta usando o SQLAlchemy.
+        """
+
+        # NOTE: Obtêm a lista de id's dos "docs" para pesquisar nos 
+        # "files" ! By Questor
+        list_id_doc = []
+        for member in members:
+            list_id_doc.append(member.id_doc)
+
+        self.get_full_documents(list_id_doc, members)
 
     def wrap_json_obj(self, obj):
         """
