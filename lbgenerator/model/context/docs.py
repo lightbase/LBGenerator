@@ -1,7 +1,6 @@
 
 
 class DocsContextFactory():
-
     """ Document Factory Methods.
     """
 

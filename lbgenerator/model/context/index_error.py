@@ -3,9 +3,7 @@ from . import CustomContextFactory
 from ..entities import LBIndexError
 
 class IndexErrorContextFactory(CustomContextFactory):
-
-    """ Document Factory Methods.
-    """
+    """Document factory methods."""
 
     entity = LBIndexError
 
