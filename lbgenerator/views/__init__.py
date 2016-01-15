@@ -76,9 +76,11 @@ class CustomView(RESTfulView):
 
     def delete_member(self):
         id = self.request.matchdict['id']
-        member = self.context.delete_member(id)
+        member = self.context.get_raw_member(id)
         if member is None:
             raise HTTPNotFound()
+
+        member = self.context.delete_member(id)
         return Response('DELETED', charset='utf-8', status=200, content_type='')
 
     def render_custom_response(self, id, default_response):
