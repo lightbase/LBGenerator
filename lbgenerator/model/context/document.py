@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-
-
 import sys
 
 from threading import Thread
@@ -137,22 +134,24 @@ class DocumentContextFactory(CustomContextFactory):
         @param index: Flag that indicates the need of indexing the
         document. 
         """
+
         self.delete_files(member, data['__files__'])
         self.create_files(member, data['__files__'])
         data.pop('__files__')
+
         stmt = update(self.entity.__table__).where(
             self.entity.__table__.c.id_doc == data['id_doc'])\
             .values(**data)
+
         self.session.execute(stmt)
         self.session.commit()
         self.session.close()
+
         if index and self.index.is_indexable:
             Thread(target=self.async_update_member,
                 args=(data['id_doc'], data, self.session)).start()
 
-        # Clear cache
-        log.debug("Realizando limpeza de cache para a base %s", self.base_name)
-        #cache.clear_document_cache(self.base_name, data['id_doc'])
+        # NOTE: Clear cache!
         cache.clear_collection_cache(self.base_name)
 
         return member

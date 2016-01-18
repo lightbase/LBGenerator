@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from pyramid.response import Response
 from pyramid.exceptions import HTTPNotFound
 from pyramid_restler.view import RESTfulView
@@ -18,8 +17,7 @@ def response_callback(request, response):
 
 
 class CustomView(RESTfulView):
-    """Default Customized View Methods.
-    """
+    """Default Customized View Methods."""
 
     def __init__(self, context, request):
 

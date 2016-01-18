@@ -4,7 +4,6 @@ from .. import utils
 from liblightbase.lbtypes import Matrix
 from liblightbase.lbdoc.metadata import DocumentMetadata
 
-
 def validate_document_data(cls, request, *args):
 
     params, method = utils.split_request(request)
@@ -67,7 +66,7 @@ def validate_put_data(cls, data, member):
 
     if 'value' in data:
 
-        # Recupera a estrutura (json) da base no formato dict.
+        # NOTE: Recupera a estrutura (json) da base no formato dict.
         # Get Base object (CustomView <- DocumentContextFactory <-
         # CustomContextFactory <- BaseMemory <- get_base())
         base = cls.get_base()
