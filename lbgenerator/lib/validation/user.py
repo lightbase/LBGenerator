@@ -1,10 +1,7 @@
-
 from .. import utils
 import datetime
 
 def validate_user_data(cls, request, id=None):
-
-
     params, method = utils.split_request(request)
     if method == 'GET': return None
     return dict(request.params)
@@ -38,5 +35,4 @@ def validate_post_data(cls, data):
     return data
 
 def validate_put_data(cls, data, id):
-
     return data

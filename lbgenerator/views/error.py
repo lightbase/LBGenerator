@@ -10,17 +10,17 @@ import traceback
 from ..lib import utils
 import sys
 
+from ..lib.lb_exception import LbException
+from ..lib.utils import LbUseful
+
 class JsonErrorMessage():
 
     def get_error(self):
+
         json_error = {
             'status': self.code,
             'type': self.request.exc_info[0].__name__,
             'error_message': self._error_message,
-            #'traceback': traceback.format_exception(
-            #    self.request.exc_info[0],
-            #    self.request.exc_info[1],
-            #    self.request.exc_info[2]),
             'request':{
                 'client_addr': self.request.client_addr,
                 'user_agent': self.request.user_agent,
@@ -35,7 +35,6 @@ class JsonErrorMessage():
 class JsonHTTPServerError(HTTPInternalServerError, JsonErrorMessage):
 
     def __init__(self, request, _error_message):
-        print(traceback.format_exc())
         self._error_message = _error_message
         self.request = request
         Response.__init__(self, self.get_error(), status=self.code)
@@ -73,10 +72,19 @@ def notfound_view(request):
 def error_view(exc, request):
     """ Customized Exception View
     """
-    #l = traceback.extract_tb(request.exc_info[2])
     exc_type, exc_obj, exc_tb = sys.exc_info()
     exc_msg = exc_obj.args
     if len(exc_obj.args) > 0:
         exc_msg = exc_obj.args[0]
     return JsonHTTPServerError(request, str(exc_msg))
 
+@view_config(context=LbException)
+def lbexception_view(exc, request):
+    """
+    Trata-se de um view customizada para os erros do LightBase.
+    """
+    exc_type, exc_obj, exc_tb = sys.exc_info()
+    exc_msg = exc_obj.args
+    if len(exc_obj.args) > 0:
+        exc_msg = exc_obj.args[0]
+    return JsonHTTPServerError(request, str(exc_msg))

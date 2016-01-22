@@ -1,4 +1,3 @@
-#!/bin/env python
 # -*- coding: utf-8 -*-
 __author__ = 'eduardo'
 import re
@@ -24,7 +23,6 @@ def clear_cache(name=None):
         _cache.clear()
 
     return True
-
 
 def clear_collection_cache(base):
     """
