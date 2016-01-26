@@ -317,7 +317,7 @@ class Lb_Txt_Idx(Base):
     __tablename__ = 'lb_txt_idx'
 
     # @column id_idx: The primary key for this table.
-    id_idx = Column(Integer, Sequence('lb_txt_idx_seq'), primary_key=True)
+    id_idx = Column(Integer, Sequence('lb_txt_idx_id_idx_seq'), primary_key=True)
 
     # @column nm_idx: Nome único p/ o índice criado.
     nm_idx = Column(String, nullable=False)
