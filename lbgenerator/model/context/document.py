@@ -199,7 +199,7 @@ class DocumentContextFactory(CustomContextFactory):
             self.entity.__table__.c.id_doc == id)
         stmt2 = delete(self.file_entity.__table__).where(
             self.file_entity.__table__.c.id_doc == id)
-        self.session.execute(stmt1)
+        result = self.session.execute(stmt1)
         self.session.execute(stmt2)
         self.session.commit()
         self.session.close()
@@ -209,7 +209,9 @@ class DocumentContextFactory(CustomContextFactory):
 
         # Clear cache
         cache.clear_collection_cache(self.base_name)
-        return True
+
+        # Returns the ResultProxy to check if something was deleted
+        return result
 
     # Deleta no ES.
     def async_delete_member(self, id, session):

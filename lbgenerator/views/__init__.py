@@ -101,11 +101,10 @@ class CustomView(RESTfulView):
 
     def delete_member(self):
         id = self.request.matchdict['id']
-        member = self.context.get_raw_member(id)
-        if member is None:
+        is_deleted = self.context.delete_member(id)
+        # Check if the number of deleted rows is different than 0
+        if is_deleted.__dict__['rowcount'] == 0:
             raise HTTPNotFound()
-
-        member = self.context.delete_member(id)
         return Response('DELETED', charset='utf-8', status=200, content_type='')
 
     def render_custom_response(self, id, default_response):
