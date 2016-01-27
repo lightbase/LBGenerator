@@ -6,9 +6,13 @@ from ..lib import utils
 from pyramid.response import Response
 from pyramid.exceptions import HTTPNotFound
 from ..lib import cache
+import requests
 
 
 class BaseCustomView(CustomView):
+    def lbirequest(self):
+        payload = {'directive': 'restart'}
+        r = requests.post("http://127.0.0.1:6543/", data=payload)
 
     """ Base Customized View Methods
     """
@@ -32,6 +36,7 @@ class BaseCustomView(CustomView):
         if member is None:
             raise HTTPNotFound()
         else:
+            self.lbirequest()
             return Response('UPDATED', charset='utf-8', status=200, content_type='')
 
     def delete_member(self):
@@ -42,6 +47,7 @@ class BaseCustomView(CustomView):
 
         # Clear cache
         cache.clear_cache()
+        self.lbirequest()
         return Response('DELETED', charset='utf-8', status=200, content_type='')
 
     def get_column(self):
