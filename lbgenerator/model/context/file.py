@@ -1,20 +1,21 @@
-from sqlalchemy.util import KeyedTuple
-from . import CustomContextFactory
-from .. import file_entity
-from collections import Iterable
-from sqlalchemy import and_
+import logging
 from threading import Thread
+from collections import Iterable
+
+from sqlalchemy.util import KeyedTuple
+from sqlalchemy import and_
 from sqlalchemy import insert
 from sqlalchemy import update
 from sqlalchemy import delete
-from sqlalchemy.util import KeyedTuple
 from sqlalchemy.orm.state import InstanceState
+
 from liblightbase.lbdoc.doctree import DocumentTree
-import logging
 from ...lib import cache
+from . import CustomContextFactory
+from .. import file_entity
+
 
 class FileContextFactory(CustomContextFactory):
-
     """ Document Factory Methods
     """
 

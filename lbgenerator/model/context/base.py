@@ -1,7 +1,8 @@
-#!/bin/env python
-# -*- coding: utf-8 -*-
 import datetime
 import logging
+
+from sqlalchemy.util import KeyedTuple
+
 from . import CustomContextFactory
 from ..entities import *
 from ..index import Index
@@ -41,11 +42,18 @@ class BaseContextFactory(CustomContextFactory):
 
     def create_member(self, data):
 
-        # Create reg and doc tables
+        # Create reg and doc tables.
         base_name = data['name']
         base_json = utils.json2object(data['struct'])
+
+        '''
+        Trata-se de uma variável global de __init__.py
+        global BASES
+        BASES = BaseMemory(begin_session, LBBase)
+        '''
         base = model.BASES.set_base(base_json)
         data['struct'] = base.json
+        data['txt_mapping'] = base.txt_mapping_json
 
         file_table = get_file_table(base_name, config.METADATA)
         doc_table = get_doc_table(base_name, config.METADATA,
@@ -84,6 +92,7 @@ class BaseContextFactory(CustomContextFactory):
 
         for name in data:
             setattr(member, name, data[name])
+
         self.session.commit()
 
         model.HISTORY.create_member(**{
@@ -110,13 +119,13 @@ class BaseContextFactory(CustomContextFactory):
             index = Index(model.BASES.bases[member.name], None)
             del model.BASES.bases[member.name]
 
-        # Delete parallel tables
+        # Delete parallel tables.
         file_table = get_file_table(member.name, config.METADATA)
         doc_table = get_doc_table(member.name, config.METADATA, **relational_fields)
         file_table.drop(config.ENGINE, checkfirst=True)
         doc_table.drop(config.ENGINE, checkfirst=True)
 
-        # Delete base
+        # Delete base.
         self.session.delete(member)
         self.session.commit()
         if index:
@@ -136,11 +145,16 @@ class BaseContextFactory(CustomContextFactory):
 
     def member_to_dict(self, member, fields=None):
 
+        '''
+        TODO: Não consegui entender pq o sempre verifica se há o método 
+        "_asdict()" visto que ele nunca está disponível e o pior de tudo 
+        é que sempre loga. Tá tosco no último e por essa razão comentei 
+        a linha que gera o log! By Questor
+        '''
         try:
             dict_member = member._asdict()
         except AttributeError as e:
-            # Continue parsing
-            log.debug("Error parsing as dict!\n%s", e)
+            # Continue parsing.
             if not isinstance(member, KeyedTuple):
                 member = self.member2KeyedTuple(member)
 

@@ -40,11 +40,11 @@ def _import(request):
 
     with tarfile.open(gzpath) as gzfile:
         members = gzfile.getmembers()
-        gzfile.extractall('/var/neolight')
+        gzfile.extractall('/tmp/neolight')
 
     os.remove(gzpath)
 
-    filepath = os.path.abspath('/var/neolight/' + members[0].name)
+    filepath = os.path.abspath('/tmp/neolight/' + members[0].name)
 
     request = FakeRequest(
         matchdict=request.matchdict,
@@ -65,10 +65,17 @@ def _import(request):
         pool.append(p)
 
     # produce data
+    success = 0
+    failure = 0
     with codecs.open(filepath, encoding='utf-8') as f:
         iters = itertools.chain(f, (None,) * num_workers)
         for num_and_line in enumerate(iters):
-            work.put(num_and_line)
+            try:
+                test = work.put(num_and_line)
+                if num_and_line[1] is not None:
+                    success = success +1
+            except:
+                failure = failure +1
 
     os.remove(filepath)
 

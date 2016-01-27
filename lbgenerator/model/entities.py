@@ -1,5 +1,4 @@
 
-
 # TODO: Fix NULL casing, this will help:
 #https://github.com/psycopg/psycopg2/blob/497247a52836e971b0b5a5779d0c5c60b98e654d/psycopg/adapter_list.c
 #https://github.com/zzzeek/sqlalchemy/blob/master/lib/sqlalchemy/dialects/postgresql/base.py
@@ -17,10 +16,12 @@ from sqlalchemy.types import Integer, String, DateTime, Binary, Boolean
 from sqlalchemy.schema import Sequence
 from sqlalchemy.schema import MetaData
 from sqlalchemy.dialects.postgresql import ARRAY
-from .jsondbtype import BaseJSON, DocumentJSON, GUID
 from sqlalchemy.dialects.postgresql import JSON
 
+from .jsondbtype import BaseJSON, DocumentJSON, GUID
+
 Base = declarative_base()
+
 
 class LBBase(Base):
     """
@@ -28,6 +29,7 @@ class LBBase(Base):
     Class used to mapp the 'lb_base' Table to object. 'lb_base' Table persists
     all Bases structures and it's metadata.
     """
+
     __tablename__ = 'lb_base'
 
     # @column id_base: The primary key for this table and uniquely identify each
@@ -69,9 +71,14 @@ class LBBase(Base):
     # asynchronous extractor to sleep beetwen the extracting processes.
     file_ext_time = Column(Integer)
 
+    # @column txt_mapping: Rotorna o mapeamento/configuração da 
+    # indexaçao textual.
+    txt_mapping = Column(String)
+
 # Table factory are the default columns used when query object by API.
 LBBase.__table__.__factory__ = [LBBase.__table__.c.id_base,
                                 LBBase.__table__.c.struct]
+
 
 class LBDocument():
     """
@@ -177,6 +184,7 @@ def get_doc_table(__base__, __metadata__, **rel_fields):
 
     return table
 
+
 class LBFile():
     """
     Files Object-Relational Mapping. Class used to mapp the 'lb_file_<BASE>' 
@@ -261,6 +269,7 @@ def get_file_table(__base__, __metadata__):
                         ]
     return table
 
+
 class LB_Users(Base):
 
     __tablename__ = 'lb_users'
@@ -272,6 +281,7 @@ class LB_Users(Base):
     js_auth = Column(String, nullable=False)
     dt_cad = Column(DateTime, nullable=False)
     in_active = Column(Boolean, nullable=False)
+
 
 class LBIndexError(Base):
     """
@@ -299,4 +309,37 @@ class LBIndexError(Base):
 LBIndexError.__table__.__factory__ = list(LBIndexError.__table__.c)
 
 
+class Lb_Txt_Idx(Base):
+    """
+    Modelo de dados (ORM) da table "lb_txt_idx". Nesta table são
+    guardadas as configurações de índices textuais.
+    """
+    __tablename__ = 'lb_txt_idx'
 
+    # @column id_idx: The primary key for this table.
+    id_idx = Column(Integer, Sequence('lb_txt_idx_id_idx_seq'), primary_key=True)
+
+    # @column nm_idx: Nome único p/ o índice criado.
+    nm_idx = Column(String, nullable=False)
+
+    # @column struct: Estrutura da base.
+    struct = Column(String, nullable=False)
+
+    # @column cfg_idx: Configuração de índice a ser submetida no ES.
+    cfg_idx = Column(String, nullable=False)
+
+    # @column dt_crt_idx: Data de criação do registro.
+    dt_crt_idx = Column(DateTime, nullable=False)
+
+    # @column dt_upt_idx: Data do último update do registro.
+    dt_upt_idx = Column(DateTime, nullable=False)
+
+    # @column url_idx: URL de indexação.
+    url_idx = Column(String, nullable=False)
+
+    # @column actv_idx: Se o registro está ativo ou não.
+    actv_idx = Column(Boolean, nullable=False)
+
+# Table factory are the default columns used when query object by API.
+Lb_Txt_Idx.__table__.__factory__ = [Lb_Txt_Idx.__table__.c.id_idx,
+                                Lb_Txt_Idx.__table__.c.cfg_idx]

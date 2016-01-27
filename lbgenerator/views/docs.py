@@ -1,6 +1,7 @@
-
 from pyramid.response import Response
+
 from ..lib import utils
+
 
 class DocsCustomView():
 
@@ -245,4 +246,3 @@ class DocsCustomView():
                 }
             }
         }
-

@@ -1,21 +1,18 @@
-#!/bin/env python
-# -*- coding: utf-8 -*-
+from pyramid.response import Response
+from pyramid.exceptions import HTTPNotFound
+
 from . import CustomView
 from ..lib.validation.base import validate_base_data
 from ..lib import utils
-from pyramid.response import Response
-from pyramid.exceptions import HTTPNotFound
 from ..lib import cache
 import requests
 
 
 class BaseCustomView(CustomView):
-    def lbirequest(self):
-        payload = {'directive': 'restart'}
-        r = requests.post("http://127.0.0.1:6543/", data=payload)
 
     """ Base Customized View Methods
     """
+
     def __init__(self, context, request):
         super(BaseCustomView, self).__init__(context, request)
 
@@ -36,7 +33,6 @@ class BaseCustomView(CustomView):
         if member is None:
             raise HTTPNotFound()
         else:
-            self.lbirequest()
             return Response('UPDATED', charset='utf-8', status=200, content_type='')
 
     def delete_member(self):
@@ -47,7 +43,6 @@ class BaseCustomView(CustomView):
 
         # Clear cache
         cache.clear_cache()
-        self.lbirequest()
         return Response('DELETED', charset='utf-8', status=200, content_type='')
 
     def get_column(self):
@@ -72,6 +67,5 @@ class BaseCustomView(CustomView):
                     value = base.get_struct(path_name).asdict
             except Exception as e:
                 raise Exception(e)
-
         value = utils.object2json(value)
         return Response(value, content_type='application/json')

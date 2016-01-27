@@ -1,6 +1,25 @@
+import sys
+import traceback
 
 from liblightbase.lbtypes.extended import FileMask
 from liblightbase.lbutils.codecs import *
+
+class LbUseful():
+    """
+    Essa classe contém vários utilitários para o LightBase!
+    """
+
+    def excep_useful(self):
+        """
+        Esse método serve para dar um retorno amigável ao usário no 
+        caso de exceção!
+        """
+        exceptiontype, exceptionobj, exceptiontb = sys.exc_info()
+        exceptiontbcomplete = traceback.format_tb(exceptiontb)
+        traceexceptionstr = "Exception Details: Type '" + str(exceptiontype) +\
+                            "', Inner Exception '" + str(exceptiontbcomplete[-1]) + \
+                            "', Message '" + str(exceptionobj) + "'."
+        return [exceptiontype, exceptiontbcomplete, traceexceptionstr]
 
 class Accept():
 
