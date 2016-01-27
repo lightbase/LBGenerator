@@ -9,11 +9,21 @@ from ... import model
 from ... import config
 from ...lib import utils
 from sqlalchemy.util import KeyedTuple
+import requests
 
 log = logging.getLogger()
 
 
 class BaseContextFactory(CustomContextFactory):
+    
+        # Restarta o lbindex quando a base for modificada
+    def lbirestart(self):
+        param = {'directive': 'restart'}
+        url = config.LBI_URL
+        response = requests.post(url, param)
+        if response.status_code != 200:
+            raise Exception('Error %s to restart LBIndex'
+                % response.status_code ,requests.exceptions.RequestException)
 
     """ Base Factory Methods
     """
@@ -47,6 +57,7 @@ class BaseContextFactory(CustomContextFactory):
         self.session.add(member)
         self.session.commit()
         self.session.close()
+        self.lbirestart()
         return member
 
     def update_member(self, id, data):
@@ -83,7 +94,7 @@ class BaseContextFactory(CustomContextFactory):
             'structure': utils.json2object(member.struct),
             'status': 'UPDATED'
         })
-
+        self.lbirestart()
         self.session.close()
 
         return member
@@ -117,9 +128,9 @@ class BaseContextFactory(CustomContextFactory):
             'date': datetime.datetime.now().strftime('%d/%m/%Y %H:%M:%S'),
             'name': member.name,
             'structure': utils.json2object(member.struct),
-            'status': 'DELETED'
+            'status': 'DELETE'
         })
-
+        self.lbirestart()
         self.session.close()
         return member
 

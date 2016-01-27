@@ -18,6 +18,7 @@ def set_globals(**settings):
     global MAX_OVERFLOW
     global TMP_DIR
     global REQUESTS_TIMEOUT
+    global LBI_URL
 
     # Add configuration as environment vars
     DB_URL = os.environ.get('DATABASE_URL', None)
@@ -51,7 +52,6 @@ def set_globals(**settings):
         REQUESTS_TIMEOUT = int(settings['requests.timeout'])
     else:
         REQUESTS_TIMEOUT = int(REQUESTS_TIMEOUT)
-
     global ENGINE
     global METADATA
 
@@ -59,6 +59,8 @@ def set_globals(**settings):
         json_serializer=object2json,
         json_deserializer=json2object
     )
+    LBI_URL = settings['lbindex_url']
+    
     #ENGINE = create_engine(DB_URL, pool_size=POOL_SIZE, max_overflow=MAX_OVERFLOW, echo=True)
     METADATA = MetaData(ENGINE)
 
