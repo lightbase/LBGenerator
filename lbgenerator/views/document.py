@@ -110,8 +110,6 @@ class DocumentCustomView(CustomView):
         object identifier, or a field name. 
         """
 
-        print("3 getattr(self.request.params")
-
         # NOTE: Get raw mapped entity object!
         if member is None:
             member = self.context.get_raw_member(self.request.matchdict['id'])
