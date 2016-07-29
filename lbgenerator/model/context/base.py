@@ -86,9 +86,11 @@ class BaseContextFactory(CustomContextFactory):
             new_name = 'lb_doc_%s_id_doc_seq' %(data['name'])
             self.session.execute('ALTER SEQUENCE %s RENAME TO %s' %(old_name, new_name))
 
-            old_name = 'lb_file_%s_id_file_seq' %(member.name)
-            new_name = 'lb_file_%s_id_file_seq' %(data['name'])
-            self.session.execute('ALTER SEQUENCE %s RENAME TO %s' %(old_name, new_name))
+            # BEGIN DEBUG
+            # old_name = 'lb_file_%s_id_file_seq' %(member.name)
+            # new_name = 'lb_file_%s_id_file_seq' %(data['name'])
+            # self.session.execute('ALTER SEQUENCE %s RENAME TO %s' %(old_name, new_name))
+            # END DEBUG
 
         for name in data:
             setattr(member, name, data[name])

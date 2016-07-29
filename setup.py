@@ -25,7 +25,9 @@ requires = [
     'waitress == 0.8.9',
     'WebOb == 1.4',
     'zope.deprecation == 4.1.1',
-    'zope.interface == 4.1.1'
+    'zope.interface == 4.1.1',
+    'pyramid_chameleon',
+    'pdfkit'
 ]
 
 '''

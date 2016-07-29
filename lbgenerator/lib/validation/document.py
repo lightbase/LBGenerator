@@ -5,7 +5,6 @@ from liblightbase.lbtypes import Matrix
 from liblightbase.lbdoc.metadata import DocumentMetadata
 
 def validate_document_data(cls, request, *args):
-
     params, method = utils.split_request(request)
     if method == 'GET': return None
 
@@ -15,6 +14,7 @@ def validate_document_data(cls, request, *args):
         'validate'
         )
 
+    print("validate: params = " + str(params))
     data = utils.filter_params(params, valid_fields)
 
     if method == 'POST':
@@ -25,6 +25,8 @@ def validate_document_data(cls, request, *args):
         return validate_put_data(cls, data, member)
 
 def validate_post_data(cls, data):
+
+    print("validata_post_data() - cls: " + str(cls) + ". data = " + str(data))
 
     validate = True
 

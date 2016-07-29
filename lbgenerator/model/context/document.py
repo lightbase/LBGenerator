@@ -83,6 +83,9 @@ class DocumentContextFactory(CustomContextFactory):
         Receives the data to INSERT at database (table lb_doc_<base>).
         Here the document will be indexed, and files within it will be created.
         """
+        # BEGIN DEBUG
+        print("Data: " + str(data))
+        # END DEBUG
         member = self.entity(**data)
         self.session.add(member)
         self.create_files(member, data['__files__'])
