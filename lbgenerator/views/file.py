@@ -32,6 +32,10 @@ class FileCustomView(CustomView):
     def create_member(self):
         data, filemask = self._get_data()
         member = self.context.create_member(data)
+        # BEGIN DEBUG
+        self.context.commit()
+        self.context.close()
+        # END DEBUG
         return Response(filemask,
                         content_type='application/json',
                         status=201)
@@ -103,6 +107,10 @@ class FileCustomView(CustomView):
         column = self.context.entity.__table__.c.get(path)
         member = self.context.session.query(column).filter(self.context.entity \
                                                            .id_file == id_file).first()
+        # BEGIN DEBUG
+        self.context.commit()
+        self.context.close()
+        # END DEBUG
 
         if member is None:
             raise HTTPNotFound()

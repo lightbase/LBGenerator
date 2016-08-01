@@ -62,8 +62,11 @@ class BaseContextFactory(CustomContextFactory):
 
         member = self.entity(**data)
         self.session.add(member)
-        self.session.commit()
-        self.session.close()
+        # BEGIN DEBUG
+        # self.session.commit()
+        # self.session.close()
+        self.session.flush()
+        # END DEBUG
         if idx:
             self.lbirestart()
         return member
@@ -95,7 +98,10 @@ class BaseContextFactory(CustomContextFactory):
         for name in data:
             setattr(member, name, data[name])
 
-        self.session.commit()
+        # BEGIN DEBUG
+        # self.session.commit()
+        self.session.flush()
+        # END DEBUG
         model.HISTORY.create_member(**{
             'id_base': member.id_base,
             'author': 'Author',
@@ -105,7 +111,9 @@ class BaseContextFactory(CustomContextFactory):
             'status': 'UPDATED'
         })
     
-        self.session.close()
+        # BEGIN DEBUG
+        # self.session.close()
+        # END DEBUG
         self.lbirestart()
 
         return member
@@ -129,7 +137,10 @@ class BaseContextFactory(CustomContextFactory):
         
         # Delete base.
         self.session.delete(member)
-        self.session.commit()
+        # BEGIN DEBUG
+        # self.session.commit()
+        self.session.flush()
+        # END DEBUG
         if index:
             index.delete_root()
 
@@ -142,7 +153,9 @@ class BaseContextFactory(CustomContextFactory):
             'status': 'DELETE'
         })
        
-        self.session.close()
+        # BEGIN DEBUG
+        # self.session.close()
+        # END DEBUG
         if idx:
             self.lbirestart()
         return member

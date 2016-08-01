@@ -91,8 +91,11 @@ class DocumentContextFactory(CustomContextFactory):
         self.create_files(member, data['__files__'])
         for name in data:
             setattr(member, name, data[name])
-        self.session.commit()
-        self.session.close()
+        # BEGIN DEBUG
+        # self.session.commit()
+        # self.session.close()
+        self.session.flush()
+        # END DEBUG
         if self.index.is_indexable:
             Thread(target=self.async_create_member,
                 args=(data, self.session)).start()
@@ -120,11 +123,18 @@ class DocumentContextFactory(CustomContextFactory):
             session.begin()
             try:
                 session.execute(stmt)
-                session.commit()
+                # BEGIN DEBUG
+                # session.commit()
+                session.flush()
+                # END DEBUG
             except:
                 pass
             finally:
-                session.close()
+                # BEGIN DEBUG
+                # session.close()
+                session.flush()
+                pass
+                # END DEBUG
 
     def update_member(self, member, data, index=True):
         """Receives the data to UPDATE at database 
@@ -147,8 +157,11 @@ class DocumentContextFactory(CustomContextFactory):
             .values(**data)
 
         self.session.execute(stmt)
-        self.session.commit()
-        self.session.close()
+        # BEGIN DEBUG
+        # self.session.commit()
+        # self.session.close()
+        self.session.flush()
+        # END DEBUG
 
         if index and self.index.is_indexable:
             Thread(target=self.async_update_member,
@@ -181,11 +194,18 @@ class DocumentContextFactory(CustomContextFactory):
             session.begin()
             try:
                 session.execute(stmt)
-                session.commit()
+                # BEGIN DEBUG
+                # session.commit()
+                session.flush()
+                # END DEBUG
             except:
                 pass
             finally:
-                session.close()
+                # BEGIN DEBUG
+                # session.close()
+                session.flush()
+                pass
+                # END DEBUG
 
     # TODO: Rever o comportamento descrito abaixo...
     def delete_member(self, id):
@@ -204,8 +224,11 @@ class DocumentContextFactory(CustomContextFactory):
             self.file_entity.__table__.c.id_doc == id)
         result = self.session.execute(stmt1)
         self.session.execute(stmt2)
-        self.session.commit()
-        self.session.close()
+        # BEGIN DEBUG
+        # self.session.commit()
+        # self.session.close()
+        self.session.flush()
+        # END DEBUG
         if self.index.is_indexable:
             Thread(target=self.async_delete_member,
                 args=(id, self.session)).start()
@@ -230,11 +253,16 @@ class DocumentContextFactory(CustomContextFactory):
             session.begin()
             try:
                 session.execute(stmt)
-                session.commit()
+                # BEGIN DEBUG
+                # session.commit()
+                # END DEBUG
             except:
                 pass
             finally:
-                session.close()
+                # BEGIN DEBUG
+                # session.close()
+                session.flush()
+                # END DEBUG
 
     def get_full_documents(self, list_id_doc, members, session=None):
         """Pesquisa na tabela file e insere os textos extraídos nos 
@@ -263,7 +291,10 @@ class DocumentContextFactory(CustomContextFactory):
             except Exception as e:
                 members_file_id[dbfiles[index].id_doc] = [index]
 
-        session.close()
+        # BEGIN DEBUG
+        # session.close()
+        session.flush()
+        # END DEBUG
 
         def prepare_file_text(list_items):
             members_filetext = {}
@@ -290,7 +321,10 @@ class DocumentContextFactory(CustomContextFactory):
            self.file_entity.filetext,
            self.file_entity.dt_ext_text)
         dbfiles = session.query(*file_cols).filter_by(id_doc=id).all()
-        session.close()
+        # BEGIN DEBUG
+        # session.close()
+        session.flush()
+        # END DEBUG
         files = {}
 
         if dbfiles:
@@ -363,9 +397,11 @@ class DocumentContextFactory(CustomContextFactory):
         files = self.session.query(self.file_entity.id_file,
             self.file_entity.filetext).filter_by(id_doc=id_doc).all() or [ ]
 
-        if close_session is True:
-            # Close session if param close_session is True
-            self.session.close()
+        # BEGIN DEBUG
+        # if close_session is True:
+        #     # Close session if param close_session is True
+        #     self.session.close()
+        # END DEBUG
 
         files = { }
         for file_ in files:

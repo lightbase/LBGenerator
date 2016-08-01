@@ -28,6 +28,10 @@ class DocumentCustomView(CustomView):
         id = self.request.matchdict['id']
         self.wrap = False
         member = self.context.get_member(id)
+        # BEGIN DEBUG
+        self.context.commit()
+        self.context.close()
+        # END DEBUG
         return self.render_to_response(member)
 
     def get_path(self):
@@ -94,6 +98,10 @@ class DocumentCustomView(CustomView):
 
         # Update member
         member = self.context.update_member(member, data)
+        # BEGIN DEBUG
+        self.context.commit()
+        self.context.close()
+        # END DEBUG
         return Response('OK', content_type='application/json')
 
     def put_path(self, member=None):
@@ -157,7 +165,10 @@ class DocumentCustomView(CustomView):
 
         # NOTE: Update member!
         member = self.context.update_member(member, data, index=index)
-
+        # BEGIN DEBUG
+        self.context.commit()
+        self.context.close()
+        # END DEBUG
         return Response('UPDATED', content_type='application/json')
 
     def delete_path(self):
@@ -199,6 +210,10 @@ class DocumentCustomView(CustomView):
 
         # Update member
         member = self.context.update_member(member, data)
+        # BEGIN DEBUG
+        self.context.commit()
+        self.context.close()
+        # END DEBUG
         return Response('DELETED', content_type='application/json')
 
     def full_document(self):

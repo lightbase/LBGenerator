@@ -13,8 +13,12 @@ class IndexErrorContextFactory(CustomContextFactory):
     def delete_member(self, id):
         member = self.get_member(id, close_sess=False)
         if member is None:
-            self.session.close()
+            # BEGIN DEBUG
+            # self.session.close()
+            # END DEBUG
             return None
         self.session.delete(member)
-        self.session.commit()
+        # BEGIN DEBUG
+        # self.session.commit()
+        # END DEBUG
         return member

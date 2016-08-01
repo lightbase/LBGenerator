@@ -57,7 +57,10 @@ def set_globals(**settings):
 
     ENGINE = create_engine(DB_URL, pool_size=POOL_SIZE, max_overflow=MAX_OVERFLOW,
         json_serializer=object2json,
-        json_deserializer=json2object
+        json_deserializer=json2object,
+        # BEGIN DEBUG
+        echo=True
+        # END DEBUG
     )
     LBI_URL = settings['lbindex_url']
     

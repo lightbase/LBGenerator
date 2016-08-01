@@ -36,8 +36,11 @@ class FileContextFactory(CustomContextFactory):
         # Create new coming files
         member = self.entity(**data)
         self.session.add(member)
-        self.session.commit() # COMMIT transaction.
-        self.session.close() # Close session.
+        # BEGIN DEBUG
+        # self.session.commit() # COMMIT transaction.
+        # self.session.close() # Close session.
+        self.session.flush()
+        # END DEBUG
         return member
 
     def member_to_dict(self, member, fields=None):
@@ -101,8 +104,11 @@ class FileContextFactory(CustomContextFactory):
                 self.entity.__table__.c.id_file == id)
 
         self.session.execute(stmt)
-        self.session.commit()
-        self.session.close()
+        # BEGIN DEBUG
+        # self.session.commit()
+        # self.session.close()
+        self.session.flush()
+        # END DEBUG
 
         # Clear cache
         cache.clear_collection_cache(self.base_name)

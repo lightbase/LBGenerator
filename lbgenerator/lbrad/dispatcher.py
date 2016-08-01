@@ -113,38 +113,38 @@ class OperationDispatcher(object):
 
             if self.transaction:
                 if result["success"]:
-                    undo_op = op.get_undo_operation()
-                    if undo_op is not None:
-                        self.rollback_stack.append(undo_op)
+                    context = op.get_context()
+                    if context is not None:
+                        self.rollback_stack.append(context)
                     else:
                         # TODO: add "empty" operation to the stack
                         pass
                 else:
                     # prevent other operations from running
                     success = False
-                    break                
+                    break
 
         # if there was an error in one of the operations of the transaction...
         if self.transaction:
-            if not success:
-                # ... rollback by executing all undo operations in the stack
-                while len(self.rollback_stack) > 0:
-                    undo_op = self.rollback_stack.pop()
-                    # TODO: care about result?
-                    result = undo_op.run()
-                    if result["success"]:
-                        # TODO: value of "i" might be wrong if one or more of the
-                        # operations don't have an undo operation (ex: read document)
-                        i = len(self.rollback_stack)
-                        self.result_list[i]["undone"] = True
+            # BEGIN DEBUG
+            import pdb; pdb.set_trace()
+            # END DEBUG
+            while len(self.rollback_stack) > 0:
+                context = self.rollback_stack.pop()
+                if success:
+                    # commit transactions
+                    context.commit()
+                else:
+                    # ... rollback by executing all undo operations in the stack
+                    context.rollback()
+
+                    i = len(self.rollback_stack)
+                    self.result_list[i]["undone"] = True
+
+                context.close()
 
                 # TODO: for each operation in the transaction that was not executed
                 # add a "not executed" result to self.result_list
-
-            # execute _on_post_transaction()
-            for op in self.operation_queue:
-                op._on_post_transaction(success)
-
 
     # TODO: test
     def register_operation(self, key, op_class):
