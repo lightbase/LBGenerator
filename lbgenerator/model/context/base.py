@@ -62,8 +62,10 @@ class BaseContextFactory(CustomContextFactory):
 
         member = self.entity(**data)
         self.session.add(member)
-        self.session.commit()
-        self.session.close()
+        # Now commits and closes session in the view instead of here
+        # flush() pushes operations to DB's buffer - DCarv
+        self.session.flush()
+        
         if idx:
             self.lbirestart()
         return member
@@ -86,16 +88,19 @@ class BaseContextFactory(CustomContextFactory):
             new_name = 'lb_doc_%s_id_doc_seq' %(data['name'])
             self.session.execute('ALTER SEQUENCE %s RENAME TO %s' %(old_name, new_name))
 
-            # BEGIN DEBUG
+            # lb_file_* tables no longer use a sequence to determine next file ID
+            # so this sequence doesn't exist anymore - DCarv
             # old_name = 'lb_file_%s_id_file_seq' %(member.name)
             # new_name = 'lb_file_%s_id_file_seq' %(data['name'])
             # self.session.execute('ALTER SEQUENCE %s RENAME TO %s' %(old_name, new_name))
-            # END DEBUG
 
         for name in data:
             setattr(member, name, data[name])
 
-        self.session.commit()
+        # Now commits and closes session in the view instead of here
+        # flush() pushes operations to DB's buffer - DCarv
+        self.session.flush()
+
         model.HISTORY.create_member(**{
             'id_base': member.id_base,
             'author': 'Author',
@@ -105,7 +110,6 @@ class BaseContextFactory(CustomContextFactory):
             'status': 'UPDATED'
         })
     
-        self.session.close()
         self.lbirestart()
 
         return member
@@ -129,7 +133,10 @@ class BaseContextFactory(CustomContextFactory):
         
         # Delete base.
         self.session.delete(member)
-        self.session.commit()
+        # Now commits and closes session in the view instead of here
+        # flush() pushes operations to DB's buffer - DCarv
+        self.session.flush()
+
         if index:
             index.delete_root()
 
@@ -141,8 +148,7 @@ class BaseContextFactory(CustomContextFactory):
             'structure': utils.json2object(member.struct),
             'status': 'DELETE'
         })
-       
-        self.session.close()
+        
         if idx:
             self.lbirestart()
         return member

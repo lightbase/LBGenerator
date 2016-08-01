@@ -61,17 +61,13 @@ class LBOperation(object):
         This method is optional, but all operations that implement it
         must call "super()._on_pre_execute()".
         """
-        pass
 
-    def _on_post_transaction(self, sucess):
-        """
-        Work that all operations must do after the whole transaction has finished.
-        Ex: delete temporary data from Lightbase
-
-        This method is optional, but all operations that implement it
-        must call "super()._on_post_transaction(success)"
-        """
-        pass
+        # if it's not a transaction, close session immediately
+        if not self.transaction:
+            context = self.get_context()
+            if context is not None:
+                context.commit()
+                context.close()
 
     # TODO: define arguments and return value
     def run(self):
@@ -85,16 +81,15 @@ class LBOperation(object):
 
         return result
 
-    def get_undo_operation(self):
+    def get_context(self):
         """
-        Creates and returns the opposite operation for rollback purposes.
-        
-        This method should be implemented by all operations that alter 
-        data (ex: Create, Update, Delete, etc...).
-        Operations that don't alter data don't need to implement this 
-        method (ex: Read, List, Search, etc...)
+        TODO:
+        Gets the current session context.
         """
-        pass
+        if not hasattr(self, "context"):
+            return None
+
+        return self.context
 
 # ---=== Base CRUD ===--- #
 
@@ -208,17 +203,7 @@ class CreateBaseOperation(BaseOperation):
     def _on_execute(self):
         self.logger.debug("CreateBaseOperation._on_execute()")
         try:
-            self.context.create_member(self.validated_base_data)
-
-            # base_dict = self.params["data"]
-            # # create base object form dict
-            # base = dict2base(base_dict)
-            # # TODO: put LBG URL in config or in global variable
-            # base_rest = BaseREST(LBG_URL_API)
-            # # create base via REST API call to LBG
-            # base_rest.create(base)
-
-            
+            self.context.create_member(self.validated_base_data)            
         except Exception as e:
             return {
                 'success': False, 
@@ -233,16 +218,6 @@ class CreateBaseOperation(BaseOperation):
     def _on_post_execute(self):
         super()._on_post_execute()
         self.logger.debug("CreateBaseOperation._on_post_execute()")
-
-    def get_undo_operation(self):
-        if not hasattr(self, "_undo_op") or self._undo_op is None:
-            undo_params = dict(
-                op_type = "db_base_delete",
-                basename = self.params["data"]["metadata"]["name"]
-            )
-            self._undo_op = DeleteBaseOperation(undo_params)
-
-        return self._undo_op
 
 
 class ReadBaseOperation(BaseOperation):
@@ -302,70 +277,13 @@ class DeleteBaseOperation(BaseOperation):
         self.context = self._get_context(method="DELETE", 
             basename=basename)
 
-        # # if it's part of a transaction...
-        # if self.transaction:
-        #     # create a temporary copy of the base before deletion so it can be 
-        #     # undone if necessary
-
-        #     # get base metadata
-        #     self.tmp_base_dict = ReadBaseOperation(self.params).run()['data']
-        #     if self.tmp_base_dict is None:
-        #         # TODO:
-        #         raise RuntimeError("Não foi possível ler base para cópia de rollback")
-
-        #     # create a copy of the base
-        #     # TODO: check if the copy of the base already exists and recreate it
-        #     self.tmp_basename = 'tmp_del_' + basename
-        #     self.tmp_base_dict['metadata']['name'] = self.tmp_basename
-        #     create_params = { 'data': self.tmp_base_dict }
-
-        #     if not CreateBaseOperation(create_params).run()['success']:
-        #         # TODO: ERROR
-        #         raise RuntimeError("Não foi possível criar cópia temporaria da base para rollback")
-
-        #     # TODO: copy all files to temp base
-
-        #     # copy all documents to temp base
-        #     read_docs = ListDocumentOperation(self.params).run()
-        #     if not read_docs['success']:
-        #         # TODO:
-        #         raise RuntimeError("Não foi possível ler documentos da base para cópia")
-
-        #     for doc in read_docs['data']:
-        #         create_doc_params = {
-        #             'basename': self.tmp_basename,
-        #             'data': doc
-        #         }
-        #         if not CreateDocumentOperation(create_doc_params).run()['success']:
-        #             raise RuntimeError("Não foi possível criar cópia temporaria de documento para rollback")
-
-
     def _on_execute(self):
         try:
             basename = self.params["basename"]
 
-            if self.transaction:
-                # get base dict
-                self.tmp_base_dict = ReadBaseOperation(self.params).run()['data']
-                if self.tmp_base_dict is None:
-                    # TODO:
-                    raise RuntimeError("Não foi possível ler base para cópia de rollback")
-
-                # get update context
-                context = self._get_context(method="UPDATE", 
-                    basename=self.params['basename'])
-            
-                # rename base to a temporary name
-                self.tmp_basename = 'tmp_del_' + basename
-                validated_tmp_base_data = self.validate_base_data(self.tmp_base_dict, task='UPDATE')
-                self.tmp_base_dict['metadata']['name'] = self.tmp_basename
-                validated_tmp_base_data['name'] = self.tmp_basename
-
-                context.update_member(basename, validated_tmp_base_data)
-            else:
-                base = self.context.delete_member(basename)
-                if base is None:
-                    raise RuntimeError("Base não encontrada.")
+            base = self.context.delete_member(basename)
+            if base is None:
+                raise RuntimeError("Base não encontrada.")
 
             # TODO: clear cache??
         except Exception as e:
@@ -376,53 +294,6 @@ class DeleteBaseOperation(BaseOperation):
             }
 
         return { "success": True }
-
-    def get_undo_operation(self):
-        if not hasattr(self, "_undo_op") or self._undo_op is None:
-            undo_params = dict(
-                op_type = "db_base_undo_delete",
-                basename = self.params["basename"],
-                tmp_basename = self.tmp_basename,
-                tmp_base_dict = self.tmp_base_dict
-            )
-            self._undo_op = DeleteBaseOperation.UndoDeleteBaseOperation(undo_params)
-
-        return self._undo_op
-
-    def _on_post_transaction(self, success):
-        super()._on_post_transaction(success)
-
-        if success:
-            # get new context (previous context's session is closed after delete_member is called)
-            context = self._get_context(method="DELETE", basename=self.tmp_basename)
-            # delete temporary copy
-            tmp_base = context.delete_member(self.tmp_basename)
-            if tmp_base is None:
-                # TODO:
-                raise RuntimeError("Erro ao deletar base temporária")
-
-    class UndoDeleteBaseOperation(BaseOperation):
-        def _on_pre_execute(self):
-            super()._on_pre_execute()
-            self.context = self._get_context(method="UPDATE", 
-                basename=self.params['basename'])
-            self.tmp_basename = self.params['tmp_basename']
-            self.tmp_base_dict = self.params['tmp_base_dict']
-
-        def _on_execute(self):
-            # BEGIN DEBUG
-            import pdb; pdb.set_trace()
-            # END DEBUG
-
-            # rename temporary copy to original name
-            original_base_dict = self.tmp_base_dict
-            original_base_dict['metadata']['name'] = self.params['basename']
-            validated_original_base_data = self.validate_base_data(original_base_dict, task='UPDATE', basename=self.tmp_basename)
-            self.context.update_member(self.tmp_basename, validated_original_base_data)
-
-            # TODO: limpar bases memoria: /_command/???
-
-            return { "success": True }
 
 
 # ---=== Document CRUD ===--- #
@@ -554,13 +425,6 @@ class CreateDocumentOperation(DocumentOperation):
         try:
             doc = self.context.create_member(self.validated_doc_data)
             self.doc_id = int(self.context.get_member_id(doc))
-
-            # doc_dict = self.params["data"]
-            # doc_json = json.dumps(doc_dict)
-            # doc_rest = DocumentREST(LBG_URL_API, self.base)
-            
-            # # create doc via REST API call to LBG
-            # self.doc_id = doc_rest.create(doc_json)
         except Exception as e:
             return {
                 'success': False, 
@@ -573,17 +437,6 @@ class CreateDocumentOperation(DocumentOperation):
             "success": True,
             "doc_id": self.doc_id
         }
-
-    def get_undo_operation(self):
-        if not hasattr(self, "_undo_op") or self._undo_op is None:
-            undo_params = dict(
-                op_type = "db_doc_delete",
-                basename = self.params["basename"],
-                doc_id = self.doc_id
-            )
-            self._undo_op = DeleteBaseOperation(undo_params)
-
-        return self._undo_op
             
 
 class ReadDocumentOperation(DocumentOperation):
@@ -614,11 +467,6 @@ class ReadDocumentOperation(DocumentOperation):
                 raise RuntimeError("Registro não encontrado.")
 
             doc_dict = doc.document
-
-            # doc_rest = DocumentREST(LBG_URL_API, self.base)
-
-            # doc = doc_rest.get(doc_id)
-            # doc_dict = document2dict(self.base, doc)
         except Exception as e:
             return {
                 'success': False, 
@@ -653,17 +501,10 @@ class ReadFullDocumentOperation(DocumentOperation):
         self.logger.debug("ReadFullDocumentOperation._on_execute()")
 
         try:
-            # # get Base obj
-            # base_name = self.params["basename"]
-            # # TODO: put LBG URL in config or in global variable
-            # base_rest = BaseREST(LBG_URL_API)
-            # base = base_rest.get(base_name)
-
             doc_id = self.params["doc_id"]
 
             # Get raw mapped entity object.
             member = self.context.get_raw_member(doc_id)
-
             if member is None:
                 # TODO: error
                 raise RuntimeError('Registro não encontrado')
@@ -696,12 +537,6 @@ class PartialReadDocumentOperation(DocumentOperation):
         self.logger.debug("PartialReadDocumentOperation._on_execute()")
 
         try:
-            # # get Base obj
-            # base_name = self.params["basename"]
-            # # TODO: put LBG URL in config or in global variable
-            # base_rest = BaseREST(LBG_URL_API)
-            # base = base_rest.get(base_name)
-
             doc_id = self.params["doc_id"]
             path = self.params["path"]
 
@@ -752,7 +587,7 @@ class ListDocumentOperation(DocumentOperation):
             # TODO: search params
             search_params = self.params.get('search_params', '{}')
             query = json2object(search_params)
-            
+
             doc_collection = self.context.get_collection(query)
             docs = list()
 
@@ -807,22 +642,10 @@ class UpdateDocumentOperation(DocumentOperation):
                 # TODO:
                 raise RuntimeError("Registro não encontrado")
 
-            self.get_undo_operation()
-
             # validate document data
             self.validated_doc_data = self._validate_doc_data(data, doc=doc)
 
             self.context.update_member(doc, self.validated_doc_data)
-
-            # doc_dict = self.params["data"]
-            # doc_json = json.dumps(doc_dict)
-            # # doc = dict2document(base, doc_dict)
-            # doc_rest = DocumentREST(LBG_URL_API, self.base)
-            # 
-            # self.get_undo_operation()
-            # 
-            # # create doc via REST API call to LBG
-            # doc_rest.update(doc_id, doc_json)
         except Exception as e:
             return {
                 'success': False, 
@@ -833,19 +656,6 @@ class UpdateDocumentOperation(DocumentOperation):
         # TODO: what else to return?
         return { "success": True }
 
-    def get_undo_operation(self):
-        if not hasattr(self, "_undo_op") or self._undo_op is None:
-            doc_dict_before = ReadDocumentOperation(self.params).run()["data"]
-            
-            undo_params = dict(
-                op_type = "db_doc_update",
-                basename = self.params["basename"],
-                doc_id = self.params["doc_id"],
-                data = doc_dict_before
-            )
-            self._undo_op = UpdateDocumentOperation(undo_params)
-
-        return self._undo_op
 
 class PartialUpdateDocumentOperation(UpdateDocumentOperation):
     """
@@ -918,27 +728,12 @@ class PartialUpdateDocumentOperation(UpdateDocumentOperation):
                 # TODO:
                 raise RuntimeError("Registro não encontrado")
 
-            self.get_undo_operation()
-
             self._update_dict(doc.document, update_doc_dict)
 
             # validate document data
             self.validated_doc_data = self._validate_doc_data(doc.document, doc=doc)
 
             self.context.update_member(doc, self.validated_doc_data)
-
-            # doc_rest = DocumentREST(LBG_URL_API, self.base)
-            # doc = doc_rest.get(doc_id)
-            # doc_dict = document2dict(self.base, doc)
-
-            # self._update_dict(doc_dict, update_doc_dict)
-
-            # doc_json = json.dumps(doc_dict)
-
-            # self.get_undo_operation()
-            
-            # # create doc via REST API call to LBG
-            # doc_rest.update(doc_id, doc_json)
         except Exception as e:
             return {
                 'success': False, 
@@ -958,9 +753,9 @@ class PartialUpdateDocumentOperation(UpdateDocumentOperation):
          - update_doc_dict: a dict with only the keys that will be changed
         """
         for key, value in update_doc_dict.items():
-            if isinstance(value, dict) and key in update_doc_dict:
+            if isinstance(value, dict) and key in doc_dict:
                 self._update_dict(doc_dict[key], update_doc_dict[key])
-            elif isinstance(value, list) and key in update_doc_dict and self._is_list_descriptor(value):
+            elif isinstance(value, list) and key in doc_dict and self._is_list_descriptor(value):
                 self._update_list(doc_dict[key], update_doc_dict[key])
             else:
                 doc_dict[key] = value
@@ -1094,19 +889,11 @@ class DeleteDocumentOperation(DocumentOperation):
         try:
             doc_id = self.params["doc_id"]
 
-            self.get_undo_operation()
-
             is_deleted = self.context.delete_member(doc_id)
             # Check if the number of deleted rows is different than 0
             if is_deleted.__dict__['rowcount'] == 0:
                 # TODO:
                 raise RuntimeError("Registro não encontrado")
-
-            # doc_rest = DocumentREST(LBG_URL_API, self.base)
-
-            # self.get_undo_operation()
-
-            # doc_rest.delete(doc_id)
         except Exception as e:
             return {
                 'success': False, 
@@ -1116,18 +903,6 @@ class DeleteDocumentOperation(DocumentOperation):
 
         return { "success": True }
 
-    def get_undo_operation(self):
-        if not hasattr(self, "_undo_op") or self._undo_op is None:
-            doc_dict_before = ReadDocumentOperation(self.params).run()["data"]
-
-            undo_params = dict(
-                op_type = "db_doc_create",
-                basename = self.params["basename"],
-                data = doc_dict_before
-            )
-            self._undo_op = CreateDocumentOperation(undo_params)
-
-        return self._undo_op
 
 # ---=== File CRUD ===--- #
 
@@ -1206,13 +981,17 @@ class MultipartCreateFileOperation(FileOperation):
     """
     default_error_msg = "Erro ao criar arquivo"
 
+    def _on_pre_execute(self):
+        super()._on_pre_execute()
+        self.context = self._get_context(method="POST")
+
+
     def _on_execute(self):
         self.logger.debug("MultipartCreateFileOperation._on_execute()")
 
         try:
             data, self.filemask = self.validate_file_data(self.params['data'])
-            context = self._get_context(method="POST")
-            member = context.create_member(data)
+            member = self.context.create_member(data)
         except Exception as e:
             return {
                 'success': False,
@@ -1276,13 +1055,16 @@ class CreateFileOperation(FileOperation):
     """
     default_error_msg = "Erro ao criar arquivo"
 
+    def _on_pre_execute(self):
+        super()._on_pre_execute()
+        self.context = self._get_context(method="POST")
+
     def _on_execute(self):
         self.logger.debug("CreateFileOperation._on_execute()")
 
         try:            
             data, self.filemask = self.validate_file_data(self.params['data'])
-            context = self._get_context(method="POST")
-            member = context.create_member(data)
+            member = self.context.create_member(data)
         except Exception as e:
             return {
                 'success': False, 
@@ -1308,13 +1090,16 @@ class ReadFileOperation(FileOperation):
     """
     default_error_msg = "Erro ao ler arquivo"
 
+    def _on_pre_execute(self):
+        super()._on_pre_execute()
+        self.context = self._get_context(method="GET")
+
     def _on_execute(self):
         self.logger.debug("ReadFileOperation._on_execute()")
 
         try:
             file_id = self.params["file_id"]
-            context = self._get_context(method="GET")
-            members = context.get_member(file_id)
+            members = self.context.get_member(file_id)
             if members is None:
                 raise RuntimeError("Arquivo não encontrado")
             files = []
@@ -1336,9 +1121,6 @@ class ReadFileOperation(FileOperation):
         if len(member) < 7:
             raise RuntimeError(ReadFileOperation.default_error_msg)
         file_id = member[0]
-        # BEGIN DEBUG
-        import pdb; pdb.set_trace()
-        # END DEBUG
         domain_url = self.params['request_url'].strip('/lbrad')
         download_url = "%s/%s/file/%s/download" % \
             (domain_url, self.params['basename'], file_id)
@@ -1361,11 +1143,15 @@ class DeleteFileOperation(FileOperation):
 
     Params:
      - basename (string): name of the base
-     - file_id (int): id of the file to be deleted
+     - file_id (string): id of the file to be deleted
 
     Creator: Danilo Carvalho
     """
     default_error_msg = "Erro ao apagar arquivo"
+
+    def _on_pre_execute(self):
+        super()._on_pre_execute()
+        self.context = self._get_context(method="DELETE")
 
     def _on_execute(self):
         self.logger.debug("DeleteFileOperation._on_execute()")
@@ -1373,9 +1159,7 @@ class DeleteFileOperation(FileOperation):
         try:
             file_id = self.params["file_id"]
 
-            # TODO: if self.transaction
-            context = self._get_context(method="DELETE")
-            success = context.delete_member(file_id)
+            success = self.context.delete_member(file_id)
             if not success:
                 raise RuntimeError("Arquivo não deletado")
         except Exception as e:

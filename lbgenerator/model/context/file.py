@@ -36,8 +36,10 @@ class FileContextFactory(CustomContextFactory):
         # Create new coming files
         member = self.entity(**data)
         self.session.add(member)
-        self.session.commit() # COMMIT transaction.
-        self.session.close() # Close session.
+        # Now commits and closes session in the view instead of here
+        # flush() pushes operations to DB's buffer - DCarv
+        self.session.flush()
+
         return member
 
     def member_to_dict(self, member, fields=None):
@@ -101,8 +103,9 @@ class FileContextFactory(CustomContextFactory):
                 self.entity.__table__.c.id_file == id)
 
         self.session.execute(stmt)
-        self.session.commit()
-        self.session.close()
+        # Now commits and closes session in the view instead of here
+        # flush() pushes operations to DB's buffer - DCarv
+        self.session.flush()
 
         # Clear cache
         cache.clear_collection_cache(self.base_name)
