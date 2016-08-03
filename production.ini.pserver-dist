@@ -1,0 +1,104 @@
+[app:lbgenerator]
+use=egg:LBGenerator
+
+###
+# Persistence access configuration.
+###
+sqlalchemy.url=<SQLALCHEMY_URL>
+
+sqlalchemy.max_overflow=0
+sqlalchemy.pool_size=20
+storage.tmp_dir=/tmp
+requests.timeout=30
+lbindex_url=http://127.0.0.1/6543/
+
+pyramid.reload_templates=true
+pyramid.debug_authorization=true
+pyramid.debug_notfound=true
+pyramid.debug_routematch=true
+pyramid.default_locale_name=en
+mako.directories=lbgenerator:templates
+
+auth.enabled=0
+auth.include_ip=1
+auth.admin_user=admin
+auth.admin_passwd=admin
+
+[alembic]
+
+###
+# Persistence access configuration.
+###
+sqlalchemy.url=<SQLALCHEMY_URL>
+
+sqlalchemy.max_overflow=0
+sqlalchemy.pool_size=20
+script_location=db_versions
+
+[server:main]
+use=egg:waitress#main
+host=127.0.0.1
+port=%(http_port)s
+
+###
+# Pipeline Configuration
+###
+
+[filter:paste_prefix]
+use=egg:PasteDeploy#prefix
+prefix=/<APP_ROOT_F>
+
+[pipeline:main]
+pipeline=
+    paste_prefix
+    # NOTE: A good spot for some logging middleware!
+    lbgenerator
+
+###
+# Logging configuration
+# http://docs.pylonsproject.org/projects/pyramid/en/1.6-branch/narr/logging.html
+###
+
+[loggers]
+keys=root, lbgenerator, alembic
+
+[handlers]
+keys=console
+
+[formatters]
+keys=generic
+
+[logger_root]
+level=WARN
+handlers=console
+
+[logger_lbgenerator]
+level=WARN
+handlers =
+qualname=lbgenerator
+
+[logger_alembic]
+level=WARN
+handlers =
+qualname=alembic
+
+[logger_sqlalchemy]
+level=WARN
+handlers =
+qualname=sqlalchemy.engine
+
+[handler_console]
+class=StreamHandler
+args=(sys.stderr,)
+level=NOTSET
+formatter=generic
+
+[handler_file]
+class=handlers.RotatingFileHandler
+args=('/var/log/lbgenerator.log', 'a', int(20*1024*1024), 10)
+level=DEBUG
+formatter=generic
+
+[formatter_generic]
+format=%(asctime)s %(levelname)-5.5s [%(name)s][%(threadName)s] %(message)s
+datefmt=%H:%M:%S
