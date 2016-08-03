@@ -1,6 +1,5 @@
 import datetime
 import logging
-
 from sqlalchemy.util import KeyedTuple
 
 from . import CustomContextFactory
@@ -16,21 +15,20 @@ log = logging.getLogger()
 
 
 class BaseContextFactory(CustomContextFactory):
-    
-        # Restarta o lbindex quando a base for modificada
-    def lbirestart(self):
-        param = {'directive': 'restart'}
-        url = config.LBI_URL
-        response = requests.post(url, param)
-        if response.status_code != 200:
-            raise Exception('Error %s to restart LBIndex'
-                % response.status_code ,requests.exceptions.RequestException)
 
     """ Base Factory Methods
     """
-
     entity = LBBase
-
+     # Restarta o lbindex quando a base for modificada
+    def lbirestart(self):
+        param = {'directive': 'restart'}
+        url = config.LBI_URL
+        try:
+            requests.post(url, data=param,timeout=(0.500))
+        except (requests.exceptions.RequestException,
+            requests.exceptions.ConnectionError) as e:
+            print(e)
+  
     def get_next_id(self):
         return model.base_next_id()
 
@@ -45,6 +43,7 @@ class BaseContextFactory(CustomContextFactory):
         # Create reg and doc tables.
         base_name = data['name']
         base_json = utils.json2object(data['struct'])
+        idx = data['idx_exp']
 
         '''
         Trata-se de uma variável global de __init__.py
@@ -65,7 +64,8 @@ class BaseContextFactory(CustomContextFactory):
         self.session.add(member)
         self.session.commit()
         self.session.close()
-        self.lbirestart()
+        if idx:
+            self.lbirestart()
         return member
 
     def update_member(self, id, data):
@@ -94,7 +94,6 @@ class BaseContextFactory(CustomContextFactory):
             setattr(member, name, data[name])
 
         self.session.commit()
-
         model.HISTORY.create_member(**{
             'id_base': member.id_base,
             'author': 'Author',
@@ -103,8 +102,9 @@ class BaseContextFactory(CustomContextFactory):
             'structure': utils.json2object(member.struct),
             'status': 'UPDATED'
         })
-        self.lbirestart()
+    
         self.session.close()
+        self.lbirestart()
 
         return member
 
@@ -118,13 +118,13 @@ class BaseContextFactory(CustomContextFactory):
         if model.BASES.bases.get(member.name) is not None:
             index = Index(model.BASES.bases[member.name], None)
             del model.BASES.bases[member.name]
-
+        idx = member.idx_exp
         # Delete parallel tables.
         file_table = get_file_table(member.name, config.METADATA)
         doc_table = get_doc_table(member.name, config.METADATA, **relational_fields)
         file_table.drop(config.ENGINE, checkfirst=True)
         doc_table.drop(config.ENGINE, checkfirst=True)
-
+        
         # Delete base.
         self.session.delete(member)
         self.session.commit()
@@ -139,8 +139,10 @@ class BaseContextFactory(CustomContextFactory):
             'structure': utils.json2object(member.struct),
             'status': 'DELETE'
         })
-        self.lbirestart()
+       
         self.session.close()
+        if idx:
+            self.lbirestart()
         return member
 
     def member_to_dict(self, member, fields=None):

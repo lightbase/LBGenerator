@@ -199,7 +199,7 @@ class DocumentCustomView(CustomView):
 
         # Update member
         member = self.context.update_member(member, data)
-        return Response('TESTE', content_type='application/json')
+        return Response('DELETED', content_type='application/json')
 
     def full_document(self):
         """Get files texts and put it into document. Return document with
