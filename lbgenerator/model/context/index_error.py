@@ -13,8 +13,8 @@ class IndexErrorContextFactory(CustomContextFactory):
     def delete_member(self, id):
         member = self.get_member(id, close_sess=False)
         if member is None:
-            self.session.close()
+            # Now commits and closes session in the view instead of here
             return None
         self.session.delete(member)
-        self.session.commit()
+        # Now commits and closes session in the view instead of here
         return member

@@ -405,6 +405,14 @@ def add_restful_base_routes(self, name='base'):
     # - Parâmetros: URI, form
     add_route('delete_{name}', '/{base}', 'delete_member', 'DELETE', permission='delete')
 
+    from ..views.lbrad import dispatch_msg
+    self.add_route('lbrad', '/lbrad', request_method='POST')
+    self.add_view(view=dispatch_msg, route_name='lbrad', request_method='POST', renderer='json')
+    
+    from ..views.lbrad import dispatch_msg_multipart
+    self.add_view(view=dispatch_msg_multipart, route_name='lbrad', 
+        request_method='POST', header='Content-Type:multipart/form-data', renderer='json')
+
 
 # Esse método faz chamadas p/ o método "add_route()". O objetivo é
 # permitir adicionar rotas de forma dinâmica! Também serve para
@@ -544,3 +552,4 @@ def add_restful_routes(self, name, factory, view=RESTfulView,
     # - Rota: "/{slug}/{id}"
     # - Parâmetros: URI, form
     add_route('delete_{name}', '/{slug}/{id}', 'delete_member', 'DELETE')
+
