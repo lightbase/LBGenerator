@@ -28,11 +28,13 @@ class DocumentCustomView(CustomView):
         id = self.request.matchdict['id']
         self.wrap = False
         member = self.context.get_member(id)
+        response = self.render_to_response(member)
+
         # Now commits and closes session here instead of in the context - DCarv
         self.context.commit()
         self.context.close()
 
-        return self.render_to_response(member)
+        return response
 
     def get_path(self):
         """Interprets the path and accesses objects. In detail, the query path

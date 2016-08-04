@@ -25,11 +25,13 @@ class BaseCustomView(CustomView):
         self.wrap = False
         base = self.request.matchdict['base']
         member = self.context.get_member(base)
+        response = self.render_to_response(member)
+        
         # Now commits and closes session here instead of in the context - DCarv
         self.context.commit()
         self.context.close()
 
-        return self.render_to_response(member)
+        return response
 
     def update_member(self):
         base = self.request.matchdict['base']

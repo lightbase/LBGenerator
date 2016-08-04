@@ -27,7 +27,11 @@ class FileCustomView(CustomView):
         id = self.request.matchdict['id']
         member = self.context.get_member(id)
         self.wrap = False
-        return self.render_to_response(member)
+        response = self.render_to_response(member)
+        # Now commits and closes session here instead of in the context - DCarv
+        self.context.commit()
+        self.context.close()
+        return 
 
     def create_member(self):
         data, filemask = self._get_data()
