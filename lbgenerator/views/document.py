@@ -106,7 +106,7 @@ class DocumentCustomView(CustomView):
 
         return Response('OK', content_type='application/json')
 
-    def put_path(self, member=None):
+    def put_path(self, member=None, close_session=True):
         """Interprets the path, accesses, and update objects. In detail, 
         the query path supported in the current implementation allows 
         the navigation of data according to the tree structure 
@@ -168,8 +168,9 @@ class DocumentCustomView(CustomView):
         # NOTE: Update member!
         member = self.context.update_member(member, data, index=index)
         # Now commits and closes session here instead of in the context - DCarv
-        self.context.commit()
-        self.context.close()
+        if close_session:
+            self.context.commit()
+            self.context.close()
         
         return Response('UPDATED', content_type='application/json')
 
@@ -260,19 +261,27 @@ class DocumentCustomView(CustomView):
                 self.context.session.begin()
 
             try:
-                self.put_path(member)
+                self.put_path(member, close_session=False)
                 success = success + 1
             except Exception as e:
                 import traceback
                 print(traceback.format_exc())
                 failure = failure + 1
             finally:
-                if self.context.session.is_active:
-                    self.context.session.close()
+                # Close session only after all members are updated -- DCarv
+                # if self.context.session.is_active:
+                #     self.context.session.close()
+                pass
+
+        # BEGIN DEBUG
+        self.context.commit()
+        self.context.close()
+        # END DEBUG
 
         return Response('{"success": %d, "failure" : %d}'
                         % (success, failure),
                         content_type='application/json')
+
 
     def delete_collection(self):
         """Delete database collection of objects. This method needs a valid JSON
