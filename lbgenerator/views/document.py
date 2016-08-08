@@ -273,10 +273,8 @@ class DocumentCustomView(CustomView):
                 #     self.context.session.close()
                 pass
 
-        # BEGIN DEBUG
         self.context.commit()
         self.context.close()
-        # END DEBUG
 
         return Response('{"success": %d, "failure" : %d}'
                         % (success, failure),
@@ -289,6 +287,7 @@ class DocumentCustomView(CustomView):
         each path (deleting the respective path). Return count of successes and 
         failures.
         """
+
         self.context.result_count = False
         collection = self.get_collection(render_to_response=False)
         success, failure = 0, 0
@@ -312,6 +311,7 @@ class DocumentCustomView(CustomView):
 
             finally:
                 if self.context.session.is_active:
+                    self.context.session.commit()
                     self.context.session.close()
 
         return Response('{"success": %d, "failure" : %d}'

@@ -62,7 +62,7 @@ class OperationDispatcher(object):
 
         # ROLLBACK
         # if the request is a transaction, operations will be rolled back in case of failure
-        self.transaction = False
+        self.transaction = True
         # create rollback operation stack = []
         self.rollback_stack = []
 
