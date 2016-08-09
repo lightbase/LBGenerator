@@ -405,6 +405,7 @@ def add_restful_base_routes(self, name='base'):
     # - Parâmetros: URI, form
     add_route('delete_{name}', '/{base}', 'delete_member', 'DELETE', permission='delete')
 
+    # LBRAD routes
     from ..views.lbrad import dispatch_msg
     self.add_route('lbrad', '/lbrad', request_method='POST')
     self.add_view(view=dispatch_msg, route_name='lbrad', request_method='POST', renderer='json')
@@ -413,6 +414,12 @@ def add_restful_base_routes(self, name='base'):
     self.add_view(view=dispatch_msg_multipart, route_name='lbrad', 
         request_method='POST', header='Content-Type:multipart/form-data', renderer='json')
 
+    # SQL commands routes
+    from ..views.sql import execute_sql
+    from ..model.context import CustomContextFactory
+    self.add_route('sql', '/sql', request_method='POST')
+    self.add_view(view=execute_sql, route_name='sql', request_method='POST', 
+        header='Content-Type:application/json', renderer='json')
 
 # Esse método faz chamadas p/ o método "add_route()". O objetivo é
 # permitir adicionar rotas de forma dinâmica! Também serve para

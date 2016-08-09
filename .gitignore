@@ -41,6 +41,6 @@ alembic.ini
 *.wsgi
 .idea
 .env
-.___init__.py
-._lbrad.py
-._.gitignore
+
+# OS X hidden files
+._*
