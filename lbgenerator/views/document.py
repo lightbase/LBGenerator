@@ -1,3 +1,5 @@
+import logging
+
 from pyramid.response import Response
 from pyramid.exceptions import HTTPNotFound
 
@@ -11,13 +13,13 @@ from ..lib.path import parse_list_pattern
 
 from ..perf_profile import pprofile
 
-
 class DocumentCustomView(CustomView):
     """ Registry Customized View Methods."""
 
     def __init__(self, context, request):
         super(DocumentCustomView, self).__init__(context, request)
-        self.logger = Logger(__name__)
+        self.logger = logging.getLogger("lbgenerator")
+
 
     def _get_data(self, *args):
         """ Get all valid data from (request) POST or PUT.
@@ -241,7 +243,6 @@ class DocumentCustomView(CustomView):
         Will query database objects, and update each path to the new 
         object. Return count of successes and failures.
         """
-
         self.context.result_count = False
         collection = self.get_collection(render_to_response=False)
         success, failure = 0, 0

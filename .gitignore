@@ -44,3 +44,4 @@ alembic.ini
 
 # OS X hidden files
 ._*
+profile.log

@@ -5,12 +5,19 @@ from pyramid.config import Configurator
 from pyramid.authorization import ACLAuthorizationPolicy
 from pyramid.authentication import AuthTktAuthenticationPolicy
 from pyramid.session import UnencryptedCookieSessionFactoryConfig
+from pyramid.settings import asbool
 import pyramid_restler
 import uuid
 
 def main(global_config, **settings):
     """ This function returns a Pyramid WSGI application.
     """
+    mem_profiler = asbool(settings.get('mem_profiler', 'False'))
+    settings['mem_profiler'] = mem_profiler
+
+    perf_profiler = asbool(settings.get('perf_profiler', 'False'))
+    settings['perf_profiler'] = perf_profiler
+
     config = Configurator(settings=settings)
 
     config.add_directive('add_restful_routes', routing.add_restful_routes)
@@ -37,4 +44,23 @@ def main(global_config, **settings):
     routing.make_routes(config)
     config.scan()
 
-    return config.make_wsgi_app()
+    app = config.make_wsgi_app()
+
+    # add memory profiler middleware
+    if mem_profiler:
+        from .mem_profiler import ProfilerMiddleware
+        app = ProfilerMiddleware(app)
+
+    if perf_profiler:
+        from repoze.profile import ProfileMiddleware
+        app = ProfileMiddleware(
+            app,
+            log_filename='/var/log/lbg_perf_profile.log',
+            cachegrind_filename='./cachegrind.out.bar',
+            discard_first_request=True,
+            flush_at_shutdown=True,
+            path='/__perf_profiler',
+            unwind=False,
+        )
+
+    return app
