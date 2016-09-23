@@ -90,8 +90,8 @@ class CustomView(RESTfulView):
         member = self.context.create_member(self._get_data())
         id = self.context.get_member_id_as_string(member)
         # Now commits and closes session here instead of in the context - DCarv
-        self.context.commit()
-        self.context.close()
+        self.context.session.commit()
+        self.context.session.close()
 
         return self.render_custom_response(id, default_response=id)
 
@@ -102,8 +102,8 @@ class CustomView(RESTfulView):
             raise HTTPNotFound()
         self.context.update_member(member, self._get_data(member))
         # Now commits and closes session here instead of in the context - DCarv
-        self.context.commit()
-        self.context.close()
+        self.context.session.commit()
+        self.context.session.close()
 
         return self.render_custom_response(id, default_response='UPDATED')
 
@@ -111,8 +111,8 @@ class CustomView(RESTfulView):
         id = self.request.matchdict['id']
         is_deleted = self.context.delete_member(id)
         # Now commits and closes session here instead of in the context - DCarv
-        self.context.commit()
-        self.context.close()
+        self.context.session.commit()
+        self.context.session.close()
         
         # Check if the number of deleted rows is different than 0
         if is_deleted.__dict__['rowcount'] == 0:

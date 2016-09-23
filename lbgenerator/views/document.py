@@ -31,8 +31,8 @@ class DocumentCustomView(CustomView):
         response = self.render_to_response(member)
 
         # Now commits and closes session here instead of in the context - DCarv
-        self.context.commit()
-        self.context.close()
+        self.context.session.commit()
+        self.context.session.close()
 
         return response
 
@@ -101,8 +101,8 @@ class DocumentCustomView(CustomView):
         # Update member
         member = self.context.update_member(member, data)
         # Now commits and closes session here instead of in the context - DCarv
-        self.context.commit()
-        self.context.close()
+        self.context.session.commit()
+        self.context.session.close()
 
         return Response('OK', content_type='application/json')
 
@@ -169,8 +169,8 @@ class DocumentCustomView(CustomView):
         member = self.context.update_member(member, data, index=index)
         # Now commits and closes session here instead of in the context - DCarv
         if close_session:
-            self.context.commit()
-            self.context.close()
+            self.context.session.commit()
+            self.context.session.close()
         
         return Response('UPDATED', content_type='application/json')
 
@@ -214,8 +214,8 @@ class DocumentCustomView(CustomView):
         # Update member
         member = self.context.update_member(member, data)
         # Now commits and closes session here instead of in the context - DCarv
-        self.context.commit()
-        self.context.close()
+        self.context.session.commit()
+        self.context.session.close()
         
         return Response('DELETED', content_type='application/json')
 
@@ -273,8 +273,8 @@ class DocumentCustomView(CustomView):
                 #     self.context.session.close()
                 pass
 
-        self.context.commit()
-        self.context.close()
+        self.context.session.commit()
+        self.context.session.close()
 
         return Response('{"success": %d, "failure" : %d}'
                         % (success, failure),

@@ -128,15 +128,15 @@ class OperationDispatcher(object):
                 context = self.rollback_stack.pop()
                 if success:
                     # commit transactions
-                    context.commit()
+                    context.session.commit()
                 else:
                     # ... rollback by executing all undo operations in the stack
-                    context.rollback()
+                    context.session.rollback()
 
                     i = len(self.rollback_stack)
                     self.result_list[i]["undone"] = True
 
-                context.close()
+                context.session.close()
 
                 # TODO: for each operation in the transaction that was not executed
                 # add a "not executed" result to self.result_list

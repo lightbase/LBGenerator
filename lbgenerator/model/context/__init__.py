@@ -348,12 +348,3 @@ class CustomContextFactory(SQLAlchemyORMContext, CacheMaster):
         self.single_member = True
 
         return _get_member_cached(id, close_sess)
-
-    def commit(self):
-        self.session.commit()
-
-    def rollback(self):
-        self.session.rollback()
-
-    def close(self):
-        self.session.close()

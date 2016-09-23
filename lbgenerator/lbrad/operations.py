@@ -66,8 +66,8 @@ class LBOperation(object):
         if not self.transaction:
             context = self.get_context()
             if context is not None:
-                context.commit()
-                context.close()
+                context.session.commit()
+                context.session.close()
 
     # TODO: define arguments and return value
     def run(self):
