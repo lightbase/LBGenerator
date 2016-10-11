@@ -96,9 +96,14 @@ class DocumentCustomView(CustomView):
             list_pattern)
 
         # Build data
-        data = validate_put_data(self,
-            dict(value=document),
-            member)
+        if 'validate' in self.request.params:
+            data = validate_put_data(self,
+                dict(value=document, validate=self.request.params['validate']),
+                member)
+        else:
+            data = validate_put_data(self,
+                dict(value=document),
+                member)
 
         # Update member
         member = self.context.update_member(member, data)
@@ -106,7 +111,7 @@ class DocumentCustomView(CustomView):
         self.context.session.commit()
         self.context.session.close()
 
-        return Response('OK', content_type='application/json')
+        return Response('OK', content_type='text/plain')
 
     def put_path(self, member=None, close_session=True):
         """Interprets the path, accesses, and update objects. In detail, 
@@ -147,11 +152,17 @@ class DocumentCustomView(CustomView):
                 member.document, 
                 list_pattern)
 
-        # NOTE: Validate data!
-        data = validate_put_data(
-            self, 
-            dict(value=document), 
-            member)
+        # NOTE: Validate data (check for flag)
+        if 'validate' in self.request.params:
+            data = validate_put_data(
+                self, 
+                dict(value=document, validate=self.request.params['validate']), 
+                member)
+        else:
+            data = validate_put_data(
+                self, 
+                dict(value=document), 
+                member)
 
         esp_cmd = None
         try:
@@ -174,7 +185,7 @@ class DocumentCustomView(CustomView):
             self.context.session.commit()
             self.context.session.close()
         
-        return Response('UPDATED', content_type='application/json')
+        return Response('UPDATED', content_type='text/plain')
 
     def delete_path(self):
         """Interprets the path, accesses, and delete objects keys. In detail, the 
@@ -219,7 +230,7 @@ class DocumentCustomView(CustomView):
         self.context.session.commit()
         self.context.session.close()
         
-        return Response('DELETED', content_type='application/json')
+        return Response('DELETED', content_type='text/plain')
 
     def full_document(self):
         """Get files texts and put it into document. Return document with

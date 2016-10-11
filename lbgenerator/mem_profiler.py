@@ -160,15 +160,17 @@ class ProfilerMiddleware:
 # This function is called by Pyramid before and after every request
 @subscriber(NewRequest, NewResponse)
 def ProfilerEventListener(event):
-    if isinstance(event, NewRequest):
-        req = event.request
-        msg = 'Request: %s %s\nBody: %s' % \
-            (req.method, req.path_qs, req.body if req.body else '(EMPTY)')
-        MemProfiler().log_diff(msg)
-    elif isinstance(event, NewResponse):
-        req = event.request
-        res = event.response
-        msg = 'Request: %s %s\nBody: %s\nResponse: %s - %s' % \
-            (req.method, req.path_qs, req.body, res.status, res.body)
-        MemProfiler().log_diff(msg)
-        MemProfiler().log_summary(msg)
+    mem_profiler = MemProfiler()
+    if mem_profiler.on:
+        if isinstance(event, NewRequest):
+            req = event.request
+            msg = 'Request: %s %s\nBody: %s' % \
+                (req.method, req.path_qs, req.body if req.body else '(EMPTY)')
+            mem_profiler.log_diff(msg)
+        elif isinstance(event, NewResponse):
+            req = event.request
+            res = event.response
+            msg = 'Request: %s %s\nBody: %s\nResponse: %s - %s' % \
+                (req.method, req.path_qs, req.body, res.status, res.body)
+            mem_profiler.log_diff(msg)
+            mem_profiler.log_summary(msg)

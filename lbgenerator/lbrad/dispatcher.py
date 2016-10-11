@@ -36,7 +36,7 @@ class OperationDispatcher(object):
     def __init__(self, request_data, request_url=None):
         """
         Params:
-         - request_data (dict) must contain:
+         - request_data (dict): must contain:
             - "operations" (list): a list of operations to be executed (see operations.py)
             - "transaction" (boolean) [optional]: defines whether this request is a
                 transaction. A transaction will be executed "atomically" so if an 

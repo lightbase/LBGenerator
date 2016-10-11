@@ -24,7 +24,6 @@ def validate_document_data(cls, request, *args):
         return validate_put_data(cls, data, member)
 
 def validate_post_data(cls, data):
-
     validate = True
 
     if 'validate' in data and data['validate'] == '0':
@@ -62,6 +61,11 @@ def validate_post_data(cls, data):
     return data
 
 def validate_put_data(cls, data, member):
+    validate = True
+    
+    if 'validate' in data and data['validate'] == '0':
+        validate = False
+        data.pop('validate')
 
     if 'value' in data:
 
@@ -94,7 +98,7 @@ def validate_put_data(cls, data, member):
         reldata, # Relational data.
         files, # All existent files within document.
         cfiles # All non-existent (will be created) files within document.
-        ) = base.validate(document, _metadata)
+        ) = base.validate(document, _metadata, validate)
 
         # Normalize relational data
         [fix_matrix(reldata[field]) for field in reldata if isinstance(reldata[field], Matrix)]
