@@ -150,6 +150,13 @@ def make_routes(self):
         {'attr': 'delete_interface', 'request_method': 'DELETE'}
     ])
 
+    # BEGIN DEBUG
+    from ..views.lbes import LBSearch
+    self.add_route('lbes', '{base}/lbes{path:.*}', request_method='POST')
+    self.add_view(view=LBSearch, route_name='lbes', request_method='POST', 
+        header='Content-Type:application/json', renderer='json')
+    # END DEBUG
+
     self.add_directive('add_restful_base_routes', add_restful_base_routes)
     self.add_static_view('static', 'static', cache_max_age=3600)
 
@@ -405,6 +412,21 @@ def add_restful_base_routes(self, name='base'):
     # - Parâmetros: URI, form
     add_route('delete_{name}', '/{base}', 'delete_member', 'DELETE', permission='delete')
 
+    # LBRAD routes
+    from ..views.lbrad import dispatch_msg
+    self.add_route('lbrad', '/lbrad', request_method='POST')
+    self.add_view(view=dispatch_msg, route_name='lbrad', request_method='POST', renderer='json')
+    
+    from ..views.lbrad import dispatch_msg_multipart
+    self.add_view(view=dispatch_msg_multipart, route_name='lbrad', 
+        request_method='POST', header='Content-Type:multipart/form-data', renderer='json')
+
+    # SQL commands routes
+    from ..views.sql import execute_sql
+    from ..model.context import CustomContextFactory
+    self.add_route('sql', '/sql', request_method='POST')
+    self.add_view(view=execute_sql, route_name='sql', request_method='POST', 
+        header='Content-Type:application/json', renderer='json')
 
 # Esse método faz chamadas p/ o método "add_route()". O objetivo é
 # permitir adicionar rotas de forma dinâmica! Também serve para
@@ -544,3 +566,4 @@ def add_restful_routes(self, name, factory, view=RESTfulView,
     # - Rota: "/{slug}/{id}"
     # - Parâmetros: URI, form
     add_route('delete_{name}', '/{slug}/{id}', 'delete_member', 'DELETE')
+

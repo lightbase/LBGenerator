@@ -80,8 +80,9 @@ class CustomContextFactory(SQLAlchemyORMContext, CacheMaster):
         self.single_member = True
         q = self.session.query(self.entity)
         member = q.get(id)
-        if close_sess:
-            self.session.close()
+        # Now closes session in the view instead of here - DCarv
+        # if close_sess:
+        #     self.session.close()
         return member
 
     def delete_member(self, id):
@@ -89,7 +90,9 @@ class CustomContextFactory(SQLAlchemyORMContext, CacheMaster):
         if member is None:
             return None
         self.session.delete(member)
-        self.session.commit()
+        # Now commits and closes session in the view instead of here
+        # flush() pushes operations to DB's buffer - DCarv
+        self.session.flush()
 
         # NOTE: Clear all caches on this case! By Questor
         cache.clear_cache()
@@ -150,7 +153,9 @@ class CustomContextFactory(SQLAlchemyORMContext, CacheMaster):
         NOTE: Query "q" e feche a sessão. Aqui é disparada a busca 
         conforme o factory acima! By Questor
         '''
-        self.session.close()
+        # Now commits and closes session in the view instead of here
+        # flush() pushes operations to DB's buffer - DCarv
+        self.session.flush()
 
         '''
         NOTE: "Compiler.filter()" faz a chamada "self.where.filter()" que 

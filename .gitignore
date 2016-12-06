@@ -41,3 +41,7 @@ alembic.ini
 *.wsgi
 .idea
 .env
+
+# OS X hidden files
+._*
+profile.log

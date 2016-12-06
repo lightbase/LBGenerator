@@ -27,11 +27,19 @@ class FileCustomView(CustomView):
         id = self.request.matchdict['id']
         member = self.context.get_member(id)
         self.wrap = False
-        return self.render_to_response(member)
+        response = self.render_to_response(member)
+        # Now commits and closes session here instead of in the context - DCarv
+        self.context.session.commit()
+        self.context.session.close()
+        return 
 
     def create_member(self):
         data, filemask = self._get_data()
         member = self.context.create_member(data)
+        # Now commits and closes session here instead of in the context - DCarv
+        self.context.session.commit()
+        self.context.session.close()
+        
         return Response(filemask,
                         content_type='application/json',
                         status=201)
@@ -103,6 +111,9 @@ class FileCustomView(CustomView):
         column = self.context.entity.__table__.c.get(path)
         member = self.context.session.query(column).filter(self.context.entity \
                                                            .id_file == id_file).first()
+        # Now commits and closes session here instead of in the context - DCarv
+        self.context.session.commit()
+        self.context.session.close()
 
         if member is None:
             raise HTTPNotFound()
@@ -126,6 +137,8 @@ class FileCustomView(CustomView):
             content_disposition = disposition + ';' + content_disposition
 
         content_disposition = content_disposition.encode('latin-1', 'ignore').decode('utf-8', 'ignore')
+
+        self.context.session.close()
 
         return Response(
             content_type=member.mimetype,

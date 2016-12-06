@@ -1,3 +1,5 @@
+import logging
+
 from pyramid.response import Response
 from pyramid.exceptions import HTTPNotFound
 
@@ -11,13 +13,13 @@ from ..lib.path import parse_list_pattern
 
 from ..perf_profile import pprofile
 
-
 class DocumentCustomView(CustomView):
     """ Registry Customized View Methods."""
 
     def __init__(self, context, request):
         super(DocumentCustomView, self).__init__(context, request)
-        self.logger = Logger(__name__)
+        self.logger = logging.getLogger("lbgenerator")
+
 
     def _get_data(self, *args):
         """ Get all valid data from (request) POST or PUT.
@@ -28,7 +30,43 @@ class DocumentCustomView(CustomView):
         id = self.request.matchdict['id']
         self.wrap = False
         member = self.context.get_member(id)
-        return self.render_to_response(member)
+        response = self.render_to_response(member)
+
+        # Now commits and closes session here instead of in the context - DCarv
+        self.context.session.commit()
+        self.context.session.close()
+
+        return response
+
+    def update_member(self):
+        id = self.request.matchdict['id']
+        member = self.context.get_member(id, close_sess=False)
+        if member is None:
+            raise HTTPNotFound()
+
+        # if header contains 'If-Not-Modified'
+        last_update_str = self.request.headers.get('If-Not-Modified-Since', None)
+        if last_update_str is not None:
+            # check if resource has been updated already
+            from datetime import datetime
+            try:
+                last_update = datetime.strptime(last_update_str, '%d/%m/%Y %H:%M:%S')
+                last_update = last_update.replace(microsecond=999999)
+                if last_update < member.dt_last_up:
+                    # HTTP 409 Conflict
+                    return Response(status_code=409,
+                                    body=utils.object2json(member.document),
+                                    content_type='application/json')
+            except ValueError as e:
+                return Response(status_code=400,
+                                body='Invalid date format in "If-Not-Modified-Since" header')
+
+        self.context.update_member(member, self._get_data(member))
+        # Now commits and closes session here instead of in the context - DCarv
+        self.context.session.commit()
+        self.context.session.close()
+
+        return self.render_custom_response(id, default_response='UPDATED')
 
     def get_path(self):
         """Interprets the path and accesses objects. In detail, the query path
@@ -88,15 +126,24 @@ class DocumentCustomView(CustomView):
             list_pattern)
 
         # Build data
-        data = validate_put_data(self,
-            dict(value=document),
-            member)
+        if 'validate' in self.request.params:
+            data = validate_put_data(self,
+                dict(value=document, validate=self.request.params['validate']),
+                member)
+        else:
+            data = validate_put_data(self,
+                dict(value=document),
+                member)
 
         # Update member
         member = self.context.update_member(member, data)
-        return Response('OK', content_type='application/json')
+        # Now commits and closes session here instead of in the context - DCarv
+        self.context.session.commit()
+        self.context.session.close()
 
-    def put_path(self, member=None):
+        return Response('OK', content_type='text/plain')
+
+    def put_path(self, member=None, close_session=True):
         """Interprets the path, accesses, and update objects. In detail, 
         the query path supported in the current implementation allows 
         the navigation of data according to the tree structure 
@@ -135,11 +182,17 @@ class DocumentCustomView(CustomView):
                 member.document, 
                 list_pattern)
 
-        # NOTE: Validate data!
-        data = validate_put_data(
-            self, 
-            dict(value=document), 
-            member)
+        # NOTE: Validate data (check for flag)
+        if 'validate' in self.request.params:
+            data = validate_put_data(
+                self, 
+                dict(value=document, validate=self.request.params['validate']), 
+                member)
+        else:
+            data = validate_put_data(
+                self, 
+                dict(value=document), 
+                member)
 
         esp_cmd = None
         try:
@@ -157,8 +210,12 @@ class DocumentCustomView(CustomView):
 
         # NOTE: Update member!
         member = self.context.update_member(member, data, index=index)
-
-        return Response('UPDATED', content_type='application/json')
+        # Now commits and closes session here instead of in the context - DCarv
+        if close_session:
+            self.context.session.commit()
+            self.context.session.close()
+        
+        return Response('UPDATED', content_type='text/plain')
 
     def delete_path(self):
         """Interprets the path, accesses, and delete objects keys. In detail, the 
@@ -199,7 +256,11 @@ class DocumentCustomView(CustomView):
 
         # Update member
         member = self.context.update_member(member, data)
-        return Response('DELETED', content_type='application/json')
+        # Now commits and closes session here instead of in the context - DCarv
+        self.context.session.commit()
+        self.context.session.close()
+        
+        return Response('DELETED', content_type='text/plain')
 
     def full_document(self):
         """Get files texts and put it into document. Return document with
@@ -223,7 +284,6 @@ class DocumentCustomView(CustomView):
         Will query database objects, and update each path to the new 
         object. Return count of successes and failures.
         """
-
         self.context.result_count = False
         collection = self.get_collection(render_to_response=False)
         success, failure = 0, 0
@@ -243,19 +303,25 @@ class DocumentCustomView(CustomView):
                 self.context.session.begin()
 
             try:
-                self.put_path(member)
+                self.put_path(member, close_session=False)
                 success = success + 1
             except Exception as e:
                 import traceback
                 print(traceback.format_exc())
                 failure = failure + 1
             finally:
-                if self.context.session.is_active:
-                    self.context.session.close()
+                # Close session only after all members are updated -- DCarv
+                # if self.context.session.is_active:
+                #     self.context.session.close()
+                pass
+
+        self.context.session.commit()
+        self.context.session.close()
 
         return Response('{"success": %d, "failure" : %d}'
                         % (success, failure),
                         content_type='application/json')
+
 
     def delete_collection(self):
         """Delete database collection of objects. This method needs a valid JSON
@@ -286,6 +352,7 @@ class DocumentCustomView(CustomView):
 
             finally:
                 if self.context.session.is_active:
+                    self.context.session.commit()
                     self.context.session.close()
 
         return Response('{"success": %d, "failure" : %d}'

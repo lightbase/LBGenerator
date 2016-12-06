@@ -76,7 +76,11 @@ def error_view(exc, request):
     exc_msg = exc_obj.args
     if len(exc_obj.args) > 0:
         exc_msg = exc_obj.args[0]
-    return JsonHTTPServerError(request, str(exc_msg))
+    # FOR DEBUGING: include traceback in error message
+    # tb_list = traceback.format_tb(exc_tb)
+    # str_msg = str(exc_msg) + ' ' + ''.join(tb_list)
+    # return JsonHTTPServerError(request, str_msg)
+    return JsonHTTPServerError(request, exc_msg)
 
 @view_config(context=LbException)
 def lbexception_view(exc, request):

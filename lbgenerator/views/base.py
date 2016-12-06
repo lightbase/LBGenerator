@@ -25,11 +25,21 @@ class BaseCustomView(CustomView):
         self.wrap = False
         base = self.request.matchdict['base']
         member = self.context.get_member(base)
-        return self.render_to_response(member)
+        response = self.render_to_response(member)
+        
+        # Now commits and closes session here instead of in the context - DCarv
+        self.context.session.commit()
+        self.context.session.close()
+
+        return response
 
     def update_member(self):
         base = self.request.matchdict['base']
         member = self.context.update_member(base, self._get_data())
+        # Now commits and closes session here instead of in the context - DCarv
+        self.context.session.commit()
+        self.context.session.close()
+
         if member is None:
             raise HTTPNotFound()
         else:
@@ -38,6 +48,10 @@ class BaseCustomView(CustomView):
     def delete_member(self):
         base = self.request.matchdict['base']
         member = self.context.delete_member(base)
+        # Now commits and closes session here instead of in the context - DCarv
+        self.context.session.commit()
+        self.context.session.close()
+        
         if member is None:
             raise HTTPNotFound()
 
