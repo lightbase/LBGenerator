@@ -147,7 +147,7 @@ class OperationDispatcher(object):
         Registers a custom operation.
         Args:
          - key: the operation string to be used in a request. ex: "bd_create_op"
-         - op_class: the operation class, it need to be a child class of LBOperation
+         - op_class: the operation class, it needs to be a subclass of LBOperation
         """
         if key in OperationDispatcher.valid_operations:
             # TODO: raise error

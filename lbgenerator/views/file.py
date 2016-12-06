@@ -31,7 +31,7 @@ class FileCustomView(CustomView):
         # Now commits and closes session here instead of in the context - DCarv
         self.context.session.commit()
         self.context.session.close()
-        return 
+        return response
 
     def create_member(self):
         data, filemask = self._get_data()

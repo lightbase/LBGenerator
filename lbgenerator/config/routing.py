@@ -153,7 +153,7 @@ def make_routes(self):
     # ES routes (lbes - simplified)
     from ..views.lbes import LBSearch
     self.add_route('lbes', '{base}/lbes{path:.*}', request_method='POST')
-    self.add_view(view=LBSearch, route_name='lbes', request_method='POST', 
+    self.add_view(view=LBSearch, route_name='lbes', request_method='POST',
         header='Content-Type:application/json', renderer='json')
 
     self.add_directive('add_restful_base_routes', add_restful_base_routes)

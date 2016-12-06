@@ -4,6 +4,7 @@ import collections
 
 from pyramid.response import Response
 from pyramid.httpexceptions import HTTPBadRequest
+from pyramid.httpexceptions import HTTPServiceUnavailable
 
 from ..model.context.es import ESContextFactory
 from liblightbase.lbutils.codecs import json2object
@@ -88,7 +89,11 @@ class LBSearch:
             dict_es_query['highlight'].update(dict_request['highlight'])
 
 
-        url = self.context.get_base().metadata.idx_exp_url + '/_search'
+        base_url = self.context.get_base().metadata.idx_exp_url
+        if not base_url:
+            return HTTPServiceUnavailable(body='This base is not indexed yet.')
+
+        url = base_url + '/_search'
 
         json_es_query = json.dumps(dict_es_query)
         response = requests.get(url, data=json_es_query)

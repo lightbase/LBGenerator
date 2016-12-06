@@ -3,4 +3,4 @@
 
 #url a qual seu rest está configurada para a utilização dos testes.
 
-url_ip = 'http://192.168.253.128/api'
+url_ip = 'http://192.168.56.102'

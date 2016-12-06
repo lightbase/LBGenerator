@@ -6,10 +6,7 @@ Creator: Danilo Carvalho
 """
 
 import logging
-import json
 
-from liblightbase.lbrest.base import BaseREST
-from liblightbase.lbrest.document import DocumentREST
 from liblightbase.lbutils.codecs import json2object
 from liblightbase.lbutils.codecs import object2json
 from liblightbase.lbutils.conv import dict2base
