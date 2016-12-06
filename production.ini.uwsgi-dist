@@ -1,4 +1,4 @@
-[app:main]
+[app:lbgenerator]
 use=egg:LBGenerator
 
 ###
@@ -35,10 +35,39 @@ sqlalchemy.max_overflow=0
 sqlalchemy.pool_size=20
 script_location=db_versions
 
-[server:main]
-use=egg:waitress#main
-host=0.0.0.0
-port=6543
+###
+# uwsgi configuration.
+# http://uwsgi-docs.readthedocs.io/en/latest/Options.html
+# http://pkgs.fedoraproject.org/repo/pkgs/uwsgi/uwsgi-wiki-doc-v43.txt/c2fa5a293ccac33e1c9c0277963c841e/uwsgi-wiki-doc-v43.txt
+###
+
+[uwsgi]
+socket=/tmp/lbg.sock
+
+# Allows the use of a paste deploy in emperor mode!
+paste=config:%p
+
+master=true
+processes=<WORKER_PROCESSES>
+threads=5
+home=<VE32_PATH>
+virtualenv=<VE32_PATH>/
+pythonpath=<VE32_PATH>/bin
+logto=/var/log/lbg.log
+
+###
+# Pipeline Configuration
+###
+
+[filter:paste_prefix]
+use=egg:PasteDeploy#prefix
+prefix=/<APP_ROOT_F>
+
+[pipeline:main]
+pipeline=
+    paste_prefix
+    # NOTE: A good spot for some logging middleware!
+    lbgenerator
 
 ###
 # Logging configuration
