@@ -38,6 +38,36 @@ class DocumentCustomView(CustomView):
 
         return response
 
+    def update_member(self):
+        id = self.request.matchdict['id']
+        member = self.context.get_member(id, close_sess=False)
+        if member is None:
+            raise HTTPNotFound()
+
+        # if header contains 'If-Not-Modified'
+        last_update_str = self.request.headers.get('If-Not-Modified-Since', None)
+        if last_update_str is not None:
+            # check if resource has been updated already
+            from datetime import datetime
+            try:
+                last_update = datetime.strptime(last_update_str, '%d/%m/%Y %H:%M:%S')
+                last_update = last_update.replace(microsecond=999999)
+                if last_update < member.dt_last_up:
+                    # HTTP 409 Conflict
+                    return Response(status_code=409,
+                                    body=utils.object2json(member.document),
+                                    content_type='application/json')
+            except ValueError as e:
+                return Response(status_code=400,
+                                body='Invalid date format in "If-Not-Modified-Since" header')
+
+        self.context.update_member(member, self._get_data(member))
+        # Now commits and closes session here instead of in the context - DCarv
+        self.context.session.commit()
+        self.context.session.close()
+
+        return self.render_custom_response(id, default_response='UPDATED')
+
     def get_path(self):
         """Interprets the path and accesses objects. In detail, the query path
         supported in the current implementation allows the navigation of data 
@@ -299,7 +329,6 @@ class DocumentCustomView(CustomView):
         each path (deleting the respective path). Return count of successes and 
         failures.
         """
-
         self.context.result_count = False
         collection = self.get_collection(render_to_response=False)
         success, failure = 0, 0
