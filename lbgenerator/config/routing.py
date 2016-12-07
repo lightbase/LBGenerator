@@ -150,12 +150,11 @@ def make_routes(self):
         {'attr': 'delete_interface', 'request_method': 'DELETE'}
     ])
 
-    # BEGIN DEBUG
+    # ES routes (lbes - simplified)
     from ..views.lbes import LBSearch
     self.add_route('lbes', '{base}/lbes{path:.*}', request_method='POST')
     self.add_view(view=LBSearch, route_name='lbes', request_method='POST', 
         header='Content-Type:application/json', renderer='json')
-    # END DEBUG
 
     self.add_directive('add_restful_base_routes', add_restful_base_routes)
     self.add_static_view('static', 'static', cache_max_age=3600)
@@ -288,6 +287,15 @@ def make_routes(self):
     # - Rota: "{base}/doc"
     # - Parâmetros: URI (?)
     self.add_restful_routes('{base}/doc', DocumentContextFactory, view=DocumentCustomView)
+
+    # PATCH route for documents
+    add_custom_routes('patch_doc', '{base}/doc/{id}', DocumentContextFactory, DocumentCustomView, [
+        # * "PATCH"
+        # - Ação: (?)
+        # - Rota: "{base}/doc"
+        # - Parâmetros: form
+        {'attr': 'patch_member', 'request_method': 'PATCH', 'permission': 'patch'}
+    ])
 
     # Restful routes for documents collection
     add_custom_routes('document_collection', '{base}/doc', DocumentContextFactory, DocumentCustomView, [

@@ -68,6 +68,24 @@ class DocumentCustomView(CustomView):
 
         return self.render_custom_response(id, default_response='UPDATED')
 
+    def patch_member(self):
+        id = self.request.matchdict['id']
+        member = self.context.get_member(id, close_sess=False)
+        if member is None:
+            raise HTTPNotFound()
+
+        updated_member_json = self.request.params.get('value', None)
+        if updated_member_json is None:
+            raise Exception('Missing param: value')
+
+        updated_member = self._get_data(member)
+        self.context.update_member(member, updated_member)
+        # Now commits and closes session here instead of in the context - DCarv
+        self.context.session.commit()
+        self.context.session.close()
+
+        return self.render_custom_response(id, default_response='UPDATED')
+
     def get_path(self):
         """Interprets the path and accesses objects. In detail, the query path
         supported in the current implementation allows the navigation of data 

@@ -18,10 +18,12 @@ def validate_document_data(cls, request, *args):
 
     if method == 'POST':
         return validate_post_data(cls, data)
-
     elif method == 'PUT':
         member = args[0]
         return validate_put_data(cls, data, member)
+    elif method == 'PATCH':
+        member = args[0]
+        return validate_patch_data(cls, data, member)
 
 def validate_post_data(cls, data):
     validate = True
@@ -62,7 +64,7 @@ def validate_post_data(cls, data):
 
 def validate_put_data(cls, data, member):
     validate = True
-    
+
     if 'validate' in data and data['validate'] == '0':
         validate = False
         data.pop('validate')
@@ -92,6 +94,57 @@ def validate_put_data(cls, data, member):
             dt_last_up = datetime.datetime.now(),
             dt_idx = dt_idx,
             dt_del = member.dt_del
+        ))
+
+        (document, # Document it self.
+        reldata, # Relational data.
+        files, # All existent files within document.
+        cfiles # All non-existent (will be created) files within document.
+        ) = base.validate(document, _metadata, validate)
+
+        # Normalize relational data
+        [fix_matrix(reldata[field]) for field in reldata if isinstance(reldata[field], Matrix)]
+
+        # Build database object
+        data['document'] = document
+        data['__files__'] = files
+        data.update(_metadata.__dict__)
+        data.update(reldata)
+
+    return data
+
+def validate_patch_data(cls, data, member):
+    validate = True
+
+    if 'validate' in data and data['validate'] == '0':
+        validate = False
+        data.pop('validate')
+
+    if 'value' in data:
+        # NOTE: Recupera a estrutura (json) da base no formato dict.
+        # Get Base object (CustomView <- DocumentContextFactory <-
+        # CustomContextFactory <- BaseMemory <- get_base())
+        base = cls.get_base()
+
+        # Parse JSON object
+        document = member.document
+        updated_partial_document = utils.json2object(data['value'])
+        data.pop('value')
+        # update member.document with new data
+        utils.DocumentPatchUtils().update_dict(document, updated_partial_document)
+
+        dt_idx = document.get('_metadata', {}).get('dt_idx', None)
+        if dt_idx and not isinstance(dt_idx, datetime.datetime):
+            dt_idx = datetime.datetime.strptime(
+                dt_idx, '%d/%m/%Y %H:%M:%S')
+
+        # Build Metadata
+        _metadata = DocumentMetadata(**dict(
+            id_doc=member.id_doc,
+            dt_doc=member.dt_doc,
+            dt_last_up=datetime.datetime.now(),
+            dt_idx=dt_idx,
+            dt_del=member.dt_del
         ))
 
         (document, # Document it self.

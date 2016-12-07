@@ -80,7 +80,7 @@ def error_view(exc, request):
     # tb_list = traceback.format_tb(exc_tb)
     # str_msg = str(exc_msg) + ' ' + ''.join(tb_list)
     # return JsonHTTPServerError(request, str_msg)
-    return JsonHTTPServerError(request, exc_msg)
+    return JsonHTTPServerError(request, str(exc_msg))
 
 @view_config(context=LbException)
 def lbexception_view(exc, request):
