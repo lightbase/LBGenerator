@@ -6,9 +6,11 @@ from pyramid.exceptions import NotFound
 from pyramid.httpexceptions import HTTPInternalServerError
 from pyramid.httpexceptions import HTTPNotFound
 from pyramid.httpexceptions import HTTPForbidden
+from pyramid.httpexceptions import HTTPConflict
 import traceback
 from ..lib import utils
 import sys
+
 
 from ..lib.lb_exception import LbException
 from ..lib.utils import LbUseful
@@ -56,6 +58,14 @@ class JsonHTTPForbidden(HTTPForbidden, JsonErrorMessage):
         Response.__init__(self, self.get_error(), status=self.code)
         self.content_type = 'application/json'
 
+class JsonHTTPConflict(HTTPConflict, JsonErrorMessage):
+
+    def __init__(self, request, _error_message):
+        self._error_message = _error_message
+        self.request = request
+        Response.__init__(self, self.get_error(), status=self.code)
+        self.content_type = 'application/json'
+
 @forbidden_view_config()
 def forbidden(request):
     """ Customized Forbidden View
@@ -92,3 +102,14 @@ def lbexception_view(exc, request):
     if len(exc_obj.args) > 0:
         exc_msg = exc_obj.args[0]
     return JsonHTTPServerError(request, str(exc_msg))
+
+@view_config(context=HTTPConflict)
+def conflict_view(exc, request):
+    """
+    View that responds to HTTPConflict errors.
+    """
+    exc_type, exc_obj, exc_tb = sys.exc_info()
+    exc_msg = exc_obj.args
+    if len(exc_obj.args) > 0:
+        exc_msg = exc_obj.args[0]
+    return JsonHTTPConflict(request, str(exc_msg))

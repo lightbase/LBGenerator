@@ -55,6 +55,9 @@ class UpdateOnPathFunctions(PathFunctions):
         new_value =  match.value.replace(*self._args)
         return (True, new_value)
 
+class PatchOnPathFunctions(UpdateOnPathFunctions):
+    pass
+
 class DeleteOnPathFunctions(PathFunctions):
     # O construtor está na classe PathFunctions.
 
@@ -107,6 +110,7 @@ def get_path_fn(path, mode, fn=None, args=[]):
     modefns = {
         'insert': InsertOnPathFunctions,
         'update': UpdateOnPathFunctions,
+        'patch': PatchOnPathFunctions,
         'delete': DeleteOnPathFunctions}
 
     try:
@@ -127,6 +131,7 @@ def parse_list_pattern(base, document, pattern):
     mapping = {
         'insert': base.set_path,
         'update': base.put_path,
+        'patch': base.patch_path,
         'delete': base.delete_path}
 
     # Itera no conjunto de operações definidas em pattern.

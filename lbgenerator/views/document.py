@@ -1,11 +1,14 @@
 import logging
+from datetime import datetime
 
 from pyramid.response import Response
 from pyramid.exceptions import HTTPNotFound
+from pyramid.httpexceptions import HTTPConflict
 
 from . import CustomView
 from ..lib.validation.document import validate_document_data
 from ..lib.validation.document import validate_put_data
+from ..lib.validation.document import validate_patch_data
 from ..lib.validation.path import validate_path_data
 from ..lib import utils
 from ..lib.log import Logger
@@ -44,22 +47,7 @@ class DocumentCustomView(CustomView):
         if member is None:
             raise HTTPNotFound()
 
-        # if header contains 'If-Not-Modified'
-        last_update_str = self.request.headers.get('If-Not-Modified-Since', None)
-        if last_update_str is not None:
-            # check if resource has been updated already
-            from datetime import datetime
-            try:
-                last_update = datetime.strptime(last_update_str, '%d/%m/%Y %H:%M:%S')
-                last_update = last_update.replace(microsecond=999999)
-                if last_update < member.dt_last_up:
-                    # HTTP 409 Conflict
-                    return Response(status_code=409,
-                                    body=utils.object2json(member.document),
-                                    content_type='application/json')
-            except ValueError as e:
-                return Response(status_code=400,
-                                body='Invalid date format in "If-Not-Modified-Since" header')
+        self._check_modified_date(member)
 
         self.context.update_member(member, self._get_data(member))
         # Now commits and closes session here instead of in the context - DCarv
@@ -74,6 +62,8 @@ class DocumentCustomView(CustomView):
         if member is None:
             raise HTTPNotFound()
 
+        self._check_modified_date(member)
+
         updated_member_json = self.request.params.get('value', None)
         if updated_member_json is None:
             raise Exception('Missing param: value')
@@ -85,6 +75,22 @@ class DocumentCustomView(CustomView):
         self.context.session.close()
 
         return self.render_custom_response(id, default_response='UPDATED')
+
+    def _check_modified_date(self, member, path=None):
+        # if header contains 'If-Not-Modified-Since'
+        last_update_str = self.request.headers.get('If-Not-Modified-Since', None)
+        if last_update_str is not None:
+            # check if resource has been updated already
+            last_update = datetime.strptime(last_update_str, '%d/%m/%Y %H:%M:%S')
+            last_update = last_update.replace(microsecond=999999)
+            if last_update < member.dt_last_up:
+                msg = member.document if path is None else\
+                    self.get_base().get_path(member.document, path.split('/'))
+                raise HTTPConflict(msg)
+                # HTTP 409 Conflict
+                # return Response(status_code=409,
+                #                 body=utils.object2json(member.document),
+                #                 content_type='application/json')
 
     def get_path(self):
         """Interprets the path and accesses objects. In detail, the query path
@@ -131,6 +137,8 @@ class DocumentCustomView(CustomView):
         member = self.context.get_raw_member(self.request.matchdict['id'])
         if member is None:
             raise HTTPNotFound()
+
+        self._check_modified_date(member, path=self.request.matchdict['path'])
 
         # Set path
         list_pattern = [{
@@ -180,6 +188,8 @@ class DocumentCustomView(CustomView):
             member = self.context.get_raw_member(self.request.matchdict['id'])
             if member is None:
                 raise HTTPNotFound()
+
+        self._check_modified_date(member, path=self.request.matchdict['path'])
 
         # NOTE: Update path!
         if self.request.params.get('path') == '/':
@@ -235,6 +245,84 @@ class DocumentCustomView(CustomView):
         
         return Response('UPDATED', content_type='text/plain')
 
+
+    def patch_path(self, member=None, close_session=True):
+        """Interprets the path, accesses, and update objects. In detail, 
+        the query path supported in the current implementation allows
+        the navigation of data according to the tree structure
+        characterizing application objects. The path has the form:
+
+        N1/N2/.../Nn
+
+        where each `N` represents a level(Node) in the tree structure
+        of an object (possibly indicating the collection it belongs
+        to). Specifically, every Node represents a collection, or an
+        object identifier, or a field name.
+        """
+
+        # NOTE: Get raw mapped entity object!
+        if member is None:
+            member = self.context.get_raw_member(self.request.matchdict['id'])
+            if member is None:
+                raise HTTPNotFound()
+
+        self._check_modified_date(member, path=self.request.matchdict['path'])
+
+        # NOTE: Patch path!
+        if self.request.params.get('path') == '/':
+            document = member.document
+        elif isinstance(self.request.matchdict['path'], list):
+            document = parse_list_pattern(
+                self.get_base(), 
+                member.document, 
+                self.request.matchdict['path']
+            )
+        else:
+            list_pattern = [{
+                'path': self.request.matchdict['path'],
+                'mode':'patch',
+                'args': [self.request.params['value']]
+            }]
+            document = parse_list_pattern(
+                self.get_base(), 
+                member.document, 
+                list_pattern)
+
+        # NOTE: Validate data (check for flag)
+        if 'validate' in self.request.params:
+            data = validate_patch_data(
+                self, 
+                dict(value=document, validate=self.request.params['validate']), 
+                member)
+        else:
+            data = validate_patch_data(
+                self, 
+                dict(value=document), 
+                member)
+
+        esp_cmd = None
+        try:
+            esp_cmd = self.request.params["esp_cmd"]
+        except Exception as e:
+            pass
+
+        # NOTE: Como o parâmetro "esp_cmd" é opcional ele não está 
+        # declarado na rota e não entra em "self.request.matchdict"! 
+        # By Questor
+        if esp_cmd == "dont_idx":
+            index = False
+        else:
+            index = True
+
+        # NOTE: Update member!
+        member = self.context.update_member(member, data, index=index)
+        # Now commits and closes session here instead of in the context - DCarv
+        if close_session:
+            self.context.session.commit()
+            self.context.session.close()
+        
+        return Response('UPDATED', content_type='text/plain')
+
     def delete_path(self):
         """Interprets the path, accesses, and delete objects keys. In detail, the 
         query path supported in the current implementation allows the navigation
@@ -253,6 +341,8 @@ class DocumentCustomView(CustomView):
         member = self.context.get_raw_member(self.request.matchdict['id'])
         if member is None:
             raise HTTPNotFound()
+
+        self._check_modified_date(member, path=self.request.matchdict['path'])
 
         # Aqui define o caminho e a operação dentro de tuplas em um 
         # array.

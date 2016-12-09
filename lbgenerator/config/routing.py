@@ -230,6 +230,11 @@ def make_routes(self):
         # - Rota: "{base}/doc/{id:\d+}/{path:.*}"
         # - Parâmetros: URI, form
         {'attr':'put_path', 'request_method':'PUT', 'permission': 'edit'},
+        # * "PATCH"
+        # - Ação: (?)
+        # - Rota: "{base}/doc/{id:\d+}/{path:.*}"
+        # - Parâmetros: URI, form
+        {'attr':'patch_path', 'request_method':'PATCH', 'permission': 'edit'},
         # * "DELETE"
         # - Ação: (?)
         # - Rota: "{base}/doc/{id:\d+}/{path:.*}"
@@ -238,7 +243,7 @@ def make_routes(self):
     ])
 
     #-----------------#
-    # Document Routes # 
+    # Document Routes #
     #-----------------#
 
     # Obter texto do registro do "tipo file".
@@ -294,7 +299,7 @@ def make_routes(self):
         # - Ação: (?)
         # - Rota: "{base}/doc"
         # - Parâmetros: form
-        {'attr': 'patch_member', 'request_method': 'PATCH', 'permission': 'patch'}
+        {'attr': 'patch_member', 'request_method': 'PATCH', 'permission': 'edit'}
     ])
 
     # Restful routes for documents collection
