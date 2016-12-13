@@ -52,11 +52,25 @@ class UpdateOnPathFunctions(PathFunctions):
         return (False, None)
 
     def _replace(self, match):
-        new_value =  match.value.replace(*self._args)
+        new_value = match.value.replace(*self._args)
         return (True, new_value)
 
 class PatchOnPathFunctions(UpdateOnPathFunctions):
-    pass
+    def _attr_equals(self, match):
+        """
+        args: ["field_in_group_to_compare", "value_to_compare", "group_to_update"]
+        update the fields of group if "field_in_group_to_compare" equal "value_to_compare"
+        """
+        if len(self._args) is 3:
+            try:
+                if type(self._args[2]) is dict:
+                    if self._args[1] == match.value[self._args[0]]:
+                        return (True, self._args[2])
+                else:
+                    if match.value == self._args[1]:
+                        return (True, self._args[2])
+            except: pass
+        return (False, None)
 
 class DeleteOnPathFunctions(PathFunctions):
     # O construtor está na classe PathFunctions.

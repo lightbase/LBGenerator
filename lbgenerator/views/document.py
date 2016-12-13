@@ -273,8 +273,8 @@ class DocumentCustomView(CustomView):
             document = member.document
         elif isinstance(self.request.matchdict['path'], list):
             document = parse_list_pattern(
-                self.get_base(), 
-                member.document, 
+                self.get_base(),
+                member.document,
                 self.request.matchdict['path']
             )
         else:
@@ -430,6 +430,48 @@ class DocumentCustomView(CustomView):
                         % (success, failure),
                         content_type='application/json')
 
+    def patch_collection(self):
+        """Udpdate database collection of objects. This method needs a 
+        valid JSON query, a valid query path and the object to update. 
+        Will query database objects, and update each path to the new 
+        object. Return count of successes and failures.
+        """
+        self.context.result_count = False
+        collection = self.get_collection(render_to_response=False)
+        success, failure = 0, 0
+        path = self.request.params['path']
+
+        if path[0] == '[':
+            path = utils.json2object(path)
+
+        self.request.matchdict['path'] = path
+
+        for member in collection:
+            # NOTE: Override matchdict!
+            self.request.matchdict['id'] = member.id_doc
+
+            if not self.context.session.is_active:
+                self.context.session.begin()
+
+            try:
+                self.patch_path(member, close_session=False)
+                success = success + 1
+            except Exception as e:
+                import traceback
+                print(traceback.format_exc())
+                failure = failure + 1
+            finally:
+                # Close session only after all members are updated -- DCarv
+                # if self.context.session.is_active:
+                #     self.context.session.close()
+                pass
+
+        self.context.session.commit()
+        self.context.session.close()
+
+        return Response('{"success": %d, "failure" : %d}'
+                        % (success, failure),
+                        content_type='application/json')
 
     def delete_collection(self):
         """Delete database collection of objects. This method needs a valid JSON

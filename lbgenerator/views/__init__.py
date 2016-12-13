@@ -52,7 +52,6 @@ class CustomView(RESTfulView):
         @param render_to_response: Se deseja que a saída seja 
         renderizada.
         """
-
         params = self.request.params.get('$$', '{}')
         query = utils.json2object(params)
         try:

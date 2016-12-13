@@ -309,6 +309,11 @@ def make_routes(self):
         # - Rota: "{base}/doc"
         # - Parâmetros: form
         {'attr':'update_collection', 'request_method': 'PUT', 'permission': 'edit'},
+        # * "PATCH"
+        # - Ação: (?)
+        # - Rota: "{base}/doc"
+        # - Parâmetros: form
+        {'attr':'patch_collection', 'request_method': 'PATCH', 'permission': 'edit'},
         # * "DELETE"
         # - Ação: (?)
         # - Rota: "{base}/doc"
