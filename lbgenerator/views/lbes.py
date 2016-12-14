@@ -1,4 +1,5 @@
 import json
+import re
 import requests
 import collections
 
@@ -34,6 +35,7 @@ class LBSearch:
         offset_size = 10
         search_fields = ['_all']
         sort = ['_score']
+        query = re.escape(dict_request['query'])
 
         # override default fields
         if 'raw_es_response' in dict_request:
@@ -62,7 +64,7 @@ class LBSearch:
             'query': {
                 'query_string': {
                     'default_operator': "AND",
-                    'query': dict_request['query'],
+                    'query': query,
                     'fields': search_fields
                 }
             },
@@ -98,9 +100,12 @@ class LBSearch:
         json_es_query = json.dumps(dict_es_query)
         response = requests.get(url, data=json_es_query)
         response_text = response.text
+        dict_response = json.loads(response_text)
+
+        if 'hits' not in dict_response:
+            raise Exception('ES Error: ' + dict_response['error'])
 
         if hl_in_source:
-            dict_response = json.loads(response_text)
             if dict_response['hits']['total'] > 0:
                 hits = dict_response['hits']['hits']
                 for hit in hits:
@@ -108,21 +113,21 @@ class LBSearch:
                         for k, v in hit['highlight'].items():
                             self._update_highlight(hit['_source'], k.split('.'), v)
                         hit.pop('highlight')
-                response_text = json.dumps(dict_response)
 
         if not raw_es_response:
-            dict_response = json.loads(response_text)
             new_dict_response = list()
             hits = dict_response['hits']['hits']
             for hit in hits:
                 new_hit = dict()
-                new_hit['data'] = hit['_source']
+                new_hit['id_doc'] = hit['_id']
                 new_hit['score'] = hit['_score']
+                new_hit['data'] = hit['_source']
                 new_dict_response.append(new_hit)
                 if not hl_in_source and 'highlight' in hit:
                     new_hit['highlight'] = hit['highlight']
-            response_text = json.dumps(new_dict_response)
+            dict_response = new_dict_response
 
+        response_text = json.dumps(dict_response)
         return Response(response_text, content_type='application/json')
 
     def _update_highlight(self, source, l_path, hl_values):
