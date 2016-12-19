@@ -55,6 +55,9 @@ virtualenv=<VE32_PATH>/
 pythonpath=<VE32_PATH>/bin
 logto=/var/log/lbg.log
 
+# Avoids the error "502 bad gateway error" when we make big requests!
+buffer-size=65535
+
 ###
 # Pipeline Configuration
 ###
