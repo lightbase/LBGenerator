@@ -272,6 +272,10 @@ class DocumentCustomView(CustomView):
         if self.request.params.get('path') == '/':
             document = member.document
         elif isinstance(self.request.matchdict['path'], list):
+            # force patch mode
+            for path in self.request.matchdict['path']:
+                path['mode'] = 'patch'
+
             document = parse_list_pattern(
                 self.get_base(),
                 member.document,
