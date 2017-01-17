@@ -127,11 +127,8 @@ def validate_patch_data(cls, data, member):
         base = cls.get_base()
 
         # Parse JSON object
-        document = member.document
-        updated_partial_document = utils.json2object(data['value'])
+        document = utils.json2object(data['value'])
         data.pop('value')
-        # update member.document with new data
-        utils.DocumentPatchUtils().update_dict(document, updated_partial_document)
 
         dt_idx = document.get('_metadata', {}).get('dt_idx', None)
         if dt_idx and not isinstance(dt_idx, datetime.datetime):

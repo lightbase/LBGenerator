@@ -274,7 +274,8 @@ class DocumentCustomView(CustomView):
         elif isinstance(self.request.matchdict['path'], list):
             # force patch mode
             for path in self.request.matchdict['path']:
-                path['mode'] = 'patch'
+                if 'mode' not in path:
+                    path['mode'] = 'patch'
 
             document = parse_list_pattern(
                 self.get_base(),
@@ -288,21 +289,23 @@ class DocumentCustomView(CustomView):
                 'args': [self.request.params['value']]
             }]
             document = parse_list_pattern(
-                self.get_base(), 
-                member.document, 
+                self.get_base(),
+                member.document,
                 list_pattern)
 
         # NOTE: Validate data (check for flag)
         if 'validate' in self.request.params:
             data = validate_patch_data(
-                self, 
-                dict(value=document, validate=self.request.params['validate']), 
-                member)
+                self,
+                dict(value=document, validate=self.request.params['validate']),
+                member
+            )
         else:
             data = validate_patch_data(
-                self, 
-                dict(value=document), 
-                member)
+                self,
+                dict(value=document),
+                member
+            )
 
         esp_cmd = None
         try:

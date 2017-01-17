@@ -84,7 +84,7 @@ def is_file_mask(mask):
         return False
 
 
-class DocumentPatchUtils:
+class DocumentManualPatchUtils:
     def update_dict(self, doc_dict, update_doc_dict):
         """
         Updates the document's data (doc_dict) with data from update_doc_dict.
@@ -142,7 +142,7 @@ class DocumentPatchUtils:
                 command = args[0]
                 args = args[1:]
 
-                command_func = DocumentPatchUtils.valid_descriptors.get(command, None)
+                command_func = DocumentManualPatchUtils.valid_descriptors.get(command, None)
                 if command_func is None:
                     # TODO: ERROR invalid command
                     pass
@@ -218,3 +218,48 @@ class DocumentPatchUtils:
         "$remove": list_remove,
         "$multi": list_multi
     }
+
+
+class DocumentMergeUtils(DocumentManualPatchUtils):
+    def update_dict(self, doc_dict, update_doc_dict):
+        """
+        Updates the document's data (doc_dict) with data from update_doc_dict.
+        Keys and subkeys that aren't present in updated_doc_dict are left unchanged.
+        Args:
+         - doc_dict: the full document to be updated
+         - update_doc_dict: a dict only with the keys that will be changed
+        """
+        for key, value in update_doc_dict.items():
+            if isinstance(value, dict) and key in doc_dict:
+                self.update_dict(doc_dict[key], update_doc_dict[key])
+            elif isinstance(value, list) and key in doc_dict:
+                for idx, item in enumerate(value):
+                    if item not in doc_dict[key]:
+                        doc_dict[key].append(item)
+            else:
+                doc_dict[key] = value
+
+
+class DocumentPatchUtils(DocumentManualPatchUtils):
+    def update_dict(self, doc_dict, update_doc_dict):
+        """
+        Updates the document's data (doc_dict) with data from update_doc_dict.
+        Keys and subkeys that aren't present in updated_doc_dict are left unchanged.
+        Args:
+         - doc_dict: the full document to be updated
+         - update_doc_dict: a dict only with the keys that will be changed
+        """
+        for key, value in update_doc_dict.items():
+            if isinstance(value, dict) and key in doc_dict:
+                self.update_dict(doc_dict[key], update_doc_dict[key])
+            elif isinstance(value, list) and key in doc_dict:
+                for idx, item in enumerate(value):
+                    if len(doc_dict[key]) > idx:
+                        if self.is_list_of_dicts(value):
+                            self.update_dict(doc_dict[key][idx], update_doc_dict[key][idx])
+                        else:
+                            doc_dict[key][idx] = item
+                    else:
+                        doc_dict[key].append(item)
+            else:
+                doc_dict[key] = value
