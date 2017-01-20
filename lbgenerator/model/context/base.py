@@ -1,7 +1,10 @@
 import datetime
 import logging
 from sqlalchemy.util import KeyedTuple
+from alembic.migration import MigrationContext
+from alembic.operations import Operations
 
+from liblightbase.lbutils.conv import json2base
 from . import CustomContextFactory
 from ..entities import *
 from ..index import Index
@@ -10,6 +13,10 @@ from ... import config
 from ...lib import utils
 from sqlalchemy.util import KeyedTuple
 import requests
+
+from pyramid.testing import DummyRequest
+from .document import DocumentContextFactory
+from ...views.document import DocumentCustomView
 
 log = logging.getLogger()
 
@@ -75,6 +82,80 @@ class BaseContextFactory(CustomContextFactory):
         if member is None:
             return None
 
+        # NOTE: BaseContext's init method sets its base to the base
+        # struct contained in the request, so we need to reset it here
+        # to the base struct that is actually in the database - DCarv
+        
+        # remove base struct from cache
+        model.BASES.bases.pop(member.name)
+        # set old base struct as active
+        self.set_base(member.struct)
+
+        # check for base content changes
+        old_base = json2base(member.struct)
+        new_base = json2base(data['struct'])
+
+        # list all fields that should be deleted
+        del_cols = []
+        for old_col_name, old_col in old_base.content.__allstructs__.items():
+            if old_col_name not in new_base.content.__allsnames__:
+                del_cols.append(old_col)
+
+        # if any field will be deleted, delete it from all documents in the base
+        if len(del_cols) > 0:
+            # create a fake request for DocumentCustomView and DocumentContext
+            url = "/%s/doc&$$={\"limit\":null}" % new_base.metadata.name
+            for col in del_cols:
+                params = {
+                    'path': "[{\"path\":\"%s\",\"fn\":null,\"mode\":\"delete\",\"args\":[]}]" % ("/".join(col.path))
+                }
+                request = DummyRequest(path=url, params=params)
+                request.method = 'PUT'
+                request.matchdict = {"base": new_base.metadata.name}
+                doc_view = DocumentCustomView(DocumentContextFactory(request), request)
+                doc_view.update_collection()
+
+        # check for relation field changes (to ALTER table if needed)
+        old_doc_table = get_doc_table(old_base.metadata.name, config.METADATA,
+            **old_base.relational_fields)
+        new_doc_table = get_doc_table(new_base.metadata.name, config.METADATA,
+            **new_base.relational_fields)
+
+        # list relational fields that should be deleted
+        del_cols = []
+        for old_col in old_doc_table.columns:
+            if old_col.name not in new_doc_table.columns:
+                del_cols.append(old_col)
+
+        # list relational fields that should be added
+        new_cols = []
+        for new_col in new_doc_table.columns:
+            if new_col.name not in old_doc_table.columns:
+                # Get liblightbase.lbbase.fields object.
+                field = new_base.relational_fields[new_col.name]
+                custom_col = get_custom_column(field)
+                new_cols.append(custom_col)
+
+        # create alembic connection and operation object
+        db_conn = config.ENGINE.connect()
+        alembic_ctx = MigrationContext.configure(db_conn)
+        alembic_op = Operations(alembic_ctx)
+
+        # drop columns
+        for col in del_cols:
+            alembic_op.drop_column(new_doc_table.name, col.name)
+
+        # TODO: new_col cannot be required
+
+        # add columns
+        for col in new_cols:
+            alembic_op.add_column(new_doc_table.name, col)
+
+        # TODO: alter columns ?
+
+        db_conn.close()
+
+        # check for base name change
         if member.name != data['name']:
             old_name = 'lb_doc_%s' %(member.name)
             new_name = 'lb_doc_%s' %(data['name'])
@@ -88,12 +169,7 @@ class BaseContextFactory(CustomContextFactory):
             new_name = 'lb_doc_%s_id_doc_seq' %(data['name'])
             self.session.execute('ALTER SEQUENCE %s RENAME TO %s' %(old_name, new_name))
 
-            # lb_file_* tables no longer use a sequence to determine next file ID
-            # so this sequence doesn't exist anymore - DCarv
-            # old_name = 'lb_file_%s_id_file_seq' %(member.name)
-            # new_name = 'lb_file_%s_id_file_seq' %(data['name'])
-            # self.session.execute('ALTER SEQUENCE %s RENAME TO %s' %(old_name, new_name))
-
+        # this will add any new fields to the base struct
         for name in data:
             setattr(member, name, data[name])
 
@@ -111,6 +187,9 @@ class BaseContextFactory(CustomContextFactory):
         })
     
         self.lbirestart()
+
+        # remove base struct from cache
+        model.BASES.bases.pop(member.name)
 
         return member
 
