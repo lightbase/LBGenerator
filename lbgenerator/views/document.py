@@ -49,7 +49,10 @@ class DocumentCustomView(CustomView):
 
         self._check_modified_date(member)
 
-        self.context.update_member(member, self._get_data(member))
+        alter_files = self.request.params.get('alter_files', True)
+
+        self.context.update_member(member, self._get_data(member),
+                                   alter_files=alter_files)
         # Now commits and closes session here instead of in the context - DCarv
         self.context.session.commit()
         self.context.session.close()
@@ -237,7 +240,9 @@ class DocumentCustomView(CustomView):
             index = True
 
         # NOTE: Update member!
-        member = self.context.update_member(member, data, index=index)
+        alter_files = self.request.params.get('alter_files', True)
+        member = self.context.update_member(member, data, index=index,
+                                            alter_files=alter_files)
         # Now commits and closes session here instead of in the context - DCarv
         if close_session:
             self.context.session.commit()

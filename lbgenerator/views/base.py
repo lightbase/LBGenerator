@@ -83,3 +83,15 @@ class BaseCustomView(CustomView):
                 raise Exception(e)
         value = utils.object2json(value)
         return Response(value, content_type='application/json')
+
+    def put_column(self):
+        basename = self.request.matchdict['base']
+        path = self.request.matchdict['column'].split('/')
+        json_column = self.request.params['value']
+
+        json_current_column = self.context.update_column(path, json_column)
+
+        self.context.session.commit()
+        self.context.session.close()
+
+        return Response(json_current_column, content_type='application/json')

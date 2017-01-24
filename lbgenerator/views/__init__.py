@@ -77,6 +77,9 @@ class CustomView(RESTfulView):
 
                 # NOTE: Sem renderizar p/ a resposta html... By Questor
                 response = collection
+
+        self.context.session.close()
+        
         return response
 
     def get_member(self):
