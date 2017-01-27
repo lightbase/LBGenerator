@@ -71,7 +71,7 @@ class DocumentCustomView(CustomView):
         if updated_member_json is None:
             raise Exception('Missing param: value')
 
-        updated_member = self._get_data(member)
+        updated_member = self._get_data(member, False)
         self.context.update_member(member, updated_member)
         # Now commits and closes session here instead of in the context - DCarv
         self.context.session.commit()
@@ -414,13 +414,12 @@ class DocumentCustomView(CustomView):
 
         self.request.matchdict['path'] = path
 
-        for member in collection:
+        if not self.context.session.is_active:
+            self.context.session.begin()
 
+        for member in collection:
             # NOTE: Override matchdict!
             self.request.matchdict['id'] = member.id_doc
-
-            if not self.context.session.is_active:
-                self.context.session.begin()
 
             try:
                 self.put_path(member, close_session=False)

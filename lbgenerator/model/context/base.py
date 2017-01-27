@@ -1,5 +1,6 @@
 import datetime
 import logging
+import threading
 from sqlalchemy.util import KeyedTuple
 from alembic.migration import MigrationContext
 from alembic.operations import Operations
@@ -25,6 +26,7 @@ import requests
 from pyramid.testing import DummyRequest
 from .document import DocumentContextFactory
 from ...views.document import DocumentCustomView
+from ...lib.lbtasks import LBTaskManager
 
 log = logging.getLogger()
 
@@ -240,184 +242,273 @@ class BaseContextFactory(CustomContextFactory):
             self.lbirestart()
         return member
 
-    def update_column(self, column_path, json_new_column):
+    def update_column_async(self, column_path, json_new_column,
+                            id_user, user_agent, user_ip):
+        # CREATE task
+        task_name = 'update_column: %s' % ('/'.join(column_path))
+        task_id, task_url = LBTaskManager()\
+            .create(task_name, id_user, user_agent, user_ip, 0.0)
+
+        worker_thread = threading.Thread(
+            target=self.update_column,
+            args=(column_path, json_new_column,),
+            kwargs={'async': True, 'task_id': task_id}
+        )
+        worker_thread.start()
+
+        return task_url
+
+    def update_column(self, column_path, json_new_column,
+                      async=False, task_id=None):
         """ Updates a column structure
         """
-        dict_new_column = json2object(json_new_column)
-        # new_column is either a Group or a Field (liblightbase.lbbase.lbstruct)
-        new_column = self.object2content(dict_new_column)
+        if async:
+            task_manager = LBTaskManager()
 
-        # base is a LBBase object
-        base = self.get_base()
-        member = self.get_member(base.metadata.name)
-        if member is None:
-            return None
-        # base struct as dictionary
-        dict_base = json2object(member.struct)
-        # current_column is the Group/Field object before update
-        current_column = base.get_struct(column_path[-1])
-        if current_column.path != column_path:
-            # TODO: error
-            return None
+        try:
+            dict_new_column = json2object(json_new_column)
+            # new_column is either a Group or a Field (liblightbase.lbbase.lbstruct)
+            new_column = self.object2content(dict_new_column)
 
-        # check if the column's name was changed
-        name_changed = False
-        old_name = None
-        if isinstance(current_column, Field) and isinstance(new_column, Field):
-            if new_column.name != current_column.name:
-                old_name = current_column.name
-                current_column.name = new_column.name
-                name_changed = True
-        elif isinstance(current_column, Group) and isinstance(new_column, Group):
-            if new_column.metadata.name != current_column.metadata.name:
-                old_name = current_column.metadata.name
-                current_column.metadata.name = new_column.metadata.name
-                name_changed = True
+            # base is a LBBase object
+            base = self.get_base()
+            member = self.get_member(base.metadata.name)
+            if member is None:
+                if async:
+                    exc = Exception('Base not found: ' + base.metadata.name)
+                    task_manager.on_error(task_id, exp)
+                return None
+            # base struct as dictionary
+            dict_base = json2object(member.struct)
+            # current_column is the Group/Field object before update
+            current_column = base.get_struct(column_path[-1])
+            if current_column.path != column_path:
+                if async:
+                    exc = Exception('Column not found: ' + '/'.join(column_path))
+                    task_manager.on_error(task_id, exp)
+                return None
 
-        if name_changed:
-            # get column value for each document
-            url = '/%s/doc' % (base.metadata.name)
-            search_param = '{"select":["id_doc", "%s"],"limit":null}' % column_path[-1]
-            params = {
-                '$$': search_param
-            }
-            request = DummyRequest(path=url, params=params)
-            request.method = 'GET'
-            request.matchdict = {"base": base.metadata.name}
-            request.accept = Accept("application/json")
-            doc_view = DocumentCustomView(DocumentContextFactory(request), request)
-            results = doc_view.get_collection(render_to_response=True)
-            results = results.json_body['results']
+            # check if the column's name was changed
+            name_changed = False
+            old_name = None
+            if isinstance(current_column, Field) and isinstance(new_column, Field):
+                if new_column.name != current_column.name:
+                    old_name = current_column.name
+                    current_column.name = new_column.name
+                    name_changed = True
+            elif isinstance(current_column, Group) and isinstance(new_column, Group):
+                if new_column.metadata.name != current_column.metadata.name:
+                    old_name = current_column.metadata.name
+                    current_column.metadata.name = new_column.metadata.name
+                    name_changed = True
 
-            # delete old column value from documents
-            url = "/%s/doc?$$={\"limit\":null}" % base.metadata.name
-            json_path_list = '[{"path":"%s","fn":null,"mode":"delete","args":[]}]' % "/".join(column_path)
-            params = {
-                'path': json_path_list,
-                'alter_files': False
-            }
-            request = DummyRequest(path=url, params=params)
-            request.method = 'PUT'
-            request.matchdict = {"base": base.metadata.name}
-            doc_view = DocumentCustomView(DocumentContextFactory(request), request)
-            doc_view.update_collection()
+            if name_changed:
+                if async:
+                    # update task progress
+                    # TODO: log result if error
+                    task_manager.on_update_progress(
+                        task_id, 5.0, msg='Preparing to change column name')
 
-            # change base struct
-            try:
-                current = dict_base
-                # traverse struct dict
-                for node in column_path:
-                    if isinstance(current, dict) and current.get('content', None):
-                        content_list = current['content']
-                    else:
-                        content_list = current
+                # get column value for each document
+                url = '/%s/doc' % (base.metadata.name)
+                search_param = '{"select":["id_doc", "%s"],"limit":null}' % column_path[-1]
+                params = {
+                    '$$': search_param
+                }
+                request = DummyRequest(path=url, params=params)
+                request.method = 'GET'
+                request.matchdict = {"base": base.metadata.name}
+                request.accept = Accept("application/json")
+                doc_view = DocumentCustomView(DocumentContextFactory(request), request)
+                results = doc_view.get_collection(render_to_response=True)
+                results = results.json_body['results']
 
-                    for f in content_list:
-                        if f.get('field', None):
-                            if f['field']['name'] == node:
-                                current = f
-                                break
-                        elif f.get('group', None):
-                            if f['group']['metadata']['name'] == node:
-                                current = f
-                                break
+                if async:
+                    # update task progress
+                    # TODO: log result if error
+                    task_manager.on_update_progress(
+                        task_id, 10.0, msg="Saved old documents' values")
 
-                # current is a dictionary with current column struct
-                if current is None:
-                    # undo delete column
-                    self._undo_delete_column(base, old_name, column_path, results)
-                    return None
+                # delete old column value from documents
+                url = "/%s/doc?$$={\"limit\":null}" % base.metadata.name
+                json_path_list = '[{"path":"%s","fn":null,"mode":"delete","args":[]}]' % "/".join(column_path)
+                params = {
+                    'path': json_path_list,
+                    'alter_files': False
+                }
+                request = DummyRequest(path=url, params=params)
+                request.method = 'PUT'
+                request.matchdict = {"base": base.metadata.name}
+                doc_view = DocumentCustomView(DocumentContextFactory(request), request)
+                doc_view.update_collection()
 
-                # get new name (Field or Group)
-                if current.get('field', None):
-                    new_name = current_column.name
-                    current['field']['name'] = new_name
-                    
-                    # check if field is relational and change its name in postgres db
-                    if current_column.is_rel:
-                        self._alter_column_name(base, old_name, new_name)
-                
-                elif current.get('group', None):
-                    new_name = current_column.metadata.name
-                    current['group']['metadata']['name'] = new_name
+                if async:
+                    # update task progress
+                    # TODO: log result if error
+                    task_manager.on_update_progress(
+                        task_id, 20.0, msg='Deleted values in old column')
 
-            except Exception as e:
-                self._undo_delete_column(base, old_name, column_path, results)
-                raise e
-
-            try:
-                old_base_struct = member.struct
-                member.struct = utils.object2json(dict_base)
-                self.session.flush()
-
-                # remove base struct from cache
-                model.BASES.bases.pop(member.name)
-                # set new base struct as active
-                self.set_base(member.struct)
-            except Exception as e:
-                # undo alter column name
+                # change base struct
                 try:
-                    self._alter_column_name(base, new_name, old_name)
-                except AttributeError:
-                    # if current_column is group it doesnt have to undo alter column
-                    pass
-
-                # undo base struct
-                member.struct = old_base_struct
-                self.session.flush()
-                model.BASES.bases.pop(member.name)
-                
-                # undo delete
-                self._undo_delete_column(base, old_name, column_path, results)
-                # reraise exception to be displayed as error msg
-                raise e
-
-            # change all documents
-            try:
-                for doc in results:
-                    if doc.get(old_name, None):
-                        id_doc = doc['_metadata']['id_doc']
-
-                        path = column_path[:-1]
-                        if len(path) == 0:
-                            path.append(new_name)
+                    current = dict_base
+                    # traverse struct dict
+                    for node in column_path:
+                        if isinstance(current, dict) and current.get('content', None):
+                            content_list = current['content']
                         else:
-                            path[-1] = new_name
-                        url = '/%s/doc/%d/%s' % (base.metadata.name, id_doc, "/".join(path))
-                        params = {
-                            'value': doc[old_name],
-                            'alter_files': False
-                        }
-                        request = DummyRequest(path=url, params=params)
-                        request.method = 'PUT'
-                        request.matchdict = {
-                            'base': base.metadata.name,
-                            'id': str(id_doc),
-                            'path': "/".join(path)
-                        }
-                        doc_view = DocumentCustomView(DocumentContextFactory(request), request)
-                        response = doc_view.put_path()
-            except Exception as e:
-                # BEGIN DEBUG
-                import pdb; pdb.set_trace()
-                # END DEBUG
-                # undo alter column name
-                self._alter_column_name(base, new_name, old_name)
+                            content_list = current
 
-                # undo base struct
-                member.struct = old_base_struct
-                self.session.flush()
-                model.BASES.bases.pop(member.name)
+                        for f in content_list:
+                            if f.get('field', None):
+                                if f['field']['name'] == node:
+                                    current = f
+                                    break
+                            elif f.get('group', None):
+                                if f['group']['metadata']['name'] == node:
+                                    current = f
+                                    break
 
-                # undo delete
-                self._undo_delete_column(base, old_name, column_path, results)
-                # reraise exception to be displayed as error msg
-                raise e
-        else:
-            current = current_column.asdict
+                    # current is a dictionary with current column struct
+                    if current is None:
+                        # undo delete column
+                        self._undo_delete_column(base, old_name, column_path, results)
+                        if async:
+                            # TODO: better error message
+                            exc = Exception('Column not found')
+                            task_manager.on_error(task_id, exc)
+                        return None
 
-        json_current_column = utils.object2json(current)
-        return json_current_column
+                    # get new name (Field or Group)
+                    new_name = None
+                    if current.get('field', None):
+                        new_name = current_column.name
+                        current['field']['name'] = new_name
+
+                        # check if field is relational and change its name in postgres db
+                        if current_column.is_rel:
+                            self._alter_column_name(base, old_name, new_name)
+
+                    elif current.get('group', None):
+                        new_name = current_column.metadata.name
+                        current['group']['metadata']['name'] = new_name
+
+                    if new_name is None:
+                        exc = Exception("Couldn't find new name")
+                        if async:
+                            task_manager.on_error(task_id, exc)
+                        raise exc
+
+                except Exception as e:
+                    self._undo_delete_column(base, old_name, column_path, results)
+                    if async:
+                        task_manager.on_error(task_id, e)
+                    # reraise exception to return it as error view
+                    raise e
+
+                try:
+                    old_base_struct = member.struct
+                    member.struct = utils.object2json(dict_base)
+                    self.session.flush()
+
+                    # remove base struct from cache
+                    model.BASES.bases.pop(member.name)
+                    # set new base struct as active
+                    self.set_base(member.struct)
+                except Exception as e:
+                    # undo alter column name
+                    try:
+                        self._alter_column_name(base, new_name, old_name)
+                    except AttributeError:
+                        # if current_column is group it doesnt have to undo alter column
+                        pass
+
+                    # undo base struct
+                    member.struct = old_base_struct
+                    self.session.flush()
+                    model.BASES.bases.pop(member.name)
+                    
+                    # undo delete
+                    self._undo_delete_column(base, old_name, column_path, results)
+                    if async:
+                        task_manager.on_error(task_id, e)
+                    # reraise exception to be displayed as error msg
+                    raise e
+
+                if async:
+                    # update task progress
+                    # TODO: log result if error
+                    task_manager.on_update_progress(
+                        task_id, 30.0, msg='Changed relational column name')
+
+                    current_progress = 30.0
+                    each_progress = 70.0 / float(len(results)) \
+                        if len(results) > 0 else 70.0
+
+                # change all documents
+                try:
+                    for doc in results:
+                        if doc.get(old_name, None):
+                            id_doc = doc['_metadata']['id_doc']
+
+                            path = column_path[:-1]
+                            if len(path) == 0:
+                                path.append(new_name)
+                            else:
+                                path[-1] = new_name
+                            url = '/%s/doc/%d/%s' % (base.metadata.name, id_doc, "/".join(path))
+                            params = {
+                                'value': doc[old_name],
+                                'alter_files': False
+                            }
+                            request = DummyRequest(path=url, params=params)
+                            request.method = 'PUT'
+                            request.matchdict = {
+                                'base': base.metadata.name,
+                                'id': str(id_doc),
+                                'path': "/".join(path)
+                            }
+                            doc_view = DocumentCustomView(DocumentContextFactory(request), request)
+                            response = doc_view.put_path()
+
+                            if async:
+                                # update task progress
+                                current_progress += each_progress
+                                # TODO: log result if error
+                                task_manager.on_update_progress(
+                                    task_id, current_progress,
+                                    msg='Setting values on new column')
+                except Exception as e:
+                    # undo alter column name
+                    self._alter_column_name(base, new_name, old_name)
+
+                    # undo base struct
+                    member.struct = old_base_struct
+                    self.session.flush()
+                    model.BASES.bases.pop(member.name)
+
+                    # undo delete
+                    self._undo_delete_column(base, old_name, column_path, results)
+                    if async:
+                        task_manager.on_error(task_id, e)
+                    # reraise exception to be displayed as error msg
+                    raise e
+            else:
+                current = current_column.asdict
+
+            if async:
+                task_manager.on_success(
+                    task_id, update_progress=True,
+                    msg='Finished successfully')
+                # if async, then close session here
+                self.session.commit()
+                self.session.close()
+
+            json_current_column = utils.object2json(current)
+            return json_current_column
+        except Exception as e:
+            task_manager.on_error(task_id, e)
+
+        return None
 
     def _undo_delete_column(self, base, old_name, path, results):
         for doc in results:
@@ -462,10 +553,6 @@ class BaseContextFactory(CustomContextFactory):
 
     # TODO: validate field data
     def object2content(self, obj, dimension=0, parent_path=[]):
-        if isinstance(obj, list):
-            # BEGIN DEBUG
-            import pdb; pdb.set_trace()
-            # END DEBUG
         if obj.get('group'):
             this_path = parent_path[:]
             group_metadata = GroupMetadata(**obj['group']['metadata'])
