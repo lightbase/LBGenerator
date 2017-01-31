@@ -119,6 +119,10 @@ class DocumentCustomView(CustomView):
             self.request.matchdict['path'].split('/'))
 
         response = utils.object2json(document)
+
+        # close session opened by self.context.get_raw_member()
+        self.context.session.close()
+
         return Response(response, content_type='application/json')
 
     def set_path(self):
@@ -394,6 +398,8 @@ class DocumentCustomView(CustomView):
             raise HTTPNotFound()
 
         document = self.context.get_full_document(utils.json2object(member.document))
+
+        self.context.session.close()
 
         return Response(utils.object2json(document),
                        content_type='application/json')

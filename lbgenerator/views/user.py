@@ -26,6 +26,8 @@ class UserView(CustomView):
             raise Exception("user '%s' already exists!" % data['nm_user'])
         member = self.context.create_member(data)
         id = self.context.get_member_id_as_string(member)
+        self.context.session.commit()
+        self.context.session.close()
         return self.render_custom_response(id, default_response=id)
 
     def authenticate(self):
@@ -55,6 +57,8 @@ class UserView(CustomView):
             raise Exception('Invalid Password!')
 
         headers = remember(self.request, user)
+        self.context.session.commit()
+        self.context.session.close()
         return Response('OK', headers=headers)
 
     def test_login(self):
