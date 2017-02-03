@@ -14,6 +14,8 @@ from pympler import tracker
 from pympler import refbrowser
 from pympler import web
 
+from . import config
+
 
 class MemProfiler:
     """
@@ -24,6 +26,7 @@ class MemProfiler:
         """ Inner class used for the singleton pattern """
         def __init__(self):
             self.on = False
+            self.db_status = False
             self.logger = logging.getLogger("memprofiler")
             self.tracker = tracker.SummaryTracker()
 
@@ -156,15 +159,24 @@ class ProfilerMiddleware:
             MemProfiler().on = False
             # TODO: log 
             start_response("200 OK",[('Content-type' , 'text/html')])
-            return [b"Memory Profiler P is OFF.\n\nTo turn it off: GET /__memprofiler_on"]
+            return [b"Memory Profiler P is OFF.\n\nTo turn it on: GET /__memprofiler_on"]
 
         if environ.get("PATH_INFO") == "/__memprofiler_web":
             MemProfiler().start_web_interface()
             start_response("200 OK",[('Content-type' , 'text/html')])
             return [b"Memory Profiler's Web Interface is now running on port: 8080"]
 
+        if environ.get("PATH_INFO") == "/__memprofiler_db_status_on":
+            MemProfiler().db_status = True
+            start_response("200 OK",[('Content-type' , 'text/html')])
+            return [b"DB Status log is ON.\n\nTo turn it off: GET /__memprofiler_db_status_off"]
+
+        if environ.get("PATH_INFO") == "/__memprofiler_db_status_off":
+            MemProfiler().db_status = False
+            start_response("200 OK",[('Content-type' , 'text/html')])
+            return [b"DB Status log is OFF.\n\nTo turn it on: GET /__memprofiler_db_status_on"]
+
         if environ.get("PATH_INFO") == "/__memprofiler_db_status":
-            from . import config
             pool_status = config.ENGINE.pool.status()
             start_response("200 OK", [('Content-type', 'text/html')])
             return [pool_status.encode('utf-8')]
@@ -188,3 +200,8 @@ def ProfilerEventListener(event):
                 (req.method, req.path_qs, req.body, res.status, res.body)
             mem_profiler.log_diff(msg)
             mem_profiler.log_summary(msg)
+
+    if mem_profiler.db_status:
+        if isinstance(event, NewResponse):
+            pool_status = config.ENGINE.pool.status()
+            print("DB Status | " + pool_status)
