@@ -6,10 +6,10 @@ use=egg:LBGenerator
 ###
 sqlalchemy.url=<SQLALCHEMY_URL>
 
-sqlalchemy.max_overflow=0
-sqlalchemy.pool_size=20
+sqlalchemy.max_overflow=<SQLA_POOL_SIZE>
+sqlalchemy.pool_size=<SQLA_POOL_SIZE>
 storage.tmp_dir=/tmp
-requests.timeout=30
+requests.timeout=1600
 lbindex_url=http://127.0.0.1:6543/
 
 pyramid.reload_templates=true
@@ -31,8 +31,8 @@ auth.admin_passwd=admin
 ###
 sqlalchemy.url=<SQLALCHEMY_URL>
 
-sqlalchemy.max_overflow=0
-sqlalchemy.pool_size=20
+sqlalchemy.max_overflow=<SQLA_POOL_SIZE>
+sqlalchemy.pool_size=<SQLA_POOL_SIZE>
 script_location=db_versions
 
 ###
@@ -42,20 +42,38 @@ script_location=db_versions
 ###
 
 [uwsgi]
+# Bind to the specified UNIX/TCP socket using default protocol.
 socket=/tmp/lbg.sock
-
 # Allows the use of a paste deploy in emperor mode!
 paste=config:%p
-
+# Enable master process.
 master=true
-processes=<WORKER_PROCESSES>
-threads=5
+# Spawn the specified number of workers/processes.
+processes=<PROCESSES_QTT>
+# Run each worker in prethreaded mode with the specified number of threads.
+threads=<THREADS_QTT>
+# PYTHONHOME/virtualenv.
 home=<VE32_PATH>
+# PYTHONHOME/virtualenv.
 virtualenv=<VE32_PATH>/
+# Directory pythonpath.
 pythonpath=<VE32_PATH>/bin
+# Log file name and path.
 logto=/var/log/lbg.log
-
-# Avoids the error "502 bad gateway error" when we make big requests!
+# Set logfile name after rotation.
+log-backupname=/var/log/lbg.log.old
+# Log requests with a 4xx response.
+log-4xx=true
+# Log requests with a 5xx response.
+log-5xx=true
+# Reopen log after reload.
+log-reopen=true
+# 50MB.
+log-maxsize=50000000
+# Prefix log entries with timestamp.
+log-date=true
+# Avoids the error "502 bad gateway error" when we make big requests 
+# (set internal buffer size)!
 buffer-size=65535
 
 ###

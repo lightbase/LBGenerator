@@ -6,10 +6,10 @@ use=egg:LBGenerator
 ###
 sqlalchemy.url=<SQLALCHEMY_URL>
 
-sqlalchemy.max_overflow=0
-sqlalchemy.pool_size=20
+sqlalchemy.max_overflow=<SQLA_POOL_SIZE>
+sqlalchemy.pool_size=<SQLA_POOL_SIZE>
 storage.tmp_dir=/tmp
-requests.timeout=30
+requests.timeout=1600
 lbindex_url=http://127.0.0.1:6543/
 
 pyramid.reload_templates=true
@@ -31,8 +31,8 @@ auth.admin_passwd=admin
 ###
 sqlalchemy.url=<SQLALCHEMY_URL>
 
-sqlalchemy.max_overflow=0
-sqlalchemy.pool_size=20
+sqlalchemy.max_overflow=<SQLA_POOL_SIZE>
+sqlalchemy.pool_size=<SQLA_POOL_SIZE>
 script_location=db_versions
 
 [server:main]

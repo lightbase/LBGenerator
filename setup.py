@@ -35,7 +35,7 @@ NOTE: Para versionamento usar "MAJOR.MINOR.REVISION.BUILDNUMBER"! By Questor
 http://programmers.stackexchange.com/questions/24987/what-exactly-is-the-build-number-in-major-minor-buildnumber-revision
 '''
 setup(name='LBGenerator',
-      version='0.6.1.0',
+      version='0.7.0.0',
       description='LBGenerator',
       long_description=README + '\n\n' +  CHANGES,
       classifiers=[
