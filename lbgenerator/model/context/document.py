@@ -127,7 +127,7 @@ class DocumentContextFactory(CustomContextFactory):
                 # flush() pushes operations to DB's buffer - DCarv
                 session.flush()
 
-    def update_member(self, member, data, index=True):
+    def update_member(self, member, data, index=True, alter_files=True):
         """Receives the data to UPDATE at database 
         (table lb_doc_<base>). Here the document will be indexed, files 
         within it will be created, and files that are not in document 
@@ -138,9 +138,9 @@ class DocumentContextFactory(CustomContextFactory):
         @param index: Flag that indicates the need of indexing the
         document. 
         """
-
-        self.delete_files(member, data['__files__'])
-        self.create_files(member, data['__files__'])
+        if alter_files:
+            self.delete_files(member, data['__files__'])
+            self.create_files(member, data['__files__'])
         data.pop('__files__')
 
         stmt = update(self.entity.__table__).where(

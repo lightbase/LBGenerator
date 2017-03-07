@@ -83,3 +83,36 @@ class BaseCustomView(CustomView):
                 raise Exception(e)
         value = utils.object2json(value)
         return Response(value, content_type='application/json')
+
+    def put_column(self):
+        basename = self.request.matchdict['base']
+        path = self.request.matchdict['column'].split('/')
+        json_column = self.request.params['value']
+
+        str_async = self.request.params.get('async', 'false')
+        async = str_async.lower() == 'true'
+
+        if async:
+            # TODO: get user id
+            id_user = 0
+            user_agent = self.request.user_agent
+            user_ip = self.request.client_addr
+            task_url = self.context.update_column_async(
+                path, json_column, id_user, user_agent, user_ip)
+
+            result = {
+                'task_url': task_url
+            }
+            response = Response(status_code=202,
+                                body=utils.object2json(result),
+                                content_type='application/json')
+            response.content_location = task_url
+            return response
+
+        json_current_column = self.context.update_column(path, json_column)
+
+        self.context.session.commit()
+        self.context.session.close()
+
+        return Response(json_current_column, content_type='application/json')
+

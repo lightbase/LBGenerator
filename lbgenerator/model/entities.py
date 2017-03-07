@@ -154,22 +154,9 @@ def get_doc_table(__base__, __metadata__, **rel_fields):
     )
 
     for rel_field in rel_fields:
-
         # Get liblightbase.lbbase.fields object.
         field = rel_fields[rel_field]
-
-        # Get sqlalchemy.type object.
-        col_type = getattr(dbtypes, field._datatype.__schema__.__dbtype__)
-
-        # Transform columns type to array if necessary.
-        if field.__dim__ > 0:
-            col_type = ARRAY(col_type, dimensions=field.__dim__)
-
-        # Add UNIQUE constraint if necessary.
-        unique = True if 'Unico' in field.indices else False
-
-        # Create Column object.
-        custom_col = Column(rel_field, col_type, unique=unique)
+        custom_col = get_custom_column(field)
         COLUMNS += (custom_col,)
 
     # Create the Table object. extend_existing Indicates that this Table is 
@@ -184,6 +171,21 @@ def get_doc_table(__base__, __metadata__, **rel_fields):
 
     return table
 
+
+def get_custom_column(field):
+    # Get sqlalchemy.type object.
+    col_type = getattr(dbtypes, field._datatype.__schema__.__dbtype__)
+
+    # Transform columns type to array if necessary.
+    if field.__dim__ > 0:
+        col_type = ARRAY(col_type, dimensions=field.__dim__)
+
+    # Add UNIQUE constraint if necessary.
+    unique = True if 'Unico' in field.indices else False
+
+    # Create Column object.
+    custom_col = Column(field.name, col_type, unique=unique)
+    return custom_col
 
 class LBFile():
     """

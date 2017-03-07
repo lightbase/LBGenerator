@@ -77,12 +77,16 @@ class CustomView(RESTfulView):
 
                 # NOTE: Sem renderizar p/ a resposta html... By Questor
                 response = collection
+
+        self.context.session.close()
+
         return response
 
     def get_member(self):
         id = self.request.matchdict['id']
         self.wrap = False
         member = self.context.get_member(id)
+        self.context.session.close()
         return self.render_to_response(member)
 
     def create_member(self):

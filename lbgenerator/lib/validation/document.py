@@ -23,7 +23,10 @@ def validate_document_data(cls, request, *args):
         return validate_put_data(cls, data, member)
     elif method == 'PATCH':
         member = args[0]
-        return validate_patch_data(cls, data, member)
+        whole_doc = True
+        if len(args) > 1:
+            whole_doc = args[1]
+        return validate_patch_data(cls, data, member, whole_doc)
 
 def validate_post_data(cls, data):
     validate = True
@@ -113,7 +116,7 @@ def validate_put_data(cls, data, member):
 
     return data
 
-def validate_patch_data(cls, data, member):
+def validate_patch_data(cls, data, member, whole_doc=True):
     validate = True
 
     if 'validate' in data and data['validate'] == '0':
@@ -127,11 +130,15 @@ def validate_patch_data(cls, data, member):
         base = cls.get_base()
 
         # Parse JSON object
-        document = member.document
-        updated_partial_document = utils.json2object(data['value'])
+        if not whole_doc:
+            document = member.document
+            updated_partial_document = utils.json2object(data['value'])    
+            # update member.document with new data
+            utils.DocumentPatchUtils().update_dict(document, updated_partial_document)
+        else:
+            document = utils.json2object(data['value'])
+
         data.pop('value')
-        # update member.document with new data
-        utils.DocumentPatchUtils().update_dict(document, updated_partial_document)
 
         dt_idx = document.get('_metadata', {}).get('dt_idx', None)
         if dt_idx and not isinstance(dt_idx, datetime.datetime):

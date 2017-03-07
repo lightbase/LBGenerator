@@ -49,7 +49,10 @@ class DocumentCustomView(CustomView):
 
         self._check_modified_date(member)
 
-        self.context.update_member(member, self._get_data(member))
+        alter_files = self.request.params.get('alter_files', True)
+
+        self.context.update_member(member, self._get_data(member),
+                                   alter_files=alter_files)
         # Now commits and closes session here instead of in the context - DCarv
         self.context.session.commit()
         self.context.session.close()
@@ -68,7 +71,7 @@ class DocumentCustomView(CustomView):
         if updated_member_json is None:
             raise Exception('Missing param: value')
 
-        updated_member = self._get_data(member)
+        updated_member = self._get_data(member, False)
         self.context.update_member(member, updated_member)
         # Now commits and closes session here instead of in the context - DCarv
         self.context.session.commit()
@@ -116,6 +119,10 @@ class DocumentCustomView(CustomView):
             self.request.matchdict['path'].split('/'))
 
         response = utils.object2json(document)
+
+        # close session opened by self.context.get_raw_member()
+        self.context.session.close()
+
         return Response(response, content_type='application/json')
 
     def set_path(self):
@@ -237,7 +244,9 @@ class DocumentCustomView(CustomView):
             index = True
 
         # NOTE: Update member!
-        member = self.context.update_member(member, data, index=index)
+        alter_files = self.request.params.get('alter_files', True)
+        member = self.context.update_member(member, data, index=index,
+                                            alter_files=alter_files)
         # Now commits and closes session here instead of in the context - DCarv
         if close_session:
             self.context.session.commit()
@@ -272,6 +281,11 @@ class DocumentCustomView(CustomView):
         if self.request.params.get('path') == '/':
             document = member.document
         elif isinstance(self.request.matchdict['path'], list):
+            # force patch mode
+            for path in self.request.matchdict['path']:
+                if 'mode' not in path:
+                    path['mode'] = 'patch'
+
             document = parse_list_pattern(
                 self.get_base(),
                 member.document,
@@ -284,21 +298,23 @@ class DocumentCustomView(CustomView):
                 'args': [self.request.params['value']]
             }]
             document = parse_list_pattern(
-                self.get_base(), 
-                member.document, 
+                self.get_base(),
+                member.document,
                 list_pattern)
 
         # NOTE: Validate data (check for flag)
         if 'validate' in self.request.params:
             data = validate_patch_data(
-                self, 
-                dict(value=document, validate=self.request.params['validate']), 
-                member)
+                self,
+                dict(value=document, validate=self.request.params['validate']),
+                member
+            )
         else:
             data = validate_patch_data(
-                self, 
-                dict(value=document), 
-                member)
+                self,
+                dict(value=document),
+                member
+            )
 
         esp_cmd = None
         try:
@@ -383,6 +399,8 @@ class DocumentCustomView(CustomView):
 
         document = self.context.get_full_document(utils.json2object(member.document))
 
+        self.context.session.close()
+
         return Response(utils.object2json(document),
                        content_type='application/json')
 
@@ -402,13 +420,12 @@ class DocumentCustomView(CustomView):
 
         self.request.matchdict['path'] = path
 
-        for member in collection:
+        if not self.context.session.is_active:
+            self.context.session.begin()
 
+        for member in collection:
             # NOTE: Override matchdict!
             self.request.matchdict['id'] = member.id_doc
-
-            if not self.context.session.is_active:
-                self.context.session.begin()
 
             try:
                 self.put_path(member, close_session=False)

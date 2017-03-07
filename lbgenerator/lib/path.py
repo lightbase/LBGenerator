@@ -125,6 +125,8 @@ def get_path_fn(path, mode, fn=None, args=[]):
         'insert': InsertOnPathFunctions,
         'update': UpdateOnPathFunctions,
         'patch': PatchOnPathFunctions,
+        'merge': PatchOnPathFunctions,
+        'manual': PatchOnPathFunctions,
         'delete': DeleteOnPathFunctions}
 
     try:
@@ -146,6 +148,8 @@ def parse_list_pattern(base, document, pattern):
         'insert': base.set_path,
         'update': base.put_path,
         'patch': base.patch_path,
+        'merge': base.merge_path,
+        'manual': base.manual_path,
         'delete': base.delete_path}
 
     # Itera no conjunto de operações definidas em pattern.
