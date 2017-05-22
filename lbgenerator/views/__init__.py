@@ -38,6 +38,12 @@ class CustomView(RESTfulView):
         """Return Base object
         """
 
+        # NOTE: self.context.get_base() = <liblightbase.lbbase.struct.
+        # Base object at 0x4255ed0>! By Questor
+
+        # NOTE: self.context = <lbgenerator.model.context.document.
+        # DocumentContextFactory object at 0x49e29d0>! By Questor
+
         return self.context.get_base()
 
     def set_base(self, base_json):

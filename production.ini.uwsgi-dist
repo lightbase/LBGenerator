@@ -9,7 +9,7 @@ sqlalchemy.url=<SQLALCHEMY_URL>
 sqlalchemy.max_overflow=<SQLA_POOL_SIZE>
 sqlalchemy.pool_size=<SQLA_POOL_SIZE>
 storage.tmp_dir=/tmp
-requests.timeout=1600
+requests.timeout=<REQ_TIMEOUT>
 lbindex_url=http://127.0.0.1:6543/
 
 pyramid.reload_templates=true

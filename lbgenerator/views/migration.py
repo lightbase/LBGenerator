@@ -90,6 +90,10 @@ def _export(request):
 def write_doc(in_queue, out_list):
     global request
 
+    # N >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    sess = None
+    # N <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
     while True:
         item = in_queue.get()
         line_no, line = item
@@ -130,5 +134,12 @@ def write_doc(in_queue, out_list):
         #if context.session.is_active:
         #    context.session.close()
 
-
-
+    # N >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    # if sess != None:
+        # sess.begin()
+        # sess.commit()
+        # sess.flush()
+        # sess.close()
+    # N <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    # O >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    # O <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

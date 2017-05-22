@@ -59,6 +59,14 @@ class DocumentContextFactory(CustomContextFactory):
                 self.file_entity.__table__.c.id_file.in_(files))\
                 .values(id_doc=member.id_doc)
             self.session.execute(stmt)
+            # N >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+            # self.session.begin()
+            # self.session.commit()
+            # self.session.flush()
+            # self.session.close()
+            # N <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+            # O >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+            # O <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     def delete_files(self, member, files):
         """Will delete files that are not present in document.
@@ -75,7 +83,16 @@ class DocumentContextFactory(CustomContextFactory):
             stmt = delete(self.file_entity.__table__).where(where_clause)
         else:
             stmt = delete(self.file_entity.__table__).where(*where_clause)
+
         self.session.execute(stmt)
+        # N >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+        # self.session.begin()
+        # self.session.commit()
+        # self.session.flush()
+        # self.session.close()
+        # N <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+        # O >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+        # O <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     def create_member(self, data):
         """ 
@@ -123,9 +140,17 @@ class DocumentContextFactory(CustomContextFactory):
             except:
                 pass
             finally:
+                # N >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+                session.begin()
+                session.commit()
+                session.flush()
+                session.close()
+                # N <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+                # O >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
                 # Now commits and closes session in the view instead of here
                 # flush() pushes operations to DB's buffer - DCarv
-                session.flush()
+                # session.flush()
+                # O <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     def update_member(self, member, data, index=True, alter_files=True):
         """Receives the data to UPDATE at database 
@@ -138,19 +163,28 @@ class DocumentContextFactory(CustomContextFactory):
         @param index: Flag that indicates the need of indexing the
         document. 
         """
+
         if alter_files:
             self.delete_files(member, data['__files__'])
             self.create_files(member, data['__files__'])
-        data.pop('__files__')
 
+        data.pop('__files__')
         stmt = update(self.entity.__table__).where(
             self.entity.__table__.c.id_doc == data['id_doc'])\
             .values(**data)
 
         self.session.execute(stmt)
+        # N >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+        self.session.begin()
+        self.session.commit()
+        self.session.flush()
+        self.session.close()
+        # N <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+        # O >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         # Now commits and closes session in the view instead of here
         # flush() pushes operations to DB's buffer - DCarv
-        self.session.flush()
+        # self.session.flush()
+        # O <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
         if index and self.index.is_indexable:
             Thread(target=self.async_update_member,
@@ -186,9 +220,17 @@ class DocumentContextFactory(CustomContextFactory):
             except:
                 pass
             finally:
+                # N >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+                session.begin()
+                session.commit()
+                session.flush()
+                session.close()
+                # N <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+                # O >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
                 # Now commits and closes session in the view instead of here
                 # flush() pushes operations to DB's buffer - DCarv
-                session.flush()
+                # session.flush()
+                # O <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     # TODO: Rever o comportamento descrito abaixo...
     def delete_member(self, id):
@@ -215,6 +257,15 @@ class DocumentContextFactory(CustomContextFactory):
             Thread(target=self.async_delete_member,
                 args=(id, self.session)).start()
 
+        # N >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+        self.session.begin()
+        self.session.commit()
+        self.session.flush()
+        self.session.close()
+        # N <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+        # O >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+        # O <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
         # Clear cache
         cache.clear_collection_cache(self.base_name)
 
@@ -238,9 +289,17 @@ class DocumentContextFactory(CustomContextFactory):
             except:
                 pass
             finally:
-                # Now commits and closes session in the view instead of here
-                # flush() pushes operations to DB's buffer - DCarv
+                # N >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+                session.begin()
+                session.commit()
                 session.flush()
+                session.close()
+                # N <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+                # O >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+                # # Now commits and closes session in the view instead of here
+                # # flush() pushes operations to DB's buffer - DCarv
+                # session.flush()
+                # O <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     def get_full_documents(self, list_id_doc, members, session=None):
         """Pesquisa na tabela file e insere os textos extraídos nos 

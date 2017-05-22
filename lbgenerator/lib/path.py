@@ -6,9 +6,26 @@ class PathFunctions(object):
             self._callfn = getattr(self, '_standard')
         else:
             self._callfn = getattr(self, '_' + fn)
+
+        # NOTE:
+        # The assert statement exists in almost every programming language.
+        # When you do...
+
+        # assert condition
+        # ... you're telling the program to test that condition, and trigger an
+        # error if the condition is false.
+
+        # In Python, it's roughly equivalent to this:
+
+        # if not condition:
+            # raise AssertionError()
+        # By Questor
         assert isinstance(args, list)
+
         self._args = args
 
+    # NOTE: __call__ method in a class is triggered when the instance of a
+    # class is called! By Questor
     def __call__(self, value):
         return self._callfn(value)
 
@@ -111,6 +128,8 @@ class DeleteOnPathFunctions(PathFunctions):
 
 def get_path_fn(path, mode, fn=None, args=[]):
     """
+    Tratar os argumentos recebidos em uma operação "path".
+
     Path Operation Examples:
     {
         "path": "field",
@@ -139,24 +158,25 @@ def get_path_fn(path, mode, fn=None, args=[]):
     except KeyError:
         raise KeyError('Mode must be %s' % str(set(modes.keys())))
 
-# Define a operação x caminho e as funções executantes da tarefa via
-# delegate.
+# NOTE: Define a operação x caminho e as funções executantes da tarefa via
+# delegate!
 def parse_list_pattern(base, document, pattern):
 
-    # Define métodos conforme a operação solicitada.
+    # NOTE: Define métodos conforme a operação solicitada. base = 
+    # <liblightbase.lbbase.struct.Base object at 0x4b1ee90>! By Questor
     mapping = {
-        'insert': base.set_path,
-        'update': base.put_path,
-        'patch': base.patch_path,
-        'merge': base.merge_path,
-        'manual': base.manual_path,
-        'delete': base.delete_path}
+        'insert': base.set_path, 
+        'update': base.put_path, 
+        'patch': base.patch_path, 
+        'merge': base.merge_path, 
+        'manual': base.manual_path, 
+        'delete': base.delete_path
+    }
 
-    # Itera no conjunto de operações definidas em pattern.
+    # NOTE: Itera no conjunto de operações definidas em pattern!
     for operation in pattern:
         path, fn = get_path_fn(**operation)
         method = mapping[operation['mode']]
         document = method(document, path, fn)
 
     return document
-

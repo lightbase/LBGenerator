@@ -103,9 +103,17 @@ class FileContextFactory(CustomContextFactory):
                 self.entity.__table__.c.id_file == id)
 
         self.session.execute(stmt)
-        # Now commits and closes session in the view instead of here
-        # flush() pushes operations to DB's buffer - DCarv
+        # N >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+        self.session.begin()
+        self.session.commit()
         self.session.flush()
+        self.session.close()
+        # N <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+        # O >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+        # # Now commits and closes session in the view instead of here
+        # # flush() pushes operations to DB's buffer - DCarv
+        # self.session.flush()
+        # O <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
         # Clear cache
         cache.clear_collection_cache(self.base_name)

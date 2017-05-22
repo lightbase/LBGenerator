@@ -27,7 +27,15 @@ class IndexErrorCustomView(CustomView):
             self.context.entity.__table__.c.id_error.in_(in_clause))
         self.context.session.begin()
         self.context.session.execute(stmt)
+        # N >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+        self.context.session.begin()
         self.context.session.commit()
+        self.context.session.flush()
         self.context.session.close()
+        # N <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+        # O >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+        # self.context.session.commit()
+        # self.context.session.close()
+        # O <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
         return Response('OK')
