@@ -94,7 +94,15 @@ class TxtIdxContextFactory(CustomContextFactory):
         except Exception as e:
             raise LbException("Failed to persist data!", str(e))
         finally:
+            # N >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+            # self.session.begin()
+            # self.session.commit()
+            # self.session.flush()
+            # self.session.close()
+            # N <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+            # O >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
             self.session.close()
+            # O <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     def delete_member(self):
 
@@ -122,7 +130,15 @@ class TxtIdxContextFactory(CustomContextFactory):
         except Exception as e:
             raise LbException("Failed to persist data!", str(e))
         finally:
+            # N >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+            # self.session.begin()
+            # self.session.commit()
+            # self.session.flush()
+            # self.session.close()
+            # N <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+            # O >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
             self.session.close()
+            # O <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     def get_member(self, nm_idx=None):
 

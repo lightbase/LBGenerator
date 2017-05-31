@@ -46,7 +46,8 @@ def make_routes(self):
     from ..model.context.docs import DocsContextFactory
 
     # Custom routes
-    def add_custom_routes(route_name, pattern, factory_class, view_class, views):
+      # add_custom_routes('path',    '{base}/doc/{id:\d+}/{path:.*}', DocumentContextFactory, DocumentCustomView, [
+    def add_custom_routes(route_name, pattern,                        factory_class,          view_class,          views):
         self.add_route(route_name, pattern, factory=factory_class)
         for view_kw in views:
             self.add_view(view=view_class, route_name=route_name, **view_kw)

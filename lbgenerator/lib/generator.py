@@ -26,6 +26,7 @@ class BaseMemory():
         # NOTE: As bases são retornadas como dict! By Questor
         return base
 
+    # NOTE: Em "json2base" é onde entra a liblightbase! By Questor
     def set_base(self, base_json):
         base = json2base(base_json)
         self.bases[base.metadata.name] = base

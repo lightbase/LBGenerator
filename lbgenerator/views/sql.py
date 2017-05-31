@@ -65,7 +65,15 @@ def execute_sql(request):
     else:
         session.rollback()
     
+    # N >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    # session.begin()
+    # session.commit()
+    # session.flush()
+    # session.close()
+    # N <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    # O >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     session.close()
+    # O <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     return results
 

@@ -102,11 +102,23 @@ class FileContextFactory(CustomContextFactory):
             stmt = delete(self.entity.__table__).where(
                 self.entity.__table__.c.id_file == id)
 
+        # N >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+        # self.session.execute(stmt)
+        # self.session.begin()
+        # self.session.commit()
+        # self.session.flush()
+        # self.session.close()
+        # N <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+        # O >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         self.session.execute(stmt)
+
         # Now commits and closes session in the view instead of here
         # flush() pushes operations to DB's buffer - DCarv
         self.session.flush()
 
+        # O <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
         # Clear cache
         cache.clear_collection_cache(self.base_name)
         return True
+

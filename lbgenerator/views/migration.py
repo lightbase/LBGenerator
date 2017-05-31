@@ -112,23 +112,32 @@ def write_doc(in_queue, out_list):
             """ Get next value from sequence """
             seq = Sequence('lb_doc_%s_id_doc_seq' %(base_name))
             seq.create(bind=ENGINE)
+
+            # N >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+            # _next = sess.execute(seq)
+            # sess.begin()
+            # sess.commit()
+            # sess.flush()
+            # sess.close()
+            # N <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+            # O >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
             _next = sess.execute(seq)
+            # O <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
             return _next
 
         context = DocumentContextFactory(request, _next_id)
         view = DocumentCustomView(context, request)
 
-        #if not context.session.is_active:
+        # N >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+        # context.session.begin()
+        # context.session.commit()
+        # context.session.flush()
+        # context.session.close()
+        # N <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+        # O >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         context.session.begin()
+        # O <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-        #try:
         view.create_member()
-        #success = success + 1
-        #except:
-        #failure = failure + 1
-
-        #if context.session.is_active:
-        #    context.session.close()
-
-
 

@@ -80,16 +80,24 @@ class DocumentCustomView(CustomView):
         return self.render_custom_response(id, default_response='UPDATED')
 
     def _check_modified_date(self, member, path=None):
-        # if header contains 'If-Not-Modified-Since'
-        last_update_str = self.request.headers.get('If-Not-Modified-Since', None)
+
+        # NOTE: If header contains 'If-Not-Modified-Since'!
+        last_update_str = self.request.headers.get(
+            'If-Not-Modified-Since', 
+            None
+        )
+
         if last_update_str is not None:
-            # check if resource has been updated already
+
+            # NOTE: Check if resource has been updated already!
             last_update = datetime.strptime(last_update_str, '%d/%m/%Y %H:%M:%S')
             last_update = last_update.replace(microsecond=999999)
             if last_update < member.dt_last_up:
                 msg = member.document if path is None else\
                     self.get_base().get_path(member.document, path.split('/'))
                 raise HTTPConflict(msg)
+
+                # NOTE: 
                 # HTTP 409 Conflict
                 # return Response(status_code=409,
                 #                 body=utils.object2json(member.document),
@@ -205,7 +213,8 @@ class DocumentCustomView(CustomView):
             document = parse_list_pattern(
                 self.get_base(), 
                 member.document, 
-                self.request.matchdict['path'])
+                self.request.matchdict['path']
+            )
         else:
             list_pattern = [{
                 'path': self.request.matchdict['path'],
@@ -228,7 +237,6 @@ class DocumentCustomView(CustomView):
                 self, 
                 dict(value=document), 
                 member)
-
         esp_cmd = None
         try:
             esp_cmd = self.request.params["esp_cmd"]
@@ -247,13 +255,13 @@ class DocumentCustomView(CustomView):
         alter_files = self.request.params.get('alter_files', True)
         member = self.context.update_member(member, data, index=index,
                                             alter_files=alter_files)
+
         # Now commits and closes session here instead of in the context - DCarv
         if close_session:
             self.context.session.commit()
             self.context.session.close()
-        
-        return Response('UPDATED', content_type='text/plain')
 
+        return Response('UPDATED', content_type='text/plain')
 
     def patch_path(self, member=None, close_session=True):
         """Interprets the path, accesses, and update objects. In detail, 

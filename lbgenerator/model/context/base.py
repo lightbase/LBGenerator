@@ -183,9 +183,19 @@ class BaseContextFactory(CustomContextFactory):
         for name in data:
             setattr(member, name, data[name])
 
+        # N >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+        # self.session.begin()
+        # self.session.commit()
+        # self.session.flush()
+        # self.session.close()
+        # N <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+        # O >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
         # Now commits and closes session in the view instead of here
         # flush() pushes operations to DB's buffer - DCarv
         self.session.flush()
+
+        # O <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
         model.HISTORY.create_member(**{
             'id_base': member.id_base,
