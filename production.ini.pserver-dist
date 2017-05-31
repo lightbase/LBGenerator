@@ -32,7 +32,11 @@ sqlalchemy.pool_size=<SQLA_POOL_SIZE_MAX_OVERFLOW>
 
 storage.tmp_dir=/tmp
 requests.timeout=300
+<<<<<<< HEAD
 lbindex_url=<LBI_LBINDEX_URL>
+=======
+lbindex_url=http://127.0.0.1:6543/
+>>>>>>> 3022d519588c11b510ddb4cc9e30667d5f43646e
 
 pyramid.reload_templates=true
 pyramid.debug_authorization=true

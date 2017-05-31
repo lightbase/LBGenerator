@@ -34,6 +34,7 @@ sqlalchemy.max_overflow=<SQLA_POOL_SIZE_MAX_OVERFLOW>
 sqlalchemy.pool_size=<SQLA_POOL_SIZE>
 
 storage.tmp_dir=/tmp
+<<<<<<< HEAD
 
 # The HTTP request timed out.
 # RECOMMENDED to use a numeric value equivalent at most 44% of your server RAM in MB.
@@ -44,6 +45,10 @@ requests.timeout=<REQ_TIMEOUT>
 # base.
 # [str]
 lbindex_url=<LBI_LBINDEX_URL>
+=======
+requests.timeout=<REQ_TIMEOUT>
+lbindex_url=http://127.0.0.1:6543/
+>>>>>>> 3022d519588c11b510ddb4cc9e30667d5f43646e
 
 pyramid.reload_templates=true
 pyramid.debug_authorization=true
