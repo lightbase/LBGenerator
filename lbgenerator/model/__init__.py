@@ -24,9 +24,9 @@ def begin_session():
     """ Returns Session object """
 
     session = scoped_session(
-        sessionmaker(bind=config.ENGINE,
-                    autocommit=True
-                    #expire_on_commit=False
+        sessionmaker(bind=config.ENGINE, 
+                    autocommit=True, 
+                    # expire_on_commit=True
                     )
         )
     session.begin()

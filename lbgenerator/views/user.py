@@ -1,14 +1,15 @@
-
-from . import CustomView
-from ..lib.validation.user import validate_user_data
-from ..lib.exceptions import OAuth2ErrorHandler
 from .. import config
-from pyramid.security import authenticated_userid
-from pyramid.security import remember
 from pyramid.security import forget
 from pyramid.response import Response
-from pyramid.httpexceptions import HTTPOk, HTTPForbidden
+from pyramid.security import remember
 from pyramid.exceptions import HTTPNotFound
+from pyramid.security import authenticated_userid
+from pyramid.httpexceptions import HTTPOk, HTTPForbidden
+
+from . import CustomView
+from ..lib.exceptions import OAuth2ErrorHandler
+from ..lib.validation.user import validate_user_data
+
 
 class UserView(CustomView):
 
@@ -26,8 +27,16 @@ class UserView(CustomView):
             raise Exception("user '%s' already exists!" % data['nm_user'])
         member = self.context.create_member(data)
         id = self.context.get_member_id_as_string(member)
-        self.context.session.commit()
-        self.context.session.close()
+
+        # NOTE: Tentar fechar a conexão de qualquer forma!
+        # -> Na criação da conexão "coautocommit=True"!
+        # By Questor
+        try:
+            if self.context.session.is_active:
+                self.context.session.close()
+        except:
+            pass
+
         return self.render_custom_response(id, default_response=id)
 
     def authenticate(self):
@@ -41,33 +50,108 @@ class UserView(CustomView):
         passwd = self.request.params.get('passwd_user')
 
         if user is None:
+
+            # NOTE: Tentar fechar a conexão de qualquer forma!
+            # -> Na criação da conexão "coautocommit=True"!
+            # By Questor
+            try:
+                if self.context.session.is_active:
+                    self.context.session.close()
+            except:
+                pass
+
             raise Exception('Required parameter nm_user not found in the request')
         elif passwd is None:
+
+            # NOTE: Tentar fechar a conexão de qualquer forma!
+            # -> Na criação da conexão "coautocommit=True"!
+            # By Questor
+            try:
+                if self.context.session.is_active:
+                    self.context.session.close()
+            except:
+                pass
+
             raise Exception("Required parameter 'passwd_user' not found in the request")
 
         if user == config.ADMIN_USER and passwd == config.ADMIN_PASSWD:
             headers = remember(self.request, user)
+
+            # NOTE: Tentar fechar a conexão de qualquer forma!
+            # -> Na criação da conexão "coautocommit=True"!
+            # By Questor
+            try:
+                if self.context.session.is_active:
+                    self.context.session.close()
+            except:
+                pass
+
             return Response('OK', headers=headers)
 
         member = self.context.get_member(user)
         if not member:
+
+            # NOTE: Tentar fechar a conexão de qualquer forma!
+            # -> Na criação da conexão "coautocommit=True"!
+            # By Questor
+            try:
+                if self.context.session.is_active:
+                    self.context.session.close()
+            except:
+                pass
+
             raise Exception('No such User!')
 
         if member.passwd_user != passwd:
+
+            # NOTE: Tentar fechar a conexão de qualquer forma!
+            # -> Na criação da conexão "coautocommit=True"!
+            # By Questor
+            try:
+                if self.context.session.is_active:
+                    self.context.session.close()
+            except:
+                pass
+
             raise Exception('Invalid Password!')
 
         headers = remember(self.request, user)
-        self.context.session.commit()
-        self.context.session.close()
+
+        # NOTE: Tentar fechar a conexão de qualquer forma!
+        # -> Na criação da conexão "coautocommit=True"!
+        # By Questor
+        try:
+            if self.context.session.is_active:
+                self.context.session.close()
+        except:
+            pass
+
         return Response('OK', headers=headers)
 
     def test_login(self):
         logged_in = authenticated_userid(self.request)
+
+        # # NOTE: Tentar fechar a conexão de qualquer forma!
+        # # -> Na criação da conexão "coautocommit=True"!
+        # # By Questor
+        # try:
+            # if self.context.session.is_active:
+                # self.context.session.close()
+        # except:
+            # pass
+
         return Response(str(logged_in))
-        
+
     def unauthenticate(self):
         headers = forget(self.request)
+
+        # NOTE: Tentar fechar a conexão de qualquer forma!
+        # -> Na criação da conexão "coautocommit=True"!
+        # By Questor
+        try:
+            if self.context.session.is_active:
+                self.context.session.close()
+        except:
+            pass
+
         return Response('OK', headers=headers)
-
-
-

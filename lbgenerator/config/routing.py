@@ -45,9 +45,8 @@ def make_routes(self):
     from ..views.docs import DocsCustomView
     from ..model.context.docs import DocsContextFactory
 
-    # Custom routes
-      # add_custom_routes('path',    '{base}/doc/{id:\d+}/{path:.*}', DocumentContextFactory, DocumentCustomView, [
-    def add_custom_routes(route_name, pattern,                        factory_class,          view_class,          views):
+    # NOTE: Custom routes! By John Doe
+    def add_custom_routes(route_name, pattern, factory_class, view_class, views):
         self.add_route(route_name, pattern, factory=factory_class)
         for view_kw in views:
             self.add_view(view=view_class, route_name=route_name, **view_kw)
@@ -151,8 +150,9 @@ def make_routes(self):
         {'attr': 'delete_interface', 'request_method': 'DELETE'}
     ])
 
-    # ES routes (lbes - simplified)
+    # NOTE: ES routes (lbes - simplified)! By John Doe
     from ..views.lbes import LBSearch
+
     self.add_route('lbes', '{base}/lbes{path:.*}', request_method='POST')
     self.add_view(view=LBSearch, route_name='lbes', request_method='POST',
         header='Content-Type:application/json', renderer='json')
@@ -160,7 +160,7 @@ def make_routes(self):
     self.add_directive('add_restful_base_routes', add_restful_base_routes)
     self.add_static_view('static', 'static', cache_max_age=3600)
 
-    # Documentation routes
+    # NOTE: Documentation routes! By John Doe
     add_custom_routes('api_docs', 'api-docs', DocsContextFactory, DocsCustomView, [
         # * "GET"
         # - Ação: (?)
@@ -168,6 +168,7 @@ def make_routes(self):
         # - Parâmetros: URI
         {'attr': 'api_docs', 'request_method': 'GET', 'renderer': 'json'},
     ])
+
     add_custom_routes('base_docs', 'api-docs/{x:.*}', DocsContextFactory, DocsCustomView, [
         # * "GET"
         # - Ação: (?)
@@ -187,6 +188,7 @@ def make_routes(self):
         # - Parâmetros: URI, form
         {'attr': 'authenticate', 'request_method': 'POST'},
     ])
+
     add_custom_routes('unauthentication', 'user/logout', UserContextFactory, UserView, [
         # * "POST"
         # - Ação: (?)
@@ -205,7 +207,7 @@ def make_routes(self):
     # Document Routes # 
     #-----------------#
 
-    # Route for full document (with document text)
+    # NOTE: Route for full document (with document text)! John Doe
     add_custom_routes('full_document', '{base}/doc/{id:\d+}/full', DocumentContextFactory, DocumentCustomView, [
         # * "GET"
         # - Ação: (?)
@@ -254,8 +256,8 @@ def make_routes(self):
     # - Parâmetros: URI (?)
     self.add_route('text', '{base}/file/{id}/text')
 
-    # Obter itens de grupos (monovalorados/multivalorados) de registro
-    # do "tipo doc".
+    # NOTE: Obter itens de grupos (monovalorados/multivalorados) de registro
+    # do "tipo doc"! By John Doe
     add_custom_routes('get_doc_column', '{base}/file/{id}/{path:.*}',
         FileContextFactory, FileCustomView, [
         # * "GET"
@@ -376,7 +378,6 @@ def make_routes(self):
     self.add_route('sql', '/sql', request_method='POST')
     self.add_view(view=execute_sql, route_name='sql', request_method='POST', 
         header='Content-Type:application/json', renderer='json')
-
 
 # self <- <pyramid.self.Configurator object>
 def add_restful_base_routes(self, name='base'):

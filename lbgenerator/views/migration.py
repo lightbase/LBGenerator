@@ -1,4 +1,3 @@
-
 import os
 import cgi
 import uuid
@@ -6,16 +5,19 @@ import codecs
 import tarfile
 import itertools
 import multiprocessing
-from ..lib.utils import FakeRequest
+from multiprocessing import Process, Manager
+
 from pyramid.response import Response
 from sqlalchemy.schema import Sequence
+
+from ..lib.utils import FakeRequest
 from .document import DocumentCustomView
-from multiprocessing import Process, Manager
 from ..model.context.document import DocumentContextFactory
 from ..config import create_new_engine, create_scoped_session
 
 BOM = codecs.BOM_UTF8.decode('utf8')
 ENGINE = create_new_engine()
+
 
 def _import(request):
 
@@ -32,10 +34,30 @@ def _import(request):
         with open(gzpath, 'wb') as f:
             f.write(file_.file.read())
     except Exception as e:
+
+        # NOTE: Tentar fechar a conexão de qualquer forma!
+        # -> Na criação da conexão "coautocommit=True"!
+        # By Questor
+        try:
+            if request.context.session.is_active:
+                request.context.session.close()
+        except:
+            pass
+
         raise e.__class__('Error while uploading file! %s' % e)
 
     if not tarfile.is_tarfile(gzpath):
         os.remove(gzpath)
+
+        # NOTE: Tentar fechar a conexão de qualquer forma!
+        # -> Na criação da conexão "coautocommit=True"!
+        # By Questor
+        try:
+            if request.context.session.is_active:
+                request.context.session.close()
+        except:
+            pass
+
         return Response('Not a tar.gz file ..')
 
     with tarfile.open(gzpath) as gzfile:
@@ -57,14 +79,14 @@ def _import(request):
     results = manager.list()
     work = manager.Queue(num_workers)
 
-    # start for workers    
+    # NOTE: Start for workers! By John Doe
     pool = []
     for i in range(num_workers):
         p = Process(target=write_doc, args=(work, results))
         p.start()
         pool.append(p)
 
-    # produce data
+    # NOTE: Produce data! By John Doe
     success = 0
     failure = 0
     with codecs.open(filepath, encoding='utf-8') as f:
@@ -79,13 +101,32 @@ def _import(request):
 
     os.remove(filepath)
 
-    # TO DO: Specify a definition for the variables: success and failure.
+    # NOTE: Tentar fechar a conexão de qualquer forma!
+    # -> Na criação da conexão "coautocommit=True"!
+    # By Questor
+    try:
+        if request.context.session.is_active:
+            request.context.session.close()
+    except:
+        pass
+
+    # TODO: Specify a definition for the variables: success and failure!
+    # By John Doe
     return Response('{"success": %d, "failure" : %d}' % (success, failure),
         content_type='application/json')
 
 def _export(request):
-    return Response('ççççççççççç')
 
+    # NOTE: Tentar fechar a conexão de qualquer forma!
+    # -> Na criação da conexão "coautocommit=True"!
+    # By Questor
+    try:
+        if request.context.session.is_active:
+            request.context.session.close()
+    except:
+        pass
+
+    return Response('ççççççççççç')
 
 def write_doc(in_queue, out_list):
     global request
@@ -94,7 +135,7 @@ def write_doc(in_queue, out_list):
         item = in_queue.get()
         line_no, line = item
 
-        # exit signal 
+        # NOTE: Exit signal! By John Doe
         if line == None:
             return
 
@@ -112,32 +153,9 @@ def write_doc(in_queue, out_list):
             """ Get next value from sequence """
             seq = Sequence('lb_doc_%s_id_doc_seq' %(base_name))
             seq.create(bind=ENGINE)
-
-            # N >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-            # _next = sess.execute(seq)
-            # sess.begin()
-            # sess.commit()
-            # sess.flush()
-            # sess.close()
-            # N <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-            # O >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
             _next = sess.execute(seq)
-            # O <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
             return _next
 
         context = DocumentContextFactory(request, _next_id)
         view = DocumentCustomView(context, request)
-
-        # N >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-        # context.session.begin()
-        # context.session.commit()
-        # context.session.flush()
-        # context.session.close()
-        # N <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-        # O >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-        context.session.begin()
-        # O <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
         view.create_member()
-

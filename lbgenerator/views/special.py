@@ -1,12 +1,15 @@
-from ..model import begin_session
-from ..model import document_entity
-from ..model import file_entity
-from ..lib import utils
+import datetime
+
 from pyramid.view import view_config
+from pyramid.response import Response
 from pyramid.view import view_defaults
 from pyramid.exceptions import HTTPNotFound
-from pyramid.response import Response
-import datetime
+
+from ..lib import utils
+from ..model import file_entity
+from ..model import begin_session
+from ..model import document_entity
+
 
 @view_defaults(route_name='text')
 class DocText(object):
@@ -58,7 +61,3 @@ class DocText(object):
         self.session.commit()
         self.session.close()
         return Response('UPDATED', content_type='application/json')
-
-
-
-

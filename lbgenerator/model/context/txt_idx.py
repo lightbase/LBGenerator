@@ -1,18 +1,18 @@
 import json
-
 import logging
+
 from sqlalchemy import insert
 from sqlalchemy import update
 from sqlalchemy import delete
 from sqlalchemy.util import KeyedTuple
 
-from ...lib.cache_master import CacheMaster
-from . import CustomContextFactory
-from ..entities import Lb_Txt_Idx
-from ...lib.lb_exception import LbException
+from ... import model
 from ...lib import utils
 from ...lib.utils import LbUseful
-from ... import model
+from ..entities import Lb_Txt_Idx
+from . import CustomContextFactory
+from ...lib.cache_master import CacheMaster
+from ...lib.lb_exception import LbException
 
 log = logging.getLogger()
 
@@ -37,10 +37,11 @@ class TxtIdxContextFactory(CustomContextFactory):
             self.session.add(member)
             self.session.commit()
 
-            # Note: Manipula o cache conforme as regras dessa rota!
+            # NOTE: Manipula o cache conforme as regras dessa rota!
             # By Questor
             member_on_db = self.session.query(self.entity)\
                 .filter_by(nm_idx=data["nm_idx"]).first()
+
             self.set_item(data["nm_idx"], member_on_db)
 
         except Exception as e:
@@ -52,9 +53,10 @@ class TxtIdxContextFactory(CustomContextFactory):
 
     def update_member(self, data):
 
-        # Note: Obtêm o nome do índice textual na rota submetida! 
+        # NOTE: Obtêm o nome do índice textual na rota submetida! 
         # By Questor
         nm_idx = self.request.matchdict['nm_idx']
+
         self.single_member = True
 
         try:
@@ -79,7 +81,7 @@ class TxtIdxContextFactory(CustomContextFactory):
                 except Exception:
                     pass
 
-                # Note: Manipula o cache conforme as regras dessa 
+                # NOTE: Manipula o cache conforme as regras dessa 
                 # rota! By Questor
                 if data_nm_idx is not "" and data_nm_idx != nm_idx:
                     member = self.session.query(self.entity)\
@@ -94,21 +96,14 @@ class TxtIdxContextFactory(CustomContextFactory):
         except Exception as e:
             raise LbException("Failed to persist data!", str(e))
         finally:
-            # N >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-            # self.session.begin()
-            # self.session.commit()
-            # self.session.flush()
-            # self.session.close()
-            # N <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-            # O >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
             self.session.close()
-            # O <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     def delete_member(self):
 
-        # Note: Obtêm o nome do índice textual na rota submetida! 
+        # NOTE: Obtêm o nome do índice textual na rota submetida! 
         # By Questor
         nm_idx = self.request.matchdict['nm_idx']
+
         self.single_member = True
 
         try:
@@ -121,7 +116,7 @@ class TxtIdxContextFactory(CustomContextFactory):
             result = self.session.execute(stmt)
             self.session.commit()
 
-            # Note: Manipula o cache conforme as regras dessa rota! 
+            # NOTE: Manipula o cache conforme as regras dessa rota! 
             # By Questor
             if result.rowcount > 0:
                 self.remove_item(nm_idx)
@@ -130,21 +125,12 @@ class TxtIdxContextFactory(CustomContextFactory):
         except Exception as e:
             raise LbException("Failed to persist data!", str(e))
         finally:
-            # N >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-            # self.session.begin()
-            # self.session.commit()
-            # self.session.flush()
-            # self.session.close()
-            # N <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-            # O >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
             self.session.close()
-            # O <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     def get_member(self, nm_idx=None):
 
-        # Note: Obtêm o nome do índice textual na rota submetida! 
+        # NOTE: Obtêm o nome do índice textual na rota submetida! 
         # By Questor
-
         if nm_idx is None:
             nm_idx = self.request.matchdict['nm_idx']
 
@@ -153,7 +139,7 @@ class TxtIdxContextFactory(CustomContextFactory):
         try:
             member = self.get_item(nm_idx)
 
-            # Note: Manipula o cache conforme as regras dessa rota! 
+            # NOTE: Manipula o cache conforme as regras dessa rota! 
             # By Questor
             if member is None:
                 member = self.session.query(self.entity)\
@@ -185,12 +171,5 @@ class TxtIdxContextFactory(CustomContextFactory):
                 member = self.member2KeyedTuple(member)
 
         dict_member = utils.json2object(member._asdict()['struct'])
-
-        # TODO: Qual o uso disso aqui? Remover? By Questor
-        # fields = getattr(self,'_query', {}).get('select')
-        # if fields and not '*' in fields:
-            # return {'settings':
-                # {field: dict_member['settings'][field] for field in fields}
-            # }
 
         return dict_member

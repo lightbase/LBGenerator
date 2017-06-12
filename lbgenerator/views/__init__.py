@@ -6,11 +6,15 @@ from pyramid.httpexceptions import HTTPFound
 from ..lib import utils
 
 def response_callback(request, response):
-    try:
-        if request.context.session.is_active:
-            request.context.session.close()
-    except:
-        pass
+
+    # # NOTE: Tentar fechar a conexão de qualquer forma!
+    # # -> Na criação da conexão "coautocommit=True"!
+    # # By Questor
+    # try:
+        # if request.context.session.is_active:
+            # request.context.session.close()
+    # except:
+        # pass
 
     if 'callback' in request.params:
         response.text = request.params['callback'] + '(' + response.text + ')'
@@ -38,17 +42,33 @@ class CustomView(RESTfulView):
         """Return Base object
         """
 
-        # NOTE: self.context.get_base() = <liblightbase.lbbase.struct.
-        # Base object at 0x4255ed0>! By Questor
+        # TODO Quem usa isso (não há referência em routing.py)? By Questor
 
-        # NOTE: self.context = <lbgenerator.model.context.document.
-        # DocumentContextFactory object at 0x49e29d0>! By Questor
+        # # NOTE: Tentar fechar a conexão de qualquer forma!
+        # # -> Na criação da conexão "coautocommit=True"!
+        # # By Questor
+        # try:
+            # if self.context.session.is_active:
+                # self.context.session.close()
+        # except:
+            # pass
 
         return self.context.get_base()
 
     def set_base(self, base_json):
         """Set Base object
         """
+
+        # TODO Quem usa isso (não há referência em routing.py)? By Questor
+
+        # # NOTE: Tentar fechar a conexão de qualquer forma!
+        # # -> Na criação da conexão "coautocommit=True"!
+        # # By Questor
+        # try:
+            # if self.context.session.is_active:
+                # self.context.session.close()
+        # except:
+            # pass
 
         return self.context.set_base(base_json)
 
@@ -58,13 +78,28 @@ class CustomView(RESTfulView):
         @param render_to_response: Se deseja que a saída seja 
         renderizada.
         """
+
         params = self.request.params.get('$$', '{}')
         query = utils.json2object(params)
+
         try:
             collection = self.context.get_collection(query)
         except Exception as e:
+
+            # NOTE: Tentar fechar a conexão de qualquer forma!
+            # -> Na criação da conexão "coautocommit=True"!
+            # By Questor
+            try:
+                if self.context.session.is_active:
+                    self.context.session.close()
+            except:
+                pass
+
             raise Exception('SearchError: %s' % e)
         else:
+            # NOTE: Entra no "else" sempre que não entrar no "except".
+            # diferente de "finally" que sempre ocorre! By Questor
+
             if render_to_response:
 
                 # NOTE: "collection" está dentro de um padrão de 
@@ -79,12 +114,20 @@ class CustomView(RESTfulView):
 
                 # NOTE: Renderizar p/ a resposta html... By Questor
                 response = self.render_to_response(collection)
+
             else:
 
                 # NOTE: Sem renderizar p/ a resposta html... By Questor
                 response = collection
 
-        self.context.session.close()
+        # NOTE: Tentar fechar a conexão de qualquer forma!
+        # -> Na criação da conexão "coautocommit=True"!
+        # By Questor
+        try:
+            if self.context.session.is_active:
+                self.context.session.close()
+        except:
+            pass
 
         return response
 
@@ -92,15 +135,30 @@ class CustomView(RESTfulView):
         id = self.request.matchdict['id']
         self.wrap = False
         member = self.context.get_member(id)
-        self.context.session.close()
+
+        # NOTE: Tentar fechar a conexão de qualquer forma!
+        # -> Na criação da conexão "coautocommit=True"!
+        # By Questor
+        try:
+            if self.context.session.is_active:
+                self.context.session.close()
+        except:
+            pass
+
         return self.render_to_response(member)
 
     def create_member(self):
         member = self.context.create_member(self._get_data())
         id = self.context.get_member_id_as_string(member)
-        # Now commits and closes session here instead of in the context - DCarv
-        self.context.session.commit()
-        self.context.session.close()
+
+        # NOTE: Tentar fechar a conexão de qualquer forma!
+        # -> Na criação da conexão "coautocommit=True"!
+        # By Questor
+        try:
+            if self.context.session.is_active:
+                self.context.session.close()
+        except:
+            pass
 
         return self.render_custom_response(id, default_response=id)
 
@@ -110,22 +168,36 @@ class CustomView(RESTfulView):
         if member is None:
             raise HTTPNotFound()
         self.context.update_member(member, self._get_data(member))
-        # Now commits and closes session here instead of in the context - DCarv
-        self.context.session.commit()
-        self.context.session.close()
+
+        # NOTE: Tentar fechar a conexão de qualquer forma!
+        # -> Na criação da conexão "coautocommit=True"!
+        # By Questor
+        try:
+            if self.context.session.is_active:
+                self.context.session.close()
+        except:
+            pass
 
         return self.render_custom_response(id, default_response='UPDATED')
 
     def delete_member(self):
         id = self.request.matchdict['id']
         is_deleted = self.context.delete_member(id)
-        # Now commits and closes session here instead of in the context - DCarv
-        self.context.session.commit()
-        self.context.session.close()
-        
-        # Check if the number of deleted rows is different than 0
+
+        # NOTE: Tentar fechar a conexão de qualquer forma!
+        # -> Na criação da conexão "coautocommit=True"!
+        # By Questor
+        try:
+            if self.context.session.is_active:
+                self.context.session.close()
+        except:
+            pass
+
+        # NOTE: Check if the number of deleted rows is different than 0!
+        # By John Doe
         if is_deleted.__dict__['rowcount'] == 0:
             raise HTTPNotFound()
+
         return Response('DELETED', charset='utf-8', status=200, content_type='')
 
     def render_custom_response(self, id, default_response):
@@ -134,8 +206,28 @@ class CustomView(RESTfulView):
         if is_valid_return:
             member = self.context.get_member(id)
             response_attr = getattr(member, _return)
+
+            # # NOTE: Tentar fechar a conexão de qualquer forma!
+            # # -> Na criação da conexão "coautocommit=True"!
+            # # By Questor
+            # try:
+                # if self.context.session.is_active:
+                    # self.context.session.close()
+            # except:
+                # pass
+
             return Response(str(response_attr), charset='utf-8', status=200, content_type='application/json')
         else:
+
+            # # NOTE: Tentar fechar a conexão de qualquer forma!
+            # # -> Na criação da conexão "coautocommit=True"!
+            # # By Questor
+            # try:
+                # if self.context.session.is_active:
+                    # self.context.session.close()
+            # except:
+                # pass
+
             return Response(default_response, charset='utf-8', status=200, content_type='')
 
     def get_collection_cached(self, render_to_response=True):
@@ -151,15 +243,36 @@ class CustomView(RESTfulView):
         cache_type = self.request.params.get('cache_key', 'default_term')
         cache_key = self.request.current_route_path()
         query = utils.json2object(params)
+
         try:
             collection = self.context.get_collection_cached(query, cache_key, cache_type)
         except Exception as e:
+
+            # NOTE: Tentar fechar a conexão de qualquer forma!
+            # -> Na criação da conexão "coautocommit=True"!
+            # By Questor
+            try:
+                if self.context.session.is_active:
+                    self.context.session.close()
+            except:
+                pass
+
             raise Exception('SearchError: %s' % e)
         else:
             if render_to_response:
                 response = self.render_to_response(collection)
             else:
                 response = collection
+
+        # NOTE: Tentar fechar a conexão de qualquer forma!
+        # -> Na criação da conexão "coautocommit=True"!
+        # By Questor
+        try:
+            if self.context.session.is_active:
+                self.context.session.close()
+        except:
+            pass
+
         return response
 
     def get_member_cached(self):
@@ -170,6 +283,16 @@ class CustomView(RESTfulView):
         cache_key = self.request.current_route_path()
         self.wrap = False
 
-        # NOTE: Get cached member!
+        # NOTE: Get cached member! By John Doe
         member = self.context.get_member_cached(id, cache_key)
+
+        # NOTE: Tentar fechar a conexão de qualquer forma!
+        # -> Na criação da conexão "coautocommit=True"!
+        # By Questor
+        try:
+            if self.context.session.is_active:
+                self.context.session.close()
+        except:
+            pass
+
         return self.render_to_response(member)

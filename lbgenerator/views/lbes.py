@@ -1,14 +1,14 @@
-import json
 import re
+import json
 import requests
 import collections
 
 from pyramid.response import Response
 from pyramid.httpexceptions import HTTPBadRequest
+from liblightbase.lbutils.codecs import json2object
 from pyramid.httpexceptions import HTTPServiceUnavailable
 
 from ..model.context.es import ESContextFactory
-from liblightbase.lbutils.codecs import json2object
 
 
 class LBSearch:
@@ -18,8 +18,9 @@ class LBSearch:
     def __init__(self, request):
         self.request = request
 
-        # get context
+        # NOTE: Get context! By John Doe
         self.context = ESContextFactory(self.request)
+
         self.context.base_name = self.request.matchdict['base']
 
     def __call__(self):
@@ -28,23 +29,43 @@ class LBSearch:
     def execute_es_query(self):
         dict_request = self.request.json_body
 
-        # check if fields are valid
+        # NOTE: Check if fields are valid! By John Doe
         for k, v in dict_request.items():
             if k not in LBSearch.valid_fields:
+
+                # # NOTE: Tentar fechar a conexão de qualquer forma!
+                # # -> Na criação da conexão "coautocommit=True"!
+                # # By Questor
+                # try:
+                    # if self.context.session.is_active:
+                        # self.context.session.close()
+                # except:
+                    # pass
+
                 return HTTPBadRequest(body="Invalid field: '{}'".format(k))
 
-        # check if query field exists
+        # NOTE: Check if query field exists! By John Doe
         if 'query' not in dict_request:
+
+            # # NOTE: Tentar fechar a conexão de qualquer forma!
+            # # -> Na criação da conexão "coautocommit=True"!
+            # # By Questor
+            # try:
+                # if self.context.session.is_active:
+                    # self.context.session.close()
+            # except:
+                # pass
+
             return HTTPBadRequest(body="No 'query' field")
 
-        # default fields
+        # NOTE: Default fields! By John Doe
         raw_es_response = False
         hl_in_source = False
         offset_from = 0
         offset_size = 10
         sort = ['_score']
 
-        # override required fields
+        # NOTE: Override required fields! By John Doe
         if 'raw_es_response' in dict_request:
             raw_es_response = dict_request['raw_es_response']
 
@@ -59,14 +80,14 @@ class LBSearch:
             if '_score' not in sort:
                 sort.append('_score')
 
-        # create es query
+        # NOTE: Create es query! By John Doe
         dict_es_query = {
             'from': offset_from,
             'size': offset_size,
             'sort': sort
         }
 
-        # check for optional fields
+        # NOTE: Check for optional fields! By John Doe
         if 'return_fields' in dict_request:
             dict_es_query['_source'] = dict_request['return_fields']
 
@@ -86,8 +107,9 @@ class LBSearch:
 
             dict_es_query['highlight'].update(dict_request['highlight'])
 
-        # check type of query
+        # NOTE: Check type of query! By John Doe
         query = dict_request['query']
+
         if isinstance(query, str):
             self._build_query_string(dict_es_query, dict_request)
         elif isinstance(query, dict):
@@ -95,6 +117,16 @@ class LBSearch:
 
         base_url = self.context.get_base().metadata.idx_exp_url
         if not base_url:
+
+            # # NOTE: Tentar fechar a conexão de qualquer forma!
+            # # -> Na criação da conexão "coautocommit=True"!
+            # # By Questor
+            # try:
+                # if self.context.session.is_active:
+                    # self.context.session.close()
+            # except:
+                # pass
+
             return HTTPServiceUnavailable(body='This base is not indexed yet.')
 
         url = base_url + '/_search'
@@ -105,6 +137,16 @@ class LBSearch:
         dict_response = json.loads(response_text)
 
         if 'hits' not in dict_response:
+
+            # # NOTE: Tentar fechar a conexão de qualquer forma!
+            # # -> Na criação da conexão "coautocommit=True"!
+            # # By Questor
+            # try:
+                # if self.context.session.is_active:
+                    # self.context.session.close()
+            # except:
+                # pass
+
             raise Exception('ES Error: ' + dict_response['error'])
 
         if hl_in_source:
@@ -114,6 +156,7 @@ class LBSearch:
                     if 'highlight' in hit:
                         for k, v in hit['highlight'].items():
                             hit['_source'] = self._update_highlight(hit['_source'], k.split('.'), v)
+
                         hit.pop('highlight')
 
         if not raw_es_response:
@@ -130,20 +173,30 @@ class LBSearch:
             dict_response = new_dict_response
 
         response_text = json.dumps(dict_response)
+
+        # # NOTE: Tentar fechar a conexão de qualquer forma!
+        # # -> Na criação da conexão "coautocommit=True"!
+        # # By Questor
+        # try:
+            # if self.context.session.is_active:
+                # self.context.session.close()
+        # except:
+            # pass
+
         return Response(response_text, content_type='application/json')
 
     def _build_query_string(self, dict_es_query, dict_request):
         query = re.escape(dict_request['query'])
         query = query.replace('\\ ', ' ')
 
-        # default fields
+        # NOTE: Default fields! By John Doe
         search_fields = ['_all']
 
-        # override default fields
+        # NOTE: Override default fields! By John Doe
         if 'search_fields' in dict_request:
             search_fields = dict_request['search_fields']
 
-        # create es query
+        # NOTE: Create es query! By John Doe
         dict_es_query['query'] = {
             'query_string': {
                 'default_operator': "AND",
@@ -156,13 +209,11 @@ class LBSearch:
 
     def _build_bool_query(self, dict_es_query, dict_request):
         query = dict_request['query']
-
         bool_query = {
             'bool': {
                 'must': []
             }
         }
-
         for key, value in query.items():
             value = re.escape(value)
             value = value.replace('\\ ', ' ')
@@ -171,25 +222,29 @@ class LBSearch:
                     key: value
                 }
             })
-
         dict_es_query['query'] = bool_query
-
         return dict_es_query
 
     def _update_highlight(self, source, l_path, hl_values):
         if isinstance(source, dict):
-            # group
+
+            # NOTE: Group! By John Doe
             key = l_path.pop(0)
+
             if key in source:
                 source[key] = self._update_highlight(source[key], l_path, hl_values)
         elif isinstance(source, list):
-            # multivalued
+
+            # NOTE: Multivalued! By John Doe
             for idx, item in enumerate(source):
                 source[idx] = self._update_highlight(item, l_path, hl_values)
+
         elif isinstance(source, str):
             for hl_value in hl_values:
-                # text value
+
+                # NOTE: Text value! By John Doe
                 no_hl_value = self._get_no_highlight_value(hl_value)
+
                 source = source.replace(no_hl_value, hl_value)
 
         return source

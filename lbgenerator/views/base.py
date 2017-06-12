@@ -19,6 +19,16 @@ class BaseCustomView(CustomView):
     def _get_data(self):
         """ Get all valid data from (request) POST or PUT.
         """
+
+        # # NOTE: Tentar fechar a conexão de qualquer forma!
+        # # -> Na criação da conexão "coautocommit=True"!
+        # # By Questor
+        # try:
+            # if self.context.session.is_active:
+                # self.context.session.close()
+        # except: 
+            # pass
+
         return validate_base_data(self, self.request)
 
     def get_member(self):
@@ -26,19 +36,30 @@ class BaseCustomView(CustomView):
         base = self.request.matchdict['base']
         member = self.context.get_member(base)
         response = self.render_to_response(member)
-        
-        # Now commits and closes session here instead of in the context - DCarv
-        self.context.session.commit()
-        self.context.session.close()
+
+        # NOTE: Tentar fechar a conexão de qualquer forma!
+        # -> Na criação da conexão "coautocommit=True"!
+        # By Questor
+        try:
+            if self.context.session.is_active:
+                self.context.session.close()
+        except:
+            pass
 
         return response
 
     def update_member(self):
         base = self.request.matchdict['base']
         member = self.context.update_member(base, self._get_data())
-        # Now commits and closes session here instead of in the context - DCarv
-        self.context.session.commit()
-        self.context.session.close()
+
+        # NOTE: Tentar fechar a conexão de qualquer forma!
+        # -> Na criação da conexão "coautocommit=True"!
+        # By Questor
+        try:
+            if self.context.session.is_active:
+                self.context.session.close()
+        except:
+            pass
 
         if member is None:
             raise HTTPNotFound()
@@ -48,20 +69,28 @@ class BaseCustomView(CustomView):
     def delete_member(self):
         base = self.request.matchdict['base']
         member = self.context.delete_member(base)
-        # Now commits and closes session here instead of in the context - DCarv
-        self.context.session.commit()
-        self.context.session.close()
-        
+
+        # NOTE: Tentar fechar a conexão de qualquer forma!
+        # -> Na criação da conexão "coautocommit=True"!
+        # By Questor
+        try:
+            if self.context.session.is_active:
+                self.context.session.close()
+        except:
+            pass
+
         if member is None:
             raise HTTPNotFound()
 
-        # Clear cache
+        # NOTE: Clear cache! By John Doe
         cache.clear_cache()
+
         return Response('DELETED', charset='utf-8', status=200, content_type='')
 
     def get_column(self):
         """ Get column value
         """
+
         base = self.request.matchdict['base']
         PATH = self.request.matchdict['column'].split('/')
         base = self.context.get_base()
@@ -80,21 +109,42 @@ class BaseCustomView(CustomView):
                 else:
                     value = base.get_struct(path_name).asdict
             except Exception as e:
+
+                # NOTE: Tentar fechar a conexão de qualquer forma!
+                # -> Na criação da conexão "coautocommit=True"!
+                # By Questor
+                try:
+                    if self.context.session.is_active:
+                        self.context.session.close()
+                except:
+                    pass
+
                 raise Exception(e)
+
         value = utils.object2json(value)
+
+        # NOTE: Tentar fechar a conexão de qualquer forma!
+        # -> Na criação da conexão "coautocommit=True"!
+        # By Questor
+        try:
+            if self.context.session.is_active:
+                self.context.session.close()
+        except:
+            pass
+
         return Response(value, content_type='application/json')
 
     def put_column(self):
         basename = self.request.matchdict['base']
         path = self.request.matchdict['column'].split('/')
         json_column = self.request.params['value']
-
         str_async = self.request.params.get('async', 'false')
         async = str_async.lower() == 'true'
-
         if async:
-            # TODO: get user id
+
+            # TODO: get user id! By John Doe
             id_user = 0
+
             user_agent = self.request.user_agent
             user_ip = self.request.client_addr
             task_url = self.context.update_column_async(
@@ -107,12 +157,27 @@ class BaseCustomView(CustomView):
                                 body=utils.object2json(result),
                                 content_type='application/json')
             response.content_location = task_url
+
+            # NOTE: Tentar fechar a conexão de qualquer forma!
+            # -> Na criação da conexão "coautocommit=True"!
+            # By Questor
+            try:
+                if self.context.session.is_active:
+                    self.context.session.close()
+            except:
+                pass
+
             return response
 
         json_current_column = self.context.update_column(path, json_column)
 
-        self.context.session.commit()
-        self.context.session.close()
+        # NOTE: Tentar fechar a conexão de qualquer forma!
+        # -> Na criação da conexão "coautocommit=True"!
+        # By Questor
+        try:
+            if self.context.session.is_active:
+                self.context.session.close()
+        except:
+            pass
 
         return Response(json_current_column, content_type='application/json')
-

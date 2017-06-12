@@ -1,12 +1,14 @@
+import requests
 
 from pyramid.response import Response
 from pyramid.exceptions import HTTPNotFound
-import requests
-from . import CustomView
+from liblightbase.lbutils.codecs import json2object
+
+from ..lib.utils import FakeRequest
 from ..model.context.document import DocumentContextFactory
 from .document import DocumentCustomView
-from ..lib.utils import FakeRequest
-from liblightbase.lbutils.codecs import json2object
+from . import CustomView
+
 
 class ESCustomView(CustomView):
 
@@ -19,16 +21,17 @@ class ESCustomView(CustomView):
     def map_id_doc(es_hits):
         return es_hits['fields']['_metadata.id_doc'][0]
         
-    # ToDo: Ajustar para que tenha o mesmo comportamento do método "post_interface",
-    # pois do jeito que está vai dar bug! By Questor
+    # TODO: Ajustar para que tenha o mesmo comportamento do método
+    # "post_interface", pois do jeito que está vai dar bug! By Questor
     def get_interface(self):
         params = dict(self.request.params)
-
         if 'lbquery' in params:
             params.pop('lbquery')
-            # Note: Seta para que automaticamente o ES retorne só as IDs, no caso
-            # do retorno vir do LB! By Questor
+
+            # NOTE: Seta para que automaticamente o ES retorne só as IDs, no
+            # caso do retorno vir do LB! By Questor
             params["fields"] = "_metadata.id_doc"
+
             dict_query = json2object(self.request.body.decode("utf-8"))
             limit = dict_query['size']
             offset = dict_query['from']
@@ -57,7 +60,26 @@ class ESCustomView(CustomView):
             doc_view_get_collection = doc_view.get_collection().json()
             doc_view_get_collection['offset'] = offset
             doc_view_get_collection['limit'] = limit
+
+            # NOTE: Tentar fechar a conexão de qualquer forma!
+            # -> Na criação da conexão "coautocommit=True"!
+            # By Questor
+            try:
+                if self.context.session.is_active:
+                    self.context.session.close()
+            except:
+                pass
+
             return doc_view_get_collection
+
+        # NOTE: Tentar fechar a conexão de qualquer forma!
+        # -> Na criação da conexão "coautocommit=True"!
+        # By Questor
+        try:
+            if self.context.session.is_active:
+                self.context.session.close()
+        except:
+            pass
 
         return Response(response.text, content_type='application/json')
 
@@ -66,21 +88,25 @@ class ESCustomView(CustomView):
         params = dict(self.request.params)
         if 'lbquery' in params:
             params.pop('lbquery')
-            # Note: Seta para que automaticamente o ES retorne só as IDs, no caso
-            # do retorno (OL) vir do LB! By Questor
+
+            # NOTE: Seta para que automaticamente o ES retorne só as IDs, no
+            # caso do retorno (OL) vir do LB! By Questor
             params["fields"] = "_metadata.id_doc"
-            # Note: Obtém os parâmetros size e from enviados na query ES para 
+
+            # NOTE: Obtém os parâmetros size e from enviados na query ES para
             # setar no retorno do LB! By Questor
             dict_query = json2object(self.request.body.decode("utf-8"))
+
             limit = dict_query.get('size', None)
             offset = dict_query.get('from', None)
             query_lb = True
         else:
             query_lb = False
+
         path = self.request.matchdict['path']
         if path: url += path
 
-        # Make the request
+        # NOTE: Make the request! By John Doe
         response = requests.get(url, params=params, data=self.request.body)
 
         if query_lb:
@@ -106,11 +132,29 @@ class ESCustomView(CustomView):
             if offset is not None:
                 doc_factory.default_offset = int(offset)
 
-            # Note: Serve para setar o total de ocorrências no 
+            # NOTE: Serve para setar o total de ocorrências no 
             # retorno do LB qdo a pesquisa vem do ES! By Questor
             doc_factory.total_count = int(response_json['hits']['total'])
 
+            # NOTE: Tentar fechar a conexão de qualquer forma!
+            # -> Na criação da conexão "coautocommit=True"!
+            # By Questor
+            try:
+                if self.context.session.is_active:
+                    self.context.session.close()
+            except:
+                pass
+
             return doc_view.render_to_response(collection)
+
+        # NOTE: Tentar fechar a conexão de qualquer forma!
+        # -> Na criação da conexão "coautocommit=True"!
+        # By Questor
+        try:
+            if self.context.session.is_active:
+                self.context.session.close()
+        except:
+            pass
 
         return Response(response.text, content_type='application/json')
 
@@ -121,4 +165,14 @@ class ESCustomView(CustomView):
         if path:
             url += path
         response = requests.delete(url, params=params, data=self.request.body)
+
+        # NOTE: Tentar fechar a conexão de qualquer forma!
+        # -> Na criação da conexão "coautocommit=True"!
+        # By Questor
+        try:
+            if self.context.session.is_active:
+                self.context.session.close()
+        except:
+            pass
+
         return Response(response.text, content_type='application/json')

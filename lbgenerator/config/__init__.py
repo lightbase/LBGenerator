@@ -149,7 +149,8 @@ def create_new_engine():
 def create_scoped_session(engine):
     return scoped_session(
         sessionmaker(
-            bind=engine,
-            autocommit=True
+            bind=engine, 
+            autocommit=True, 
+            # expire_on_commit=True
         )
     )

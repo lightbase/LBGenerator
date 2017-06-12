@@ -1,42 +1,41 @@
-import datetime
 import logging
+import datetime
 import threading
-from sqlalchemy.util import KeyedTuple
-from alembic.migration import MigrationContext
-from alembic.operations import Operations
-from webob.acceptparse import Accept
 
+import requests
+from webob.acceptparse import Accept
+from sqlalchemy.util import KeyedTuple
+from pyramid.testing import DummyRequest
+from alembic.operations import Operations
+from alembic.migration import MigrationContext
+from liblightbase.lbbase.content import Content
 from liblightbase.lbutils.conv import json2base
 from liblightbase.lbutils.codecs import json2object
 from liblightbase.lbbase.lbstruct.field import Field
 from liblightbase.lbbase.lbstruct.group import Group
 from liblightbase.lbbase.lbstruct.group import GroupMetadata
-from liblightbase.lbbase.content import Content
 
-from . import CustomContextFactory
-from ..entities import *
-from ..index import Index
 from ... import model
 from ... import config
 from ...lib import utils
 from ...lib import cache
-from sqlalchemy.util import KeyedTuple
-import requests
-
-from pyramid.testing import DummyRequest
+from ..entities import *
+from ..index import Index
+from . import CustomContextFactory
+from ...lib.lbtasks import LBTaskManager
 from .document import DocumentContextFactory
 from ...views.document import DocumentCustomView
-from ...lib.lbtasks import LBTaskManager
 
 log = logging.getLogger()
 
 
 class BaseContextFactory(CustomContextFactory):
-
     """ Base Factory Methods
     """
+
     entity = LBBase
-     # Restarta o lbindex quando a base for modificada
+
+    # NOTE: Restarta o lbindex quando a base for modificada! By John Doe
     def lbirestart(self):
         param = {'directive': 'restart'}
         url = config.LBI_URL
@@ -57,8 +56,9 @@ class BaseContextFactory(CustomContextFactory):
 
     def create_member(self, data):
 
-        # Create reg and doc tables.
+        # NOTE: Create reg and doc tables.! By John Doe
         base_name = data['name']
+
         base_json = utils.json2object(data['struct'])
         idx = data['idx_exp']
 
@@ -79,7 +79,8 @@ class BaseContextFactory(CustomContextFactory):
 
         member = self.entity(**data)
         self.session.add(member)
-        # Now commits and closes session in the view instead of here
+
+        # NOTE: Now commits and closes session in the view instead of here
         # flush() pushes operations to DB's buffer - DCarv
         self.session.flush()
         
@@ -95,25 +96,28 @@ class BaseContextFactory(CustomContextFactory):
         # NOTE: BaseContext's init method sets its base to the base
         # struct contained in the request, so we need to reset it here
         # to the base struct that is actually in the database - DCarv
-        
-        # remove base struct from cache
+
+        # NOTE: Remove base struct from cache! By John Doe
         model.BASES.bases.pop(member.name)
-        # set old base struct as active
+
+        # NOTE: Set old base struct as active! By John Doe
         self.set_base(member.struct)
 
-        # check for base content changes
+        # NOTE: Check for base content changes! By John Doe
         old_base = json2base(member.struct)
+
         new_base = json2base(data['struct'])
 
-        # list all fields that should be deleted
+        # NOTE: List all fields that should be deleted! By John Doe
         del_cols = []
         for old_col_name, old_col in old_base.content.__allstructs__.items():
             if old_col_name not in new_base.content.__allsnames__:
                 del_cols.append(old_col)
 
-        # if any field will be deleted, delete it from all documents in the base
+        # NOTE: If any field will be deleted, delete it from all documents in the base! By John Doe
         if len(del_cols) > 0:
-            # create a fake request for DocumentCustomView and DocumentContext
+            # NOTE: Create a fake request for DocumentCustomView and DocumentContext! By John Doe
+
             url = "/%s/doc&$$={\"limit\":null}" % new_base.metadata.name
             for col in del_cols:
                 params = {
@@ -125,77 +129,68 @@ class BaseContextFactory(CustomContextFactory):
                 doc_view = DocumentCustomView(DocumentContextFactory(request), request)
                 doc_view.update_collection()
 
-        # check for relation field changes (to ALTER table if needed)
+        # NOTE: Check for relation field changes (to ALTER table if needed)! By John Doe
         old_doc_table = get_doc_table(old_base.metadata.name, config.METADATA,
             **old_base.relational_fields)
+
         new_doc_table = get_doc_table(new_base.metadata.name, config.METADATA,
             **new_base.relational_fields)
 
-        # list relational fields that should be deleted
+        # NOTE: List relational fields that should be deleted! By John Doe
         del_cols = []
         for old_col in old_doc_table.columns:
             if old_col.name not in new_doc_table.columns:
                 del_cols.append(old_col)
 
-        # list relational fields that should be added
+        # NOTE: List relational fields that should be added! By John Doe
         new_cols = []
         for new_col in new_doc_table.columns:
             if new_col.name not in old_doc_table.columns:
-                # Get liblightbase.lbbase.fields object.
+                # NOTE: Get liblightbase.lbbase.fields object! By John Doe
+
                 field = new_base.relational_fields[new_col.name]
                 custom_col = get_custom_column(field)
                 new_cols.append(custom_col)
 
-        # create alembic connection and operation object
+        # NOTE: Create alembic connection and operation object! By John Doe
         db_conn = config.ENGINE.connect()
+
         alembic_ctx = MigrationContext.configure(db_conn)
         alembic_op = Operations(alembic_ctx)
 
-        # drop columns
+        # NOTE: Drop columns! By John Doe
         for col in del_cols:
             alembic_op.drop_column(new_doc_table.name, col.name)
 
-        # TODO: new_col cannot be required
+        # TODO: New_col cannot be required! By John Doe
 
-        # add columns
+        # NOTE: Add columns! By John Doe
         for col in new_cols:
             alembic_op.add_column(new_doc_table.name, col)
 
-        # TODO: alter columns ?
+        # TODO: Alter columns? By John Doe
 
         db_conn.close()
 
-        # check for base name change
+        # NOTE: Check for base name change! By John Doe
         if member.name != data['name']:
             old_name = 'lb_doc_%s' %(member.name)
             new_name = 'lb_doc_%s' %(data['name'])
             self.session.execute('ALTER TABLE %s RENAME TO %s' %(old_name, new_name))
-
             old_name = 'lb_file_%s' %(member.name)
             new_name = 'lb_file_%s' %(data['name'])
             self.session.execute('ALTER TABLE %s RENAME TO %s' %(old_name, new_name))
-
             old_name = 'lb_doc_%s_id_doc_seq' %(member.name)
             new_name = 'lb_doc_%s_id_doc_seq' %(data['name'])
             self.session.execute('ALTER SEQUENCE %s RENAME TO %s' %(old_name, new_name))
 
-        # this will add any new fields to the base struct
+        # NOTE: This will add any new fields to the base struct! By John Doe
         for name in data:
             setattr(member, name, data[name])
 
-        # N >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-        # self.session.begin()
-        # self.session.commit()
-        # self.session.flush()
-        # self.session.close()
-        # N <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-        # O >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-        # Now commits and closes session in the view instead of here
+        # NOTE: Now commits and closes session in the view instead of here
         # flush() pushes operations to DB's buffer - DCarv
         self.session.flush()
-
-        # O <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
         model.HISTORY.create_member(**{
             'id_base': member.id_base,
@@ -208,7 +203,7 @@ class BaseContextFactory(CustomContextFactory):
     
         self.lbirestart()
 
-        # remove base struct from cache
+        # NOTE: Remove base struct from cache! By John Doe
         model.BASES.bases.pop(member.name)
 
         return member
@@ -224,15 +219,18 @@ class BaseContextFactory(CustomContextFactory):
             index = Index(model.BASES.bases[member.name], None)
             del model.BASES.bases[member.name]
         idx = member.idx_exp
-        # Delete parallel tables.
+
+        # NOTE: Delete parallel tables! By John Doe
         file_table = get_file_table(member.name, config.METADATA)
+
         doc_table = get_doc_table(member.name, config.METADATA, **relational_fields)
         file_table.drop(config.ENGINE, checkfirst=True)
         doc_table.drop(config.ENGINE, checkfirst=True)
         
-        # Delete base.
+        # NOTE: Delete base! By John Doe
         self.session.delete(member)
-        # Now commits and closes session in the view instead of here
+
+        # NOTE: Now commits and closes session in the view instead of here
         # flush() pushes operations to DB's buffer - DCarv
         self.session.flush()
 
@@ -254,52 +252,67 @@ class BaseContextFactory(CustomContextFactory):
 
     def update_column_async(self, column_path, json_new_column,
                             id_user, user_agent, user_ip):
-        # CREATE task
+
+        # NOTE: CREATE task! By John Doe
         task_name = 'update_column: %s' % ('/'.join(column_path))
+
         task_id, task_url = LBTaskManager()\
             .create(task_name, id_user, user_agent, user_ip, 0.0)
 
         worker_thread = threading.Thread(
-            target=self.update_column,
-            args=(column_path, json_new_column,),
+            target=self.update_column, 
+            args=(
+                column_path, 
+                json_new_column
+            ), 
             kwargs={'async': True, 'task_id': task_id}
         )
         worker_thread.start()
 
         return task_url
 
-    def update_column(self, column_path, json_new_column,
-                      async=False, task_id=None):
+    def update_column(self, 
+        column_path, 
+        json_new_column, 
+        async=False, 
+        task_id=None):
         """ Updates a column structure
         """
+
         if async:
             task_manager = LBTaskManager()
 
         try:
             dict_new_column = json2object(json_new_column)
-            # new_column is either a Group or a Field (liblightbase.lbbase.lbstruct)
+
+            # NOTE: New_column is either a Group or a Field (liblightbase.lbbase.lbstruct)! By John Doe
             new_column = self.object2content(dict_new_column)
 
-            # base is a LBBase object
+            # NOTE: Base is a LBBase object! By John Doe
             base = self.get_base()
+
             member = self.get_member(base.metadata.name)
             if member is None:
                 if async:
                     exc = Exception('Base not found: ' + base.metadata.name)
                     task_manager.on_error(task_id, exp)
                 return None
-            # base struct as dictionary
+
+            # NOTE: Base struct as dictionary! By John Doe
             dict_base = json2object(member.struct)
-            # current_column is the Group/Field object before update
+
+            # NOTE: Current_column is the Group/Field object before update! By John Doe
             current_column = base.get_struct(column_path[-1])
+
             if current_column.path != column_path:
                 if async:
                     exc = Exception('Column not found: ' + '/'.join(column_path))
                     task_manager.on_error(task_id, exp)
                 return None
 
-            # check if the column's name was changed
+            # NOTE: Check if the column's name was changed! By John Doe
             name_changed = False
+
             old_name = None
             if isinstance(current_column, Field) and isinstance(new_column, Field):
                 if new_column.name != current_column.name:
@@ -314,13 +327,15 @@ class BaseContextFactory(CustomContextFactory):
 
             if name_changed:
                 if async:
-                    # update task progress
-                    # TODO: log result if error
+                    # NOTE: Update task progress! By John Doe
+
+                    # TODO: Log result if error! By John Doe
                     task_manager.on_update_progress(
                         task_id, 5.0, msg='Preparing to change column name')
 
-                # get column value for each document
+                # NOTE: Get column value for each document! By John Doe
                 url = '/%s/doc' % (base.metadata.name)
+
                 search_param = '{"select":["id_doc", "%s"],"limit":null}' % column_path[-1]
                 params = {
                     '$$': search_param
@@ -334,13 +349,15 @@ class BaseContextFactory(CustomContextFactory):
                 results = results.json_body['results']
 
                 if async:
-                    # update task progress
-                    # TODO: log result if error
+                    # NOTE: Update task progress! By John Doe
+
+                    # TODO: Log result if error! By John Doe
                     task_manager.on_update_progress(
                         task_id, 10.0, msg="Saved old documents' values")
 
-                # delete old column value from documents
+                # NOTE: Delete old column value from documents! By John Doe
                 url = "/%s/doc?$$={\"limit\":null}" % base.metadata.name
+
                 json_path_list = '[{"path":"%s","fn":null,"mode":"delete","args":[]}]' % "/".join(column_path)
                 params = {
                     'path': json_path_list,
@@ -353,15 +370,17 @@ class BaseContextFactory(CustomContextFactory):
                 doc_view.update_collection()
 
                 if async:
-                    # update task progress
-                    # TODO: log result if error
+                    # NOTE: Update task progress! By John Doe
+
+                    # TODO: Log result if error! By John Doe
                     task_manager.on_update_progress(
                         task_id, 20.0, msg='Deleted values in old column')
 
-                # change base struct
+                # NOTE: Change base struct! By John Doe
                 try:
                     current = dict_base
-                    # traverse struct dict
+
+                    # NOTE: Traverse struct dict! By John Doe
                     for node in column_path:
                         if isinstance(current, dict) and current.get('content', None):
                             content_list = current['content']
@@ -378,23 +397,25 @@ class BaseContextFactory(CustomContextFactory):
                                     current = f
                                     break
 
-                    # current is a dictionary with current column struct
+                    # NOTE: Current is a dictionary with current column struct! By John Doe
                     if current is None:
-                        # undo delete column
+                        # NOTE: Undo delete column! By John Doe
+
                         self._undo_delete_column(base, old_name, column_path, results)
                         if async:
-                            # TODO: better error message
+                            # TODO: Better error message! By John Doe
+
                             exc = Exception('Column not found')
                             task_manager.on_error(task_id, exc)
                         return None
 
-                    # get new name (Field or Group)
+                    # NOTE: Get new name (Field or Group)! By John Doe
                     new_name = None
                     if current.get('field', None):
                         new_name = current_column.name
                         current['field']['name'] = new_name
 
-                        # check if field is relational and change its name in postgres db
+                        # NOTE: Check if field is relational and change its name in postgres db! By John Doe
                         if current_column.is_rel:
                             self._alter_column_name(base, old_name, new_name)
 
@@ -412,7 +433,8 @@ class BaseContextFactory(CustomContextFactory):
                     self._undo_delete_column(base, old_name, column_path, results)
                     if async:
                         task_manager.on_error(task_id, e)
-                    # reraise exception to return it as error view
+
+                    # NOTE: Reraise exception to return it as error view! By John Doe
                     raise e
 
                 try:
@@ -420,33 +442,41 @@ class BaseContextFactory(CustomContextFactory):
                     member.struct = utils.object2json(dict_base)
                     self.session.flush()
 
-                    # remove base struct from cache
+                    # NOTE: Remove base struct from cache! By John Doe
                     model.BASES.bases.pop(member.name)
-                    # set new base struct as active
+
+                    # NOTE: Set new base struct as active! By John Doe
                     self.set_base(member.struct)
+
                 except Exception as e:
-                    # undo alter column name
+                    # NOTE: Undo alter column name! By John Doe
+
                     try:
                         self._alter_column_name(base, new_name, old_name)
                     except AttributeError:
-                        # if current_column is group it doesnt have to undo alter column
+                        # NOTE: If current_column is group it doesnt have to undo alter column! By John Doe
+
                         pass
 
-                    # undo base struct
+                    # NOTE: Undo base struct! By John Doe
                     member.struct = old_base_struct
+
                     self.session.flush()
                     model.BASES.bases.pop(member.name)
                     
-                    # undo delete
+                    # NOTE: Undo delete! By John Doe
                     self._undo_delete_column(base, old_name, column_path, results)
+
                     if async:
                         task_manager.on_error(task_id, e)
-                    # reraise exception to be displayed as error msg
+
+                    # NOTE: Reraise exception to be displayed as error msg! By John Doe
                     raise e
 
                 if async:
-                    # update task progress
-                    # TODO: log result if error
+                    # NOTE: Update task progress! By John Doe
+
+                    # TODO: Log result if error! By John Doe
                     task_manager.on_update_progress(
                         task_id, 30.0, msg='Changed relational column name')
 
@@ -454,7 +484,7 @@ class BaseContextFactory(CustomContextFactory):
                     each_progress = 70.0 / float(len(results)) \
                         if len(results) > 0 else 70.0
 
-                # change all documents
+                # NOTE: Change all documents! By John Doe
                 try:
                     for doc in results:
                         if doc.get(old_name, None):
@@ -481,35 +511,43 @@ class BaseContextFactory(CustomContextFactory):
                             response = doc_view.put_path()
 
                             if async:
-                                # update task progress
+                                # NOTE: Update task progress! By John Doe
+
                                 current_progress += each_progress
-                                # TODO: log result if error
+                                # TODO: Log result if error! By John Doe
+
                                 task_manager.on_update_progress(
                                     task_id, current_progress,
                                     msg='Setting values on new column')
                 except Exception as e:
-                    # undo alter column name
+                    # NOTE: Undo alter column name! By John Doe
+
                     self._alter_column_name(base, new_name, old_name)
 
-                    # undo base struct
+                    # NOTE: Undo base struct! By John Doe
                     member.struct = old_base_struct
+
                     self.session.flush()
                     model.BASES.bases.pop(member.name)
 
-                    # undo delete
+                    # NOTE: Undo delete! By John Doe
                     self._undo_delete_column(base, old_name, column_path, results)
+
                     if async:
                         task_manager.on_error(task_id, e)
-                    # reraise exception to be displayed as error msg
+
+                    # NOTE: Reraise exception to be displayed as error msg! By John Doe
                     raise e
             else:
                 current = current_column.asdict
 
             if async:
                 task_manager.on_success(
-                    task_id, update_progress=True,
-                    msg='Finished successfully')
-                # if async, then close session here
+                    task_id, update_progress=True, 
+                    msg='Finished successfully'
+                )
+
+                # NOTE: If async, then close session here! By John Doe
                 self.session.commit()
                 self.session.close()
 
@@ -517,6 +555,12 @@ class BaseContextFactory(CustomContextFactory):
             return json_current_column
         except Exception as e:
             task_manager.on_error(task_id, e)
+        finally:
+            if async:
+                # NOTE: If async, then close session here! By John Doe
+
+                self.session.commit()
+                self.session.close()
 
         return None
 
@@ -541,7 +585,8 @@ class BaseContextFactory(CustomContextFactory):
                 response = doc_view.put_path()
 
     def _alter_column_name(self, base, old_name, new_name):
-        # create alembic connection and operation object
+        # NOTE: Create alembic connection and operation object! By John Doe
+
         db_conn = config.ENGINE.connect()
         alembic_ctx = MigrationContext.configure(db_conn)
         alembic_op = Operations(alembic_ctx)
@@ -561,7 +606,7 @@ class BaseContextFactory(CustomContextFactory):
         db_conn.close()
 
 
-    # TODO: validate field data
+    # TODO: Validate field data! By John Doe
     def object2content(self, obj, dimension=0, parent_path=[]):
         if obj.get('group'):
             this_path = parent_path[:]
@@ -609,7 +654,8 @@ class BaseContextFactory(CustomContextFactory):
         try:
             dict_member = member._asdict()
         except AttributeError as e:
-            # Continue parsing.
+            # NOTE: Continue parsing.! By John Doe
+
             if not isinstance(member, KeyedTuple):
                 member = self.member2KeyedTuple(member)
 

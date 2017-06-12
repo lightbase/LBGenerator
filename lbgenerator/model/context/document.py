@@ -1,27 +1,25 @@
 import sys
-
+import logging
 from threading import Thread
 
 from sqlalchemy import and_
 from sqlalchemy import insert
 from sqlalchemy import update
 from sqlalchemy import delete
+from ...perf_profile import pprofile
 from sqlalchemy.util import KeyedTuple
 from sqlalchemy.orm.state import InstanceState
 
 from ... import config
 from ...lib import utils
+from ...lib import cache
 from ..index import Index
 from .. import file_entity
 from .. import document_entity
 from . import CustomContextFactory
 from ..entities import LBIndexError
-from liblightbase.lbdoc.doctree import DocumentTree
-from ...lib import cache
 from ...lib.lb_exception import LbException
-import logging
-
-from ...perf_profile import pprofile
+from liblightbase.lbdoc.doctree import DocumentTree
 
 log = logging.getLogger()
 
@@ -33,18 +31,18 @@ class DocumentContextFactory(CustomContextFactory):
     def __init__(self, request, next_id_fn=None):
         super(DocumentContextFactory, self).__init__(request)
 
-        # liblightbase.lbbase.Base object
+        # NOTE: Liblightbase.lbbase.Base object! By John Doe
         base = self.get_base()
 
-        # LBDoc_<base> object (mapped ORM entity).
+        # NOTE: LBDoc_<base> object (mapped ORM entity)! By John Doe
         self.entity = document_entity(self.base_name,
             next_id_fn=next_id_fn,
             **base.relational_fields)
 
-        # LBFile_<base> object (mapped ORM entity).
+        # NOTE: LBFile_<base> object (mapped ORM entity)! By John Doe
         self.file_entity = file_entity(self.base_name)
 
-        # Index object 
+        # NOTE: Index object! By John Doe
         self.index = Index(base, self.get_full_document)
 
     def create_files(self, member, files):
@@ -59,16 +57,7 @@ class DocumentContextFactory(CustomContextFactory):
                 self.file_entity.__table__.c.id_file.in_(files))\
                 .values(id_doc=member.id_doc)
 
-            # N >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-            # self.session.execute(stmt)
-            # self.session.begin()
-            # self.session.commit()
-            # self.session.flush()
-            # self.session.close()
-            # N <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-            # O >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
             self.session.execute(stmt)
-            # O <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     def delete_files(self, member, files):
         """Will delete files that are not present in document.
@@ -86,16 +75,7 @@ class DocumentContextFactory(CustomContextFactory):
         else:
             stmt = delete(self.file_entity.__table__).where(*where_clause)
 
-        # N >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-        # self.session.execute(stmt)
-        # self.session.begin()
-        # self.session.commit()
-        # self.session.flush()
-        # self.session.close()
-        # N <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-        # O >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         self.session.execute(stmt)
-        # O <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     def create_member(self, data):
         """ 
@@ -109,13 +89,19 @@ class DocumentContextFactory(CustomContextFactory):
         self.create_files(member, data['__files__'])
         for name in data:
             setattr(member, name, data[name])
-        # Now commits and closes session in the view instead of here
+
+        # NOTE: Now commits and closes session in the view instead of here
         # flush() pushes operations to DB's buffer - DCarv
         self.session.flush()
+        self.session.commit()
 
         if self.index.is_indexable:
-            Thread(target=self.async_create_member,
-                args=(data, self.session)).start()
+            Thread(
+                target=self.async_create_member, 
+                args=(
+                    data, self.session
+                )
+            ).start()
         return member
 
     def async_create_member(self, data, session):
@@ -143,19 +129,12 @@ class DocumentContextFactory(CustomContextFactory):
             except:
                 pass
             finally:
-                # N >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-                # session.begin()
-                # session.commit()
-                # session.flush()
-                # session.close()
-                # N <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-                # O >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-                # Now commits and closes session in the view instead of here
-                # flush() pushes operations to DB's buffer - DCarv
+                # NOTE: Se não fecharmos a conexão aqui os registros ficam 
+                # locados e vai travar a próxima requisição! By Questor
                 session.flush()
-
-                # O <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+                session.commit()
+                session.close()
 
     def update_member(self, member, data, index=True, alter_files=True):
         """Receives the data to UPDATE at database 
@@ -178,32 +157,21 @@ class DocumentContextFactory(CustomContextFactory):
             self.entity.__table__.c.id_doc == data['id_doc'])\
             .values(**data)
 
-        # N >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-        # self.session.execute(stmt)
-        # self.session.begin()
-        # self.session.commit()
-        # self.session.flush()
-        # self.session.close()
-        # N <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-        # O >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         self.session.execute(stmt)
-
-        # NOTE: Aparentemente ao executar apenas ".flush()" os registros alvo
-        # daquela execução ficam locados no banco. Para resolver isso
-        # acrescentei ".begin()"! By Questor
-        self.session.begin()
-
-        # Now commits and closes session in the view instead of here
-        # flush() pushes operations to DB's buffer - DCarv
         self.session.flush()
-
-        # O <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+        self.session.commit()
 
         if index and self.index.is_indexable:
-            Thread(target=self.async_update_member,
-                args=(data['id_doc'], data, self.session)).start()
+            Thread(
+                target=self.async_update_member, 
+                args=(
+                    data['id_doc'], 
+                    data, 
+                    self.session
+                )
+            ).start()
 
-        # NOTE: Clear cache!
+        # NOTE: Clear cache! By John Doe
         cache.clear_collection_cache(self.base_name)
 
         return member
@@ -233,21 +201,14 @@ class DocumentContextFactory(CustomContextFactory):
             except:
                 pass
             finally:
-                # N >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-                # session.begin()
-                # session.commit()
-                # session.flush()
-                # session.close()
-                # N <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-                # O >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-                # Now commits and closes session in the view instead of here
-                # flush() pushes operations to DB's buffer - DCarv
+                # NOTE: Se não fecharmos a conexão aqui os registros ficam 
+                # locados e vai travar a próxima requisição! By Questor
                 session.flush()
+                session.commit()
+                session.close()
 
-                # O <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-    # TODO: Rever o comportamento descrito abaixo...
+    # TODO: Rever o comportamento descrito abaixo! By Questor
     def delete_member(self, id):
         """Query the document object, verify the flag "dt_del". If 
         setted, that means that this document was deleted once, but 
@@ -263,39 +224,30 @@ class DocumentContextFactory(CustomContextFactory):
         stmt2 = delete(self.file_entity.__table__).where(
             self.file_entity.__table__.c.id_doc == id)
 
-        # N >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-        # result = self.session.execute(stmt1)
-        # self.session.begin()
-        # self.session.commit()
-        # self.session.flush()
-        # self.session.close()
-        # self.session.execute(stmt2)
-        # self.session.begin()
-        # self.session.commit()
-        # self.session.flush()
-        # self.session.close()
-        # N <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-        # O >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         result = self.session.execute(stmt1)
         self.session.execute(stmt2)
 
-        # Now commits and closes session in the view instead of here
+        # NOTE: Now commits and closes session in the view instead of here
         # flush() pushes operations to DB's buffer - DCarv
         self.session.flush()
-
-        # O <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+        self.session.commit()
 
         if self.index.is_indexable:
-            Thread(target=self.async_delete_member,
-                args=(id, self.session)).start()
+            Thread(
+                target=self.async_delete_member, 
+                args=(
+                    id, 
+                    self.session
+                )
+            ).start()
 
-        # Clear cache
+        # NOTE: Clear cache! By John Doe
         cache.clear_collection_cache(self.base_name)
 
-        # Returns the ResultProxy to check if something was deleted
+        # NOTE: Returns the ResultProxy to check if something was deleted! By John Doe
         return result
 
-    # Deleta no ES.
+    # NOTE: Deleta no ES! By John Doe
     def async_delete_member(self, id, session):
 
         ok = False
@@ -312,19 +264,12 @@ class DocumentContextFactory(CustomContextFactory):
             except:
                 pass
             finally:
-                # N >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-                # session.begin()
-                # session.commit()
-                # session.flush()
-                # session.close()
-                # N <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-                # O >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-                # # Now commits and closes session in the view instead of here
-                # # flush() pushes operations to DB's buffer - DCarv
+                # NOTE: Se não fecharmos a conexão aqui os registros ficam 
+                # locados e vai travar a próxima requisição! By Questor
                 session.flush()
-
-                # O <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+                session.commit()
+                session.close()
 
     def get_full_documents(self, list_id_doc, members, session=None):
         """Pesquisa na tabela file e insere os textos extraídos nos 
@@ -353,7 +298,7 @@ class DocumentContextFactory(CustomContextFactory):
             except Exception as e:
                 members_file_id[dbfiles[index].id_doc] = [index]
 
-        # Now commits and closes session in the view instead of here
+        # NOTE: Now commits and closes session in the view instead of here
         # flush() pushes operations to DB's buffer - DCarv
         session.flush()
 
@@ -382,7 +327,8 @@ class DocumentContextFactory(CustomContextFactory):
            self.file_entity.filetext,
            self.file_entity.dt_ext_text)
         dbfiles = session.query(*file_cols).filter_by(id_doc=id).all()
-        # Now commits and closes session in the view instead of here
+
+        # NOTE: Now commits and closes session in the view instead of here! By John Doe
         # flush() pushes operations to DB's buffer - DCarv
         session.flush()
 
@@ -422,19 +368,20 @@ class DocumentContextFactory(CustomContextFactory):
         try:
             dict_member = member._asdict()
         except AttributeError as e:
-            # Continue parsing
+
+            # NOTE: Continue parsing! By John Doe
             log.debug("Error parsing as dict!\n%s", e)
             if not isinstance(member, KeyedTuple):
                 member = self.member2KeyedTuple(member)
 
-        # Get document as dictionary object.
+        # NOTE: Get document as dictionary object! By John Doe
         dict_member = member._asdict()['document']
 
         fields = getattr(self,'_query', {}).get('select')
         if fields and not '*' in fields:
-            # Will prune tree nodes.
-            # dict_member can be None if method could not find any fileds
-            # matching the nodes list.
+
+            # NOTE: Will prune tree nodes. dict_member can be None if method
+            # could not find any fileds matching the nodes list! By John Doe
             dict_member = DocumentTree(dict_member).prune(nodes=fields)
 
         return dict_member
@@ -454,19 +401,15 @@ class DocumentContextFactory(CustomContextFactory):
         This method will return a dictonary in the format {id_file: filetext},
         with all docs referenced by @param: id_doc
         """
-        # Query documents
+
+        # NOTE: Query documents! By John Doe
         files = self.session.query(self.file_entity.id_file,
             self.file_entity.filetext).filter_by(id_doc=id_doc).all() or [ ]
 
-        # Now commits and closes session in the view instead of here
-        # flush() pushes operations to DB's buffer - DCarv
-        # if close_session is True:
-        #     # Close session if param close_session is True
-        #     self.session.close()
-
         files = { }
         for file_ in files:
-            # Build dictionary
+            # NOTE: Build dictionary! John Doe
+
             files[file_.id_file] = file_.filetext
 
         return files
