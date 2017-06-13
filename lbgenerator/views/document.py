@@ -291,6 +291,7 @@ class DocumentCustomView(CustomView):
                     try:
                         if self.context.session.is_active:
                             self.context.session.close()
+
                     except:
                         pass
 
@@ -346,6 +347,7 @@ class DocumentCustomView(CustomView):
 
         # NOTE: Update member! By John Doe
         alter_files = self.request.params.get('alter_files', True)
+
         member = self.context.update_member(member, data, index=index,
                                             alter_files=alter_files)
 
@@ -358,6 +360,7 @@ class DocumentCustomView(CustomView):
             try:
                 if self.context.session.is_active:
                     self.context.session.close()
+
             except:
                 pass
 
@@ -589,15 +592,15 @@ class DocumentCustomView(CustomView):
 
         self.request.matchdict['path'] = path
 
-        if not self.context.session.is_active:
-            self.context.session.begin()
-
         for member in collection:
 
             # NOTE: Override matchdict! By John Doe
             self.request.matchdict['id'] = member.id_doc
 
             try:
+                if not self.context.session.is_active:
+                    self.context.session.begin()
+
                 self.put_path(member, close_session=False)
                 success = success + 1
             except Exception as e:
@@ -677,10 +680,11 @@ class DocumentCustomView(CustomView):
             self.request.matchdict = {'path': self.request.params.get('path'),
                                       'id': member.id_doc}
 
-            if not self.context.session.is_active:
-                self.context.session.begin()
-
             try:
+
+                if not self.context.session.is_active:
+                    self.context.session.begin()
+
                 if self.request.matchdict['path'] is None:
                     self.context.delete_member(member.id_doc)
                 else:
@@ -689,16 +693,6 @@ class DocumentCustomView(CustomView):
                 success = success + 1
             except Exception as e:
                 failure = failure + 1
-            # finally:
-
-                # # NOTE: Tentar fechar a conexão de qualquer forma!
-                # # -> Na criação da conexão "coautocommit=True"!
-                # # By Questor
-                # try:
-                    # if self.context.session.is_active:
-                        # self.context.session.close()
-                # except:
-                    # pass
 
         # NOTE: Tentar fechar a conexão de qualquer forma!
         # -> Na criação da conexão "coautocommit=True"!

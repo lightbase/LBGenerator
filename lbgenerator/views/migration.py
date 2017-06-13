@@ -97,7 +97,7 @@ def _import(request):
                 if num_and_line[1] is not None:
                     success = success +1
             except:
-                failure = failure +1
+                failure = failure + 1
 
     os.remove(filepath)
 

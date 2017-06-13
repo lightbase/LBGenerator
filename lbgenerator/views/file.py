@@ -103,10 +103,14 @@ class FileCustomView(CustomView):
             self.request.matchdict = {'path': self.request.params.get('path'),
                                       'id': member.id_doc}
 
-            if not self.context.session.is_active:
-                self.context.session.begin()
+            # if not self.context.session.is_active:
+                # self.context.session.begin()
 
             try:
+
+                if not self.context.session.is_active:
+                    self.context.session.begin()
+
                 if self.request.matchdict['path'] is None:
                     self.context.delete_member(member.id_doc)
                 else:
@@ -115,19 +119,6 @@ class FileCustomView(CustomView):
                 success = success + 1
             except Exception as e:
                 failure = failure + 1
-            # finally:
-
-                # # NOTE: Tentar fechar a conexão de qualquer forma!
-                # # -> Na criação da conexão "coautocommit=True"!
-                # # By Questor
-                # try:
-                    # if self.context.session.is_active:
-                        # self.context.session.close()
-                # except:
-                    # pass
-
-                # if self.context.session.is_active:
-                    # self.context.session.close()
 
         # NOTE: Tentar fechar a conexão de qualquer forma!
         # -> Na criação da conexão "coautocommit=True"!
@@ -247,16 +238,6 @@ class FileCustomView(CustomView):
         raise NotImplementedError('NOT IMPLEMENTED')
 
     def delete_path(self, close_session=True):
-
-        # # NOTE: Tentar fechar a conexão de qualquer forma!
-        # # -> Na criação da conexão "coautocommit=True"!
-        # # By Questor
-        # try:
-            # if self.context.session.is_active:
-                # self.context.session.close()
-        # except:
-            # pass
-
         if close_session:
 
             # NOTE: Tentar fechar a conexão de qualquer forma!
