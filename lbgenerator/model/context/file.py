@@ -44,6 +44,7 @@ class FileContextFactory(CustomContextFactory):
         # NOTE: Now commits and closes session in the view instead of here
         # flush() pushes operations to DB's buffer - DCarv
         self.session.flush()
+        self.session.commit()
 
         return member
 
