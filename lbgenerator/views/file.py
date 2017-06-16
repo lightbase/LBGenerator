@@ -103,9 +103,6 @@ class FileCustomView(CustomView):
             self.request.matchdict = {'path': self.request.params.get('path'),
                                       'id': member.id_doc}
 
-            # if not self.context.session.is_active:
-                # self.context.session.begin()
-
             try:
 
                 if not self.context.session.is_active:

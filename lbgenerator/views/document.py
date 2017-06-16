@@ -681,7 +681,6 @@ class DocumentCustomView(CustomView):
                                       'id': member.id_doc}
 
             try:
-
                 if not self.context.session.is_active:
                     self.context.session.begin()
 
