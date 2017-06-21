@@ -10,6 +10,7 @@ from alembic.operations import Operations
 from alembic.migration import MigrationContext
 from liblightbase.lbbase.content import Content
 from liblightbase.lbutils.conv import json2base
+from liblightbase.lbutils.conv import base2json
 from liblightbase.lbutils.codecs import json2object
 from liblightbase.lbbase.lbstruct.field import Field
 from liblightbase.lbbase.lbstruct.group import Group
@@ -44,14 +45,35 @@ class BaseContextFactory(CustomContextFactory):
         except (requests.exceptions.RequestException,
             requests.exceptions.ConnectionError) as e:
             print(e)
-  
+
     def get_next_id(self):
         return model.base_next_id()
 
-    def get_member(self, base):
+    def get_member(self, base, get_base=False):
         self.single_member = True
         member = self.session.query(self.entity)\
             .filter_by(name=base).first()
+        if get_base:
+            try:
+                if member.idx_exp:
+                    if not member.idx_exp_url and config.ES_DEF_URL:
+                        member.idx_exp_url=config.ES_DEF_URL + "/" + member.\
+                                name + "/" + member.name
+
+                        # NOTE: A meu ver esse processo de converter de "json"
+                        # para "object" e depois no sentido inverso tá tosco no
+                        # que tange performance, mas não ví outra solução uma
+                        # vez que "render_to_response" renderiza o conteúdo de
+                        # "struct" e não dos atributos que formam o objeto
+                        # valorado. Talvez não haja solução viável melhor que
+                        # essa! By Questor
+
+                        json_in_base=json2base(member.struct)
+                        json_in_base.metadata.idx_exp_url=member.idx_exp_url
+                        member.struct=base2json(json_in_base)
+            except:
+                pass
+
         return member or None
 
     def create_member(self, data):
@@ -83,7 +105,7 @@ class BaseContextFactory(CustomContextFactory):
         # NOTE: Now commits and closes session in the view instead of here
         # flush() pushes operations to DB's buffer - DCarv
         self.session.flush()
-        
+
         if idx:
             self.lbirestart()
         return member
@@ -200,7 +222,7 @@ class BaseContextFactory(CustomContextFactory):
             'structure': utils.json2object(member.struct),
             'status': 'UPDATED'
         })
-    
+
         self.lbirestart()
 
         # NOTE: Remove base struct from cache! By John Doe
@@ -226,7 +248,7 @@ class BaseContextFactory(CustomContextFactory):
         doc_table = get_doc_table(member.name, config.METADATA, **relational_fields)
         file_table.drop(config.ENGINE, checkfirst=True)
         doc_table.drop(config.ENGINE, checkfirst=True)
-        
+
         # NOTE: Delete base! By John Doe
         self.session.delete(member)
 
@@ -245,7 +267,7 @@ class BaseContextFactory(CustomContextFactory):
             'structure': utils.json2object(member.struct),
             'status': 'DELETE'
         })
-        
+
         if idx:
             self.lbirestart()
         return member
@@ -463,7 +485,7 @@ class BaseContextFactory(CustomContextFactory):
 
                     self.session.flush()
                     model.BASES.bases.pop(member.name)
-                    
+
                     # NOTE: Undo delete! By John Doe
                     self._undo_delete_column(base, old_name, column_path, results)
 

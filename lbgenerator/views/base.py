@@ -1,11 +1,16 @@
 from pyramid.response import Response
 from pyramid.exceptions import HTTPNotFound
 
-from . import CustomView
-from ..lib.validation.base import validate_base_data
+import requests
+# from .. import config
+
 from ..lib import utils
 from ..lib import cache
-import requests
+from . import CustomView
+from ..lib.validation.base import validate_base_data
+
+# from liblightbase.lbutils.conv import json2base
+# from liblightbase.lbutils.conv import base2json
 
 
 class BaseCustomView(CustomView):
@@ -32,10 +37,10 @@ class BaseCustomView(CustomView):
         return validate_base_data(self, self.request)
 
     def get_member(self):
-        self.wrap = False
-        base = self.request.matchdict['base']
-        member = self.context.get_member(base)
-        response = self.render_to_response(member)
+        self.wrap=False
+        base=self.request.matchdict['base']
+        member=self.context.get_member(base, get_base=True)
+        response=self.render_to_response(member)
 
         # NOTE: Tentar fechar a conexão de qualquer forma!
         # -> Na criação da conexão "coautocommit=True"!

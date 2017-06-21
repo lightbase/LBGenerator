@@ -114,7 +114,7 @@ class BaseOperation(LBOperation):
 
         if basename is not None:
             dummy_request.matchdict = { "base": basename }    
-        
+
         context = BaseContextFactory(dummy_request)
 
         return context
@@ -127,7 +127,7 @@ class BaseOperation(LBOperation):
 
         from ..lib import utils
         data = utils.filter_params(base_data, valid_fields)
-        
+
         for field in valid_fields:
             if field not in data:
                 raise Exception('Required field: %s' % (field))
@@ -195,12 +195,12 @@ class CreateBaseOperation(BaseOperation):
         # validate base data
         self.context = self._get_context(method="POST")
         self.validated_base_data = self.validate_base_data(self.params['data'])
-        
+
 
     def _on_execute(self):
         self.logger.debug("CreateBaseOperation._on_execute()")
         try:
-            self.context.create_member(self.validated_base_data)            
+            self.context.create_member(self.validated_base_data)
         except Exception as e:
             return {
                 'success': False, 

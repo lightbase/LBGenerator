@@ -26,6 +26,7 @@ def set_globals(**settings):
     global REQUESTS_TIMEOUT
     global ENGINE
     global LBI_URL
+    global ES_DEF_URL
     global METADATA
     global LOG_FILE
     global LOG_FORMAT
@@ -111,7 +112,15 @@ def set_globals(**settings):
         json_serializer=object2json,
         json_deserializer=json2object
     )
+
+    # NOTE: URL to connect to the LBI - LBIndex to inform changes in the structure of a
+    # base! By Questor
     LBI_URL = settings['lbindex_url']
+
+    # NOTE: Base URL to ES - ElasticSearch. Will be used if "idx_exp" is true and
+    # "idx_exp_url" is empty in a base "metadata"! By Questor
+    ES_DEF_URL = settings['es_def_url']
+
     METADATA = MetaData(ENGINE)
 
     LOG_FILE = '/var/log/lbgenerator.log'
