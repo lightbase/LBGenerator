@@ -34,6 +34,13 @@ def set_globals(**settings):
     global AUTH_INCLUDE_IP
     global ADMIN_USER
     global ADMIN_PASSWD
+    global LBRELACIONAL_URL
+
+    # Add configuration as environment vars
+    LBRELACIONAL_URL = os.environ.get('LBRELACIONAL_URL', None)
+    if LBRELACIONAL_URL is None:
+        LBRELACIONAL_URL = settings['lbrelacional.url']
+
 
     # NOTE: A forma como estamos convertendo booleanos (usando o método 
     # try_parse_to_bool) tá tosco, mas a forma como estar-se obtendo as 

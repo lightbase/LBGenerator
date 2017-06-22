@@ -32,30 +32,10 @@ class LBSearch:
         # NOTE: Check if fields are valid! By John Doe
         for k, v in dict_request.items():
             if k not in LBSearch.valid_fields:
-
-                # # NOTE: Tentar fechar a conexão de qualquer forma!
-                # # -> Na criação da conexão "coautocommit=True"!
-                # # By Questor
-                # try:
-                    # if self.context.session.is_active:
-                        # self.context.session.close()
-                # except:
-                    # pass
-
                 return HTTPBadRequest(body="Invalid field: '{}'".format(k))
 
         # NOTE: Check if query field exists! By John Doe
         if 'query' not in dict_request:
-
-            # # NOTE: Tentar fechar a conexão de qualquer forma!
-            # # -> Na criação da conexão "coautocommit=True"!
-            # # By Questor
-            # try:
-                # if self.context.session.is_active:
-                    # self.context.session.close()
-            # except:
-                # pass
-
             return HTTPBadRequest(body="No 'query' field")
 
         # NOTE: Default fields! By John Doe
@@ -117,16 +97,6 @@ class LBSearch:
 
         base_url = self.context.get_base().metadata.idx_exp_url
         if not base_url:
-
-            # # NOTE: Tentar fechar a conexão de qualquer forma!
-            # # -> Na criação da conexão "coautocommit=True"!
-            # # By Questor
-            # try:
-                # if self.context.session.is_active:
-                    # self.context.session.close()
-            # except:
-                # pass
-
             return HTTPServiceUnavailable(body='This base is not indexed yet.')
 
         url = base_url + '/_search'
@@ -137,16 +107,6 @@ class LBSearch:
         dict_response = json.loads(response_text)
 
         if 'hits' not in dict_response:
-
-            # # NOTE: Tentar fechar a conexão de qualquer forma!
-            # # -> Na criação da conexão "coautocommit=True"!
-            # # By Questor
-            # try:
-                # if self.context.session.is_active:
-                    # self.context.session.close()
-            # except:
-                # pass
-
             raise Exception('ES Error: ' + dict_response['error'])
 
         if hl_in_source:
@@ -173,16 +133,6 @@ class LBSearch:
             dict_response = new_dict_response
 
         response_text = json.dumps(dict_response)
-
-        # # NOTE: Tentar fechar a conexão de qualquer forma!
-        # # -> Na criação da conexão "coautocommit=True"!
-        # # By Questor
-        # try:
-            # if self.context.session.is_active:
-                # self.context.session.close()
-        # except:
-            # pass
-
         return Response(response_text, content_type='application/json')
 
     def _build_query_string(self, dict_es_query, dict_request):

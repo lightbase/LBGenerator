@@ -1,18 +1,22 @@
-from .. import config
-from sqlalchemy.schema import Sequence
-from sqlalchemy.orm import scoped_session
-from sqlalchemy.orm import mapper
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy import engine_from_config
 from sqlalchemy import event
+from sqlalchemy.orm import mapper
 from sqlalchemy.engine import Engine
+from sqlalchemy.schema import Sequence
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import scoped_session
+from sqlalchemy import engine_from_config
 
+from .. import config
 from .entities import *
-from .metabase.history import HistoryMetaBase
-from .metabase.user import UserMetaBase
 from ..lib.generator import BaseMemory
 from ..lib.provider import AuthProvider
-
+from ..lib.generator import BaseMemory
+from ..lib.provider import AuthProvider
+from .metabase.user import UserMetaBase
+from .metabase.form import FormMetaBase
+from .metabase.report import ReportMetaBase
+from .metabase.search import SearchMetaBase
+from .metabase.history import HistoryMetaBase
 
 @event.listens_for(Engine, "connect")
 def connect(dbapi_connection, connection_record):
@@ -25,8 +29,7 @@ def begin_session():
 
     session = scoped_session(
         sessionmaker(bind=config.ENGINE, 
-                    autocommit=True, 
-                    # expire_on_commit=True
+                    autocommit=True
                     )
         )
     session.begin()
@@ -38,17 +41,32 @@ def make_restful_app():
     global BASES
     global HISTORY
     global USER
+    global FORM
+    global REPORT 
+    global SEARCH 
 
-    # Create Base Memory
+    # NOTE: Create Base Memory! John Doe
     BASES = BaseMemory(begin_session, LBBase)
 
-    # Create Base History stuff
+    # NOTE: Create Base History stuff! John Doe
     HISTORY = HistoryMetaBase()
     HISTORY.create_base(begin_session)
 
-    # Create Base Users stuff
+    # NOTE: Create Base Users stuff! John Doe
     USER = UserMetaBase()
     USER.create_base(begin_session)
+
+    # NOTE: Create Base Form stuff! John Doe
+    FORM = FormMetaBase()
+    FORM.create_base(begin_session)
+
+    # NOTE: Create Base Report stuff! John Doe
+    REPORT = ReportMetaBase()
+    REPORT.create_base(begin_session)
+
+    # NOTE: Create Base Report stuff! John Doe
+    SEARCH = SearchMetaBase()
+    SEARCH.create_base(begin_session)
 
     Sequence('lb_index_error_seq').create(bind=config.ENGINE)
     config.METADATA.create_all(bind=config.ENGINE,
@@ -141,4 +159,5 @@ def user_callback(user_name, request):
     for auth_pattern in user_auth:
         authorized = auth_provider.get_authorization(auth_pattern)
         if authorized: return authorized
-    return [ ]
+    return []
+

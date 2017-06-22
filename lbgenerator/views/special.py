@@ -61,3 +61,4 @@ class DocText(object):
         self.session.commit()
         self.session.close()
         return Response('UPDATED', content_type='application/json')
+

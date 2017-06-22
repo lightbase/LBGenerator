@@ -71,6 +71,8 @@ def execute_sql(request):
             break
 
     if success:
+
+        # TODO: Se necessário! By Questor
         # session.commit()
 
         # NOTE: Tentar fechar a conexão de qualquer forma!
@@ -115,3 +117,4 @@ def serialize(value):
             res = value
 
     return res
+

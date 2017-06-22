@@ -9,6 +9,7 @@ from ..lib import utils
 from . import CustomView
 from ..lib.log import Logger
 from ..perf_profile import pprofile
+from .security import verify_api_key
 from ..lib.path import parse_list_pattern
 from ..lib.validation.path import validate_path_data
 from ..lib.validation.document import validate_put_data
@@ -26,9 +27,9 @@ class DocumentCustomView(CustomView):
     def _get_data(self, *args):
         """ Get all valid data from (request) POST or PUT.
         """
-
         return validate_document_data(self, self.request, *args)
 
+    @verify_api_key
     def get_member(self):
         id = self.request.matchdict['id']
         self.wrap = False
@@ -152,6 +153,7 @@ class DocumentCustomView(CustomView):
                 #                 content_type='application/json')
                 # ! By John Doe
 
+    @verify_api_key
     def get_path(self):
         """Interprets the path and accesses objects. In detail, the query path
         supported in the current implementation allows the navigation of data 
@@ -198,6 +200,7 @@ class DocumentCustomView(CustomView):
 
         return Response(response, content_type='application/json')
 
+    @verify_api_key
     def set_path(self):
         """Interprets the path, accesses, and append objects. In detail, the query
         path supported in the current implementation allows the navigation of 
@@ -265,6 +268,7 @@ class DocumentCustomView(CustomView):
 
         return Response('OK', content_type='text/plain')
 
+    @verify_api_key
     def put_path(self, member=None, close_session=True):
         """Interprets the path, accesses, and update objects. In detail, 
         the query path supported in the current implementation allows 
@@ -473,6 +477,7 @@ class DocumentCustomView(CustomView):
 
         return Response('UPDATED', content_type='text/plain')
 
+    @verify_api_key
     def delete_path(self, close_session=True):
         """Interprets the path, accesses, and delete objects keys. In detail, the 
         query path supported in the current implementation allows the navigation
@@ -539,6 +544,7 @@ class DocumentCustomView(CustomView):
 
         return Response('DELETED', content_type='text/plain')
 
+    @verify_api_key
     def full_document(self):
         """Get files texts and put it into document. Return document with
         files texts.
@@ -575,13 +581,13 @@ class DocumentCustomView(CustomView):
         return Response(utils.object2json(document),
                        content_type='application/json')
 
+    @verify_api_key
     def update_collection(self):
         """Udpdate database collection of objects. This method needs a 
         valid JSON query, a valid query path and the object to update. 
         Will query database objects, and update each path to the new 
         object. Return count of successes and failures.
         """
-
         self.context.result_count = False
         collection = self.get_collection(render_to_response=False)
         success, failure = 0, 0
@@ -663,6 +669,7 @@ class DocumentCustomView(CustomView):
                         % (success, failure),
                         content_type='application/json')
 
+    @verify_api_key
     def delete_collection(self):
         """Delete database collection of objects. This method needs a valid JSON
         query and a valid query path . Will query database objects, and update 
@@ -705,3 +712,4 @@ class DocumentCustomView(CustomView):
         return Response('{"success": %d, "failure" : %d}'
                         % (success, failure),
                         content_type='application/json')
+

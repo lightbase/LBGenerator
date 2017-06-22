@@ -1,5 +1,4 @@
 import requests
-
 from pyramid.response import Response
 from pyramid.exceptions import HTTPNotFound
 
@@ -104,7 +103,6 @@ class FileCustomView(CustomView):
                                       'id': member.id_doc}
 
             try:
-
                 if not self.context.session.is_active:
                     self.context.session.begin()
 
@@ -247,3 +245,4 @@ class FileCustomView(CustomView):
                 pass
 
         raise NotImplementedError('Delete file path operation is not possible')
+

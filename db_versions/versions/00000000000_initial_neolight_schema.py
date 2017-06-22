@@ -51,6 +51,27 @@ def upgrade():
             sa.PrimaryKeyConstraint('id_doc')
     )
 
+
+    op.create_table('lb_doc__form',
+            sa.Column('id_doc', sa.Integer(), nullable=False),
+            sa.Column('document', sa.String(), nullable=False),
+            sa.Column('dt_doc', sa.DateTime(), nullable=False),
+            sa.Column('dt_last_up', sa.DateTime(), nullable=False),
+            sa.Column('dt_del', sa.DateTime(), nullable=True),
+            sa.Column('dt_idx', sa.DateTime(), nullable=True),
+            sa.PrimaryKeyConstraint('id_doc')
+    )
+
+    op.create_table('lb_doc__report',
+            sa.Column('id_doc', sa.Integer(), nullable=False),
+            sa.Column('document', sa.String(), nullable=False),
+            sa.Column('dt_doc', sa.DateTime(), nullable=False),
+            sa.Column('dt_last_up', sa.DateTime(), nullable=False),
+            sa.Column('dt_del', sa.DateTime(), nullable=True),
+            sa.Column('dt_idx', sa.DateTime(), nullable=True),
+            sa.PrimaryKeyConstraint('id_doc')
+    )
+
     op.create_table('lb_file__history',
             sa.Column('id_file', sa.Integer(), nullable=False),
             sa.Column('id_doc', sa.Integer(), nullable=False),
@@ -75,10 +96,39 @@ def upgrade():
             sa.PrimaryKeyConstraint('id_file')
     )
 
+    op.create_table('lb_file__form',
+            sa.Column('id_file', sa.Integer(), nullable=False),
+            sa.Column('id_doc', sa.Integer(), nullable=False),
+            sa.Column('filename', sa.String(), nullable=True),
+            sa.Column('file', sa.dialects.postgresql.BYTEA(), nullable=True),
+            sa.Column('mimetype', sa.String(), nullable=True),
+            sa.Column('filetext', sa.String(), nullable=True),
+            sa.Column('dt_ext_text', sa.DateTime(), nullable=True),
+            sa.Column('filesize', sa.String(), nullable=True),
+            sa.PrimaryKeyConstraint('id_file')
+    )
+
+    op.create_table('lb_file__report',
+            sa.Column('id_file', sa.Integer(), nullable=False),
+            sa.Column('id_doc', sa.Integer(), nullable=False),
+            sa.Column('filename', sa.String(), nullable=True),
+            sa.Column('file', sa.dialects.postgresql.BYTEA(), nullable=True),
+            sa.Column('mimetype', sa.String(), nullable=True),
+            sa.Column('filetext', sa.String(), nullable=True),
+            sa.Column('dt_ext_text', sa.DateTime(), nullable=True),
+            sa.Column('filesize', sa.String(), nullable=True),
+            sa.PrimaryKeyConstraint('id_file')
+    )
 
 def downgrade():
     op.drop_table('lb_base')
     op.drop_table('lb_doc__history')
     op.drop_table('lb_doc__user')
+    op.drop_table('lb_doc__form')
+    op.drop_table('lb_doc__report')
     op.drop_table('lb_file__history')
     op.drop_table('lb_file__user')
+    op.drop_table('lb_file__form')
+    op.drop_table('lb_file__report')
+
+

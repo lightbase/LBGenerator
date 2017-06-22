@@ -1,17 +1,15 @@
-from pyramid.response import Response
-from pyramid.exceptions import HTTPNotFound
+import json
 
 import requests
-# from .. import config
+from pyramid.response import Response
+from pyramid.exceptions import HTTPNotFound
 
 from ..lib import utils
 from ..lib import cache
 from . import CustomView
+from .security import verify_api_key
 from ..lib.validation.base import validate_base_data
-
-# from liblightbase.lbutils.conv import json2base
-# from liblightbase.lbutils.conv import base2json
-
+from ..lib.validation.document import validate_document_data
 
 class BaseCustomView(CustomView):
 
@@ -24,18 +22,9 @@ class BaseCustomView(CustomView):
     def _get_data(self):
         """ Get all valid data from (request) POST or PUT.
         """
-
-        # # NOTE: Tentar fechar a conexão de qualquer forma!
-        # # -> Na criação da conexão "coautocommit=True"!
-        # # By Questor
-        # try:
-            # if self.context.session.is_active:
-                # self.context.session.close()
-        # except: 
-            # pass
-
         return validate_base_data(self, self.request)
 
+    @verify_api_key
     def get_member(self):
         self.wrap=False
         base=self.request.matchdict['base']
@@ -53,6 +42,7 @@ class BaseCustomView(CustomView):
 
         return response
 
+    @verify_api_key
     def update_member(self):
         base = self.request.matchdict['base']
         member = self.context.update_member(base, self._get_data())
@@ -71,6 +61,7 @@ class BaseCustomView(CustomView):
         else:
             return Response('UPDATED', charset='utf-8', status=200, content_type='')
 
+    @verify_api_key
     def delete_member(self):
         base = self.request.matchdict['base']
         member = self.context.delete_member(base)
@@ -92,10 +83,10 @@ class BaseCustomView(CustomView):
 
         return Response('DELETED', charset='utf-8', status=200, content_type='')
 
+    @verify_api_key
     def get_column(self):
         """ Get column value
         """
-
         base = self.request.matchdict['base']
         PATH = self.request.matchdict['column'].split('/')
         base = self.context.get_base()
@@ -186,3 +177,4 @@ class BaseCustomView(CustomView):
             pass
 
         return Response(json_current_column, content_type='application/json')
+

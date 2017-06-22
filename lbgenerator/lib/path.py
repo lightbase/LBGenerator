@@ -173,7 +173,7 @@ def parse_list_pattern(base, document, pattern):
         'delete': base.delete_path
     }
 
-    # NOTE: Itera no conjunto de operações definidas em pattern!
+    # NOTE: Itera no conjunto de operações definidas em pattern! By John Doe
     for operation in pattern:
         path, fn = get_path_fn(**operation)
         method = mapping[operation['mode']]

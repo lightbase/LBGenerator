@@ -20,10 +20,17 @@ class IndexErrorCustomView(CustomView):
         failures.
         """
 
-        collection = self.get_collection(render_to_response=False)
-        in_clause = tuple(map(self.mapper, collection))
-        stmt = delete(self.context.entity.__table__).where(
+        collection=self.get_collection(render_to_response=False)
+        in_clause=tuple(map(self.mapper, collection))
+        stmt=delete(self.context.entity.__table__).where(
             self.context.entity.__table__.c.id_error.in_(in_clause))
+
+        # TODO: Talvez seja necessário um "begin" e um "commit" aqui!
+        # By Questor
+        # self.context.session.begin()
+        # self.context.session.commit()
+
+        self.context.session.execute(stmt)
 
         # NOTE: Tentar fechar a conexão de qualquer forma!
         # -> Na criação da conexão "coautocommit=True"!
@@ -35,3 +42,4 @@ class IndexErrorCustomView(CustomView):
             pass
 
         return Response('OK')
+

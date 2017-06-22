@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from pyramid_restler.view import RESTfulView
 
 
@@ -453,7 +452,6 @@ def add_restful_base_routes(self, name='base'):
     # - Rota: "/{base}"
     # - Parâmetros: URI, form
     add_route('delete_{name}', '/{base}', 'delete_member', 'DELETE', permission='delete')
-
 
 # Esse método faz chamadas p/ o método "add_route()". O objetivo é
 # permitir adicionar rotas de forma dinâmica! Também serve para

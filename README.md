@@ -1,3 +1,24 @@
+Change Log
+=================================
+
+## v0.2-beta (master) (2015-08-01)
+
+Workarounds:
+
+  - authentication 
+
+Bugfixes:
+
+  - fix errors in ...... 
+
+## v0.1-beta  (2015-04-01)
+
+Workarounds:
+
+  - the first version  
+
+
+
 Install notes
 =================================
 
@@ -73,3 +94,31 @@ Now you can use one of the supplied wsgi scripts:
 <pre>
 cp lbgenerator.wsgi-dist lbgenerator.wsgi
 </pre>
+
+
+Enable authentication mode 
+--------------------
+
+1) Baixar o código atualizado a partir da 0.2
+
+2) Rodar o alembic para atualizar o modelo de dados
+
+alembic -c development.ini upgrade head
+
+3) Editar a url do script que cria do usuário admin do banco de dados
+
+# vi scripts/2__cria_admin_user.py
+
+url = 'http://api.brlight.net/homolog/lbgenerator/user'
+
+4) Rodar o script de criação do usuário admin do banco de dados:
+
+python3.2 scripts/2__cria_admin_user.py
+OBS: o sistema irá retornar a api_key neste comando
+
+5) Alterar o parâmetro auth.enabled do arquivo de configuração
+
+# vi development.ini
+auth.enabled = 1 
+
+

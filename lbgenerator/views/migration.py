@@ -158,4 +158,9 @@ def write_doc(in_queue, out_list):
 
         context = DocumentContextFactory(request, _next_id)
         view = DocumentCustomView(context, request)
+
+        # TODO: Para o caso de necessitar! By Questor
+        # context.session.begin()
+
         view.create_member()
+

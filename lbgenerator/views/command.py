@@ -35,7 +35,7 @@ class CommandCustomView():
     def reset(self):
             BASES.bases = dict()
 
-            # NOTE: Comando mata toas as conexões com o banco de dados!
+            # NOTE: Comando que mata todas as conexões com o banco de dados!
             # By John Doe
             config.ENGINE.dispose()
 
@@ -70,3 +70,4 @@ def get_ip_address(ifname):
         0x8915, # SIOCGIFADDR
         struct.pack('256s', ifname[:15])
     )[20:24])
+

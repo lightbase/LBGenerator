@@ -45,6 +45,11 @@ requests.timeout=<REQ_TIMEOUT>
 # [str]
 lbindex_url=<LBI_LBINDEX_URL>
 
+# URL to connect to the LBR - LBRelacional to inform changes in the data
+# structure.
+# [str]
+lbrelacional.url=http://127.0.0.1:8000/sqlapi
+
 pyramid.reload_templates=true
 pyramid.debug_authorization=true
 pyramid.debug_notfound=true

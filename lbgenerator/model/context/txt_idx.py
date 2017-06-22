@@ -173,3 +173,4 @@ class TxtIdxContextFactory(CustomContextFactory):
         dict_member = utils.json2object(member._asdict()['struct'])
 
         return dict_member
+

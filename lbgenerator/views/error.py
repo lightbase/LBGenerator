@@ -36,6 +36,7 @@ class JsonErrorMessage():
         # necessariamente, "views" para esses métodos eu optei por tentar
         # fechar a conexão AQUI TAMBÉM para garantir que um "raise exception"
         # da vida impeça a conexão de ser fechada! By Questor
+
         # NOTE II: Tentar fechar a conexão de qualquer forma!
         # -> Na criação da conexão "coautocommit=True"!
         # By Questor
@@ -55,6 +56,7 @@ class JsonHTTPServerError(HTTPInternalServerError, JsonErrorMessage):
         # necessariamente, "views" para esses métodos eu optei por tentar
         # fechar a conexão AQUI TAMBÉM para garantir que um "raise exception"
         # da vida impeça a conexão de ser fechada! By Questor
+
         # NOTE II: Tentar fechar a conexão de qualquer forma!
         # -> Na criação da conexão "coautocommit=True"!
         # By Questor
@@ -77,6 +79,7 @@ class JsonHTTPNotFound(HTTPNotFound, JsonErrorMessage):
         # necessariamente, "views" para esses métodos eu optei por tentar
         # fechar a conexão AQUI TAMBÉM para garantir que um "raise exception"
         # da vida impeça a conexão de ser fechada! By Questor
+
         # NOTE II: Tentar fechar a conexão de qualquer forma!
         # -> Na criação da conexão "coautocommit=True"!
         # By Questor
@@ -99,6 +102,7 @@ class JsonHTTPForbidden(HTTPForbidden, JsonErrorMessage):
         # necessariamente, "views" para esses métodos eu optei por tentar
         # fechar a conexão AQUI TAMBÉM para garantir que um "raise exception"
         # da vida impeça a conexão de ser fechada! By Questor
+
         # NOTE II: Tentar fechar a conexão de qualquer forma!
         # -> Na criação da conexão "coautocommit=True"!
         # By Questor
@@ -121,6 +125,7 @@ class JsonHTTPConflict(HTTPConflict, JsonErrorMessage):
         # necessariamente, "views" para esses métodos eu optei por tentar
         # fechar a conexão AQUI TAMBÉM para garantir que um "raise exception"
         # da vida impeça a conexão de ser fechada! By Questor
+
         # NOTE II: Tentar fechar a conexão de qualquer forma!
         # -> Na criação da conexão "coautocommit=True"!
         # By Questor
@@ -144,6 +149,7 @@ def forbidden(request):
     # necessariamente, "views" para esses métodos eu optei por tentar fechar a
     # conexão AQUI TAMBÉM para garantir que um "raise exception" da vida impeça
     # a conexão de ser fechada! By Questor
+
     # NOTE II: Tentar fechar a conexão de qualquer forma!
     # -> Na criação da conexão "coautocommit=True"!
     # By Questor
@@ -164,6 +170,7 @@ def notfound_view(request):
     # necessariamente, "views" para esses métodos eu optei por tentar fechar a
     # conexão AQUI TAMBÉM para garantir que um "raise exception" da vida impeça
     # a conexão de ser fechada! By Questor
+
     # NOTE II: Tentar fechar a conexão de qualquer forma!
     # -> Na criação da conexão "coautocommit=True"!
     # By Questor
@@ -185,16 +192,11 @@ def error_view(exc, request):
     if len(exc_obj.args) > 0:
         exc_msg = exc_obj.args[0]
 
-    # # NOTE: For Debuging -> include traceback in error message
-    # # tb_list = traceback.format_tb(exc_tb)
-    # # str_msg = str(exc_msg) + ' ' + ''.join(tb_list)
-    # # return JsonHTTPServerError(request, str_msg)
-    # # ! By John Doe
-
     # NOTE I: Pode parecer excesso de zelo... Mas, mesmo não havendo,
     # necessariamente, "views" para esses métodos eu optei por tentar fechar a
     # conexão AQUI TAMBÉM para garantir que um "raise exception" da vida impeça
     # a conexão de ser fechada! By Questor
+
     # NOTE II: Tentar fechar a conexão de qualquer forma!
     # -> Na criação da conexão "coautocommit=True"!
     # By Questor
@@ -217,16 +219,11 @@ def lbexception_view(exc, request):
     if len(exc_obj.args) > 0:
         exc_msg = exc_obj.args[0]
 
-    # NOTE: For Debuging -> include traceback in error message
-    # tb_list = traceback.format_tb(exc_tb)
-    # str_msg = str(exc_msg) + ' ' + ''.join(tb_list)
-    # return JsonHTTPServerError(request, str_msg)
-    # ! By John Doe
-
     # NOTE I: Pode parecer excesso de zelo... Mas, mesmo não havendo,
     # necessariamente, "views" para esses métodos eu optei por tentar fechar a
     # conexão AQUI TAMBÉM para garantir que um "raise exception" da vida impeça
     # a conexão de ser fechada! By Questor
+
     # NOTE II: Tentar fechar a conexão de qualquer forma!
     # -> Na criação da conexão "coautocommit=True"!
     # By Questor
@@ -249,16 +246,11 @@ def conflict_view(exc, request):
     if len(exc_obj.args) > 0:
         exc_msg = exc_obj.args[0]
 
-    # NOTE: For Debuging -> include traceback in error message
-    # tb_list = traceback.format_tb(exc_tb)
-    # str_msg = str(exc_msg) + ' ' + ''.join(tb_list)
-    # return JsonHTTPServerError(request, str_msg)
-    # ! By John Doe
-
     # NOTE I: Pode parecer excesso de zelo... Mas, mesmo não havendo,
     # necessariamente, "views" para esses métodos eu optei por tentar fechar a
     # conexão AQUI TAMBÉM para garantir que um "raise exception" da vida impeça
     # a conexão de ser fechada! By Questor
+
     # NOTE II: Tentar fechar a conexão de qualquer forma!
     # -> Na criação da conexão "coautocommit=True"!
     # By Questor
@@ -269,3 +261,4 @@ def conflict_view(exc, request):
         pass
 
     return JsonHTTPConflict(request, str(exc_msg))
+

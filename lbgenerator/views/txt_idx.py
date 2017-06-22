@@ -128,3 +128,4 @@ class TxtIdxCustomView(CustomView):
                 pass
 
             return self.render_to_response(member)
+

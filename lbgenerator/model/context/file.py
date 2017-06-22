@@ -119,3 +119,4 @@ class FileContextFactory(CustomContextFactory):
         # NOTE: Clear cache! By John Doe
         cache.clear_collection_cache(self.base_name)
         return True
+

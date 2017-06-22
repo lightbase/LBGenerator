@@ -1,13 +1,12 @@
 import requests
-
 from pyramid.response import Response
 from pyramid.exceptions import HTTPNotFound
 from liblightbase.lbutils.codecs import json2object
 
-from ..lib.utils import FakeRequest
-from ..model.context.document import DocumentContextFactory
-from .document import DocumentCustomView
 from . import CustomView
+from ..lib.utils import FakeRequest
+from .document import DocumentCustomView
+from ..model.context.document import DocumentContextFactory
 
 
 class ESCustomView(CustomView):
@@ -176,3 +175,4 @@ class ESCustomView(CustomView):
             pass
 
         return Response(response.text, content_type='application/json')
+

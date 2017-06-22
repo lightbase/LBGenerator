@@ -32,7 +32,16 @@ sqlalchemy.pool_size=<SQLA_POOL_SIZE_MAX_OVERFLOW>
 
 storage.tmp_dir=/tmp
 requests.timeout=300
+
+# URL to connect to the LBI - LBIndex to inform changes in the structure of a
+# base.
+# [str]
 lbindex_url=<LBI_LBINDEX_URL>
+
+# URL to connect to the LBR - LBRelacional to inform changes in the data
+# structure.
+# [str]
+lbrelacional.url=http://127.0.0.1:8000/sqlapi
 
 pyramid.reload_templates=true
 pyramid.debug_authorization=true
