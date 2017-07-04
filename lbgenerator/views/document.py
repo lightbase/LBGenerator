@@ -170,6 +170,7 @@ class DocumentCustomView(CustomView):
 
         # NOTE: Get raw mapped entity object! By John Doe
         member = self.context.get_raw_member(self.request.matchdict['id'])
+
         if member is None:
 
             # NOTE: Tentar fechar a conexão de qualquer forma!
@@ -218,6 +219,7 @@ class DocumentCustomView(CustomView):
 
         # NOTE: Get raw mapped entity object! By John Doe
         member = self.context.get_raw_member(self.request.matchdict['id'])
+
         if member is None:
 
             # NOTE: Tentar fechar a conexão de qualquer forma!
@@ -712,4 +714,3 @@ class DocumentCustomView(CustomView):
         return Response('{"success": %d, "failure" : %d}'
                         % (success, failure),
                         content_type='application/json')
-

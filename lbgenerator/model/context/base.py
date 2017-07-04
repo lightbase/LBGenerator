@@ -78,17 +78,14 @@ class BaseContextFactory(CustomContextFactory):
 
     def create_member(self, data):
 
-        # NOTE: Create reg and doc tables.! By John Doe
+        # NOTE: Create reg and doc tables! By John Doe
         base_name=data['name']
 
         base_json=utils.json2object(data['struct'])
         idx=data['idx_exp']
 
-        '''
-        Trata-se de uma variável global de __init__.py
-        global BASES
-        BASES=BaseMemory(begin_session, LBBase)
-        '''
+        # NOTE: BASES -> Trata-se de uma variável global de __init__.py!
+        # By Questor
         base=model.BASES.set_base(base_json)
         data['struct']=base.json
         data['txt_mapping']=base.txt_mapping_json
@@ -106,8 +103,29 @@ class BaseContextFactory(CustomContextFactory):
         # flush() pushes operations to DB's buffer - DCarv
         self.session.flush()
 
+        # NOTE: Por alguma razão o objeto "session" estando com
+        # "autocommit=True" não "commita" no "close" e por isso executamos um
+        # "commit" aqui! "autocommit=True" não comita mais de uma operação em
+        # sequência? By Questor
+        # session_factory: sessionmaker(
+            # class_='Session', 
+            # autoflush=True, 
+            # bind=Engine(postgresql://lbu:***@127.0.0.1/lb), 
+            # autocommit=True, 
+            # expire_on_commit=True
+        # )
+        # registry: <sqlalchemy.\
+                # util.\
+                # _collections.\
+                # ThreadLocalRegistry object at 0x4143f90>
+        # ! By Questor
+        self.session.commit()
+
+        # NOTE: Atualiza a estrutura das bases no LBI se o mesmo estiver
+        # disponível! By Questor
         if idx:
             self.lbirestart()
+
         return member
 
     def update_member(self, id, data):
@@ -233,6 +251,24 @@ class BaseContextFactory(CustomContextFactory):
         # flush() pushes operations to DB's buffer - DCarv
         self.session.flush()
 
+        # NOTE: Por alguma razão o objeto "session" estando com
+        # "autocommit=True" não "commita" no "close" e por isso executamos um
+        # "commit" aqui! "autocommit=True" não comita mais de uma operação em
+        # sequência? By Questor
+        # session_factory: sessionmaker(
+            # class_='Session', 
+            # autoflush=True, 
+            # bind=Engine(postgresql://lbu:***@127.0.0.1/lb), 
+            # autocommit=True, 
+            # expire_on_commit=True
+        # )
+        # registry: <sqlalchemy.\
+                # util.\
+                # _collections.\
+                # ThreadLocalRegistry object at 0x4143f90>
+        # ! By Questor
+        self.session.commit()
+
         model.HISTORY.create_member(**{
             'id_base': member.id_base, 
             'author': 'Author', 
@@ -278,6 +314,24 @@ class BaseContextFactory(CustomContextFactory):
         # flush() pushes operations to DB's buffer - DCarv
         self.session.flush()
 
+        # NOTE: Por alguma razão o objeto "session" estando com
+        # "autocommit=True" não "commita" no "close" e por isso executamos um
+        # "commit" aqui! "autocommit=True" não comita mais de uma operação em
+        # sequência? By Questor
+        # session_factory: sessionmaker(
+            # class_='Session', 
+            # autoflush=True, 
+            # bind=Engine(postgresql://lbu:***@127.0.0.1/lb), 
+            # autocommit=True, 
+            # expire_on_commit=True
+        # )
+        # registry: <sqlalchemy.\
+                # util.\
+                # _collections.\
+                # ThreadLocalRegistry object at 0x4143f90>
+        # ! By Questor
+        self.session.commit()
+
         if index:
             index.delete_root()
 
@@ -294,8 +348,13 @@ class BaseContextFactory(CustomContextFactory):
             self.lbirestart()
         return member
 
-    def update_column_async(self, column_path, json_new_column,
-                            id_user, user_agent, user_ip):
+    def update_column_async(
+            self, 
+            column_path, 
+            json_new_column, 
+            id_user, 
+            user_agent, 
+            user_ip):
 
         # NOTE: CREATE task! By John Doe
         task_name='update_column: %s' % ('/'.join(column_path))
@@ -736,12 +795,10 @@ class BaseContextFactory(CustomContextFactory):
 
     def member_to_dict(self, member, fields=None):
 
-        '''
-        TODO: Não consegui entender pq o sempre verifica se há o método 
-        "_asdict()" visto que ele nunca está disponível e o pior de tudo 
-        é que sempre loga. Tá tosco no último e por essa razão comentei 
-        a linha que gera o log! By Questor
-        '''
+        # TODO: Não consegui entender pq o sempre verifica se há o método
+        # "_asdict()" visto que ele nunca está disponível e o pior de tudo é que
+        # sempre loga. Tá tosco no último e por essa razão comentei a linha que
+        # gera o log! By Questor
         try:
             dict_member=member._asdict()
         except AttributeError as e:
@@ -754,8 +811,10 @@ class BaseContextFactory(CustomContextFactory):
 
         fields=getattr(self,'_query', {}).get('select')
         if fields and not '*' in fields:
-            return {'metadata':
-                {field: dict_member['metadata'][field] for field in fields}
+            return {
+                'metadata': {
+                    field: dict_member['metadata'][field] for field in fields
+                }
             }
 
         return dict_member

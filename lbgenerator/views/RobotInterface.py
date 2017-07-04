@@ -144,7 +144,8 @@ class RobotInterface:
     @staticmethod
     def baseContentSave(name, content ,id):
         if(len(basePath) > 0):
-            restPath=basePath + "content/" + name + "?lb_id=" + str(id) + "&database=lightbase"
+            restPath=basePath + "content/" + name + "?lb_id=" + str(id) +\
+                    "&database=lightbase"
             headers={'Content-Type': 'application/json'}
             valor=json.dumps(content)
             r=requests.post(restPath, data=valor, headers=headers)

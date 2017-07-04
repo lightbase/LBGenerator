@@ -10,9 +10,10 @@ INVALID_API_KEY='Invalid API key'
 def verify_api_key(view_function):
     '''
     Decorator function wich is responsable to 
-    check if an api_key in Authentication header
+    check if an api_key in Authentication header 
     is valid.
     '''
+
     @wraps(view_function)
     def verify(*args, **kwargs):
         request=args[0].request

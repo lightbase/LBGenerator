@@ -54,22 +54,20 @@ class CustomContextFactory(SQLAlchemyORMContext, CacheMaster):
 
         if getattr(self, 'overwrite_session', False) is True:
             return self.__session__
+
         return begin_session()
 
     def get_base(self):
         """ Return Base object
         """
 
-        '''
-        NOTE: O seguinte tipo é o que consta em "model.BASES"!
-        <lbgenerator.lib.generator.BaseMemory object>
-
-        Retorna a estrutura da base (json) convertida para dict.
-        Essa base pode vir do banco de dados ou da memória. Essas
-        estruras são guardadas em memória "on demand", ou seja,
-        na primeira vez que determinada estrutura de base é
-        requerida esse processo acontece! By Questor
-        '''
+        # NOTE: O seguinte tipo é o que consta em "model.BASES"...
+        # <lbgenerator.lib.generator.BaseMemory object>
+        # Retorna a estrutura da base (json) convertida para dict. Essa base
+        # pode vir do banco de dados ou da memória. Essas estruras são
+        # guardadas em memória "on demand", ou seja, na primeira vez que
+        # determinada estrutura de base é requerida esse processo acontece!
+        # By Questor
         return model.BASES.get_base(self.base_name)
 
     def set_base(self, base_json):
@@ -119,21 +117,16 @@ class CustomContextFactory(SQLAlchemyORMContext, CacheMaster):
         if self.request.method == 'DELETE' \
                 and self.entity.__table__.name.startswith('lb_doc_'):
 
-            '''
-            NOTE: Seta que a lista de ocorrência terá apenas o campo 
-            "id_doc" p/ os registros! By Questor
-            '''
+            # NOTE: Seta que a lista de ocorrência terá apenas o campo "id_doc"
+            # p/ os registros! By Questor
             self.entity.__table__.__factory__=[self.entity.__table__.c.id_doc]
 
-        '''
-        NOTE: "__factory__" em "self.entity.__table__.__factory__", 
-        pode ser, a princípio, entendido como um "place holder" que vai 
-        acomodar cada registro conforme o modelo definido neste. Esse 
-        modelo vem originalmente do método "get_doc_table(__base__, 
-        __metadata__, **rel_fields)" do arquivo "lbgenerator/model/
-        entities.py", mas pode ser modificado conforme logo acima... 
-        By Questor
-        '''
+        # NOTE: "__factory__" em "self.entity.__table__.__factory__", pode ser,
+        # a princípio, entendido como um "place holder" que vai acomodar cada
+        # registro conforme o modelo definido neste. Esse modelo vem
+        # originalmente do método "get_doc_table(__base__, __metadata__,
+        # **rel_fields)" do arquivo "lbgenerator/model/entities.py", mas pode
+        # ser modificado conforme logo acima... By Questor
         self.total_count=None
         factory=None
         count_over=None
@@ -150,19 +143,15 @@ class CustomContextFactory(SQLAlchemyORMContext, CacheMaster):
         else:
             q=self.session.query(*factory)
 
-        '''
-        NOTE: Query "q" e feche a sessão. Aqui é disparada a busca 
-        conforme o factory acima! By Questor
-        '''
-
-        # NOTE: Now commits and closes session in the view instead of here
+        # NOTE I: Query "q" e feche a sessão. Aqui é disparada a busca conforme o
+        # factory acima! By Questor
+        
+        # NOTE II: Now commits and closes session in the view instead of here
         # flush() pushes operations to DB's buffer - DCarv
         self.session.flush()
 
-        '''
-        NOTE: "Compiler.filter()" faz a chamada "self.where.filter()" que 
-        assim como "self.session.query()" fazem parte! By Questor
-        '''
+        # NOTE: "Compiler.filter()" faz a chamada "self.where.filter()" que
+        # assim como "self.session.query()" fazem parte! By Questor
         q=compiler.filter(q)
 
         # NOTE: Ordena busca se for o caso! By John Doe
@@ -171,12 +160,10 @@ class CustomContextFactory(SQLAlchemyORMContext, CacheMaster):
                 order=getattr(sqlalchemy, o)
                 for i in compiler.order_by[o]: q=q.order_by(order(i))
 
-        '''
-        NOTE: In a table, a column may contain many duplicate values; 
-        and sometimes you only want to list the different (distinct) 
-        values. The DISTINCT keyword can be used to return only 
-        distinct (different) values! By Questor
-        '''
+        # NOTE: In a table, a column may contain many duplicate values; and
+        # sometimes you only want to list the different (distinct) values. The
+        # DISTINCT keyword can be used to return only distinct (different)
+        # values! By Questor
         if compiler.distinct:
             q=q.distinct(compiler.distinct)
 

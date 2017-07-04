@@ -175,4 +175,3 @@ class ESCustomView(CustomView):
             pass
 
         return Response(response.text, content_type='application/json')
-

@@ -43,6 +43,14 @@ lbindex_url=<LBI_LBINDEX_URL>
 # [str]
 lbrelacional.url=http://127.0.0.1:8000/sqlapi
 
+# Base URL to ES - ElasticSearch. Will be used if "idx_exp" is true and
+# "idx_exp_url" is empty in a base "metadata". In this case "idx_exp_url" will
+# be returned with folowing model: "http://<es_def_url>/<base_name>/<base_name>".
+# "<base_name>" will be the ES index and the mapping respectively! Do not use
+# "/" at the end!
+# [str]
+es_def_url=http://127.0.0.1:9200
+
 pyramid.reload_templates=true
 pyramid.debug_authorization=true
 pyramid.debug_notfound=true

@@ -42,4 +42,3 @@ class IndexErrorCustomView(CustomView):
             pass
 
         return Response('OK')
-

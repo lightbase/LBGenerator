@@ -125,7 +125,7 @@ class UserView(CustomView):
         user=self.request.params.get('nm_user')
         passwd=self.request.params.get('passwd_user')
 
-        # TODO: Encriptografar a senha, para comparar com a senha criptgrafada
+        # TODO: Criptografar a senha, para comparar com a senha criptografada
         # que está armazenada no banco! By John Doe
         if user == config.ADMIN_USER:
             if passwd == config.ADMIN_PASSWD:
@@ -212,4 +212,3 @@ class UserView(CustomView):
     def test_login(self):
         logged_in=authenticated_userid(self.request)
         return Response(str(logged_in))
-

@@ -126,7 +126,8 @@ def _export(request):
     except:
         pass
 
-    return Response('ççççççççççç')
+    # TODO: Tá tosco, deveria levantar um exceção! By Questor
+    return Response('NOT IMPLEMENTED!')
 
 def write_doc(in_queue, out_list):
     global request
@@ -163,4 +164,3 @@ def write_doc(in_queue, out_list):
         # context.session.begin()
 
         view.create_member()
-

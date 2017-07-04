@@ -1,465 +1,559 @@
 from pyramid_restler.view import RESTfulView
 
 
-# self <- <pyramid.self.Configurator object>
 def make_routes(self):
     """ Cria rotas para aplicação do gerador de bases
     """
 
-    # Import token controller and context factory
+    # NOTE: Import token controller and context factory! By John Doe
     from ..views.user import UserView
     from ..model.context.user import UserContextFactory
 
-    # Import Bases controller and context factory
+    # NOTE: Import Bases controller and context factory! By John Doe
     from ..views.base import BaseCustomView
     from ..model.context.base import BaseContextFactory
 
-    # Import documents controller and context factory
+    # NOTE: Import documents controller and context factory! By John Doe
     from ..views.document import DocumentCustomView
     from ..model.context.document import DocumentContextFactory
 
-    # Import files controller and context factory
+    # NOTE: Import files controller and context factory! By John Doe
     from ..views.file import FileCustomView
     from ..model.context.file import FileContextFactory
 
-    # Migration views
+    # NOTE: Migration views! By John Doe
     from ..views.migration import _import, _export
 
-    # ES Rules
+    # NOTE: ES Rules! By John Doe
     from ..views.index_error import IndexErrorCustomView
     from ..model.context.index_error import IndexErrorContextFactory
 
-    # Regras p/ gerenciamento da indexação textual (índices)
+    # NOTE: Regras p/ gerenciamento da indexação textual (índices)! By John Doe
     from ..views.txt_idx import TxtIdxCustomView
     from ..model.context.txt_idx import TxtIdxContextFactory
 
-    # Command rules
+    # NOTE: Command rules! By John Doe
     from ..views.command import CommandCustomView
 
-    # ES Rules
+    # NOTE: ES Rules! By John Doe
     from ..views.es import ESCustomView
     from ..model.context.es import ESContextFactory
 
-    # Documentation views
+    # NOTE: Documentation views! By John Doe
     from ..views.docs import DocsCustomView
     from ..model.context.docs import DocsContextFactory
 
     # NOTE: Custom routes! By John Doe
-    def add_custom_routes(route_name, pattern, factory_class, view_class, views):
+    def add_custom_routes(
+            route_name, 
+            pattern, 
+            factory_class, 
+            view_class, 
+            views
+        ):
         self.add_route(route_name, pattern, factory=factory_class)
         for view_kw in views:
             self.add_view(view=view_class, route_name=route_name, **view_kw)
 
-    # Import/export routes
-    # * "GET" (?)
-    # - Ação: (?)
-    # - Rota: "{base}/_import"
-    # - Parâmetros: URI (?)
+    # NOTE: Import/export routes! By John Doe
     self.add_route('importation', '{base}/_import')
     self.add_view(view=_import, route_name='importation')
-
-    # * "GET" (?)
-    # - Ação: (?)
-    # - Rota: "{base}/_export"
-    # - Parâmetros: URI (?)
     self.add_route('exportation', '{base}/_export')
     self.add_view(view=_export, route_name='exportation')
 
-    # * "GET" (?)
-    # - Ação: (?)
-    # - Rota: "_txt_idx"
-    # - Parâmetros: URI (?)
-    # self.add_restful_routes('_txt_idx', TxtIdxContextFactory, view=TxtIdxCustomView)
-
-    # _txt_idx routes
+    # NOTE: _txt_idx routes! By John Doe
     add_custom_routes(
-        '_txt_idx_get_put_delete', '_txt_idx/{nm_idx}', 
-        TxtIdxContextFactory, TxtIdxCustomView, 
+        '_txt_idx_get_put_delete', 
+        '_txt_idx/{nm_idx}', 
+        TxtIdxContextFactory, 
+        TxtIdxCustomView, 
         [
             {
-                'attr':'get_member', 'request_method':'GET', 
+                'attr': 'get_member', 
+                'request_method': 'GET', 
                 'permission': 'view'
             }, 
             {
-                'attr':'update_member', 'request_method':'PUT', 
+                'attr': 'update_member', 
+                'request_method': 'PUT', 
                 'permission': 'edit'
             }, 
             {
-                'attr':'delete_member', 'request_method':'DELETE', 
+                'attr': 'delete_member', 
+                'request_method': 'DELETE', 
                 'permission': 'delete'
-            } 
-        ])
-
-    add_custom_routes(
-        '_txt_idx_post', '_txt_idx', 
-        TxtIdxContextFactory, TxtIdxCustomView, 
-        [
-            {
-                'attr':'create_member', 'request_method':'POST', 
-                'permission': 'create'
             }
-        ])
-
-    # Index error routes
-    # * "GET" (?)
-    # - Ação: (?)
-    # - Rota: "_index_error"
-    # - Parâmetros: URI (?)
-    self.add_restful_routes('_index_error', IndexErrorContextFactory, view=IndexErrorCustomView)
-
-    add_custom_routes('index_error', '_index_error', IndexErrorContextFactory, IndexErrorCustomView, [
-        # * "DELETE"
-        # - Ação: (?)
-        # - Rota: "_index_error"
-        # - Parâmetros: URI, form
-        {'attr': 'delete_collection', 'request_method': 'DELETE'},
-    ])
-
-    # Command routes
-    # * "GET" (?)
-    # - Ação: (?)
-    # - Rota: "_command/{command}"
-    # - Parâmetros: URI (?)
-    self.add_route('command', '_command/{command}')
-
-    self.add_view(view=CommandCustomView, route_name='command',
-        # * "POST"
-        # - Ação: (?)
-        # - Rota: "_command/{command}"
-        # - Parâmetros: URI, form
-        **{'attr': 'execute', 'request_method': 'POST'}
+        ]
     )
 
-    # ES routes
-    add_custom_routes('elasticsearch', '{base}/es{path:.*}', ESContextFactory, ESCustomView, [
-        # * "GET"
-        # - Ação: (?)
-        # - Rota: "{base}/es{path:.*}"
-        # - Parâmetros: URI
-        {'attr': 'get_interface', 'request_method': 'GET'},
-        # * "POST"
-        # - Ação: (?)
-        # - Rota: "{base}/es{path:.*}"
-        # - Parâmetros: URI, form
-        {'attr': 'post_interface', 'request_method': 'POST'},
-        # * "DELETE"
-        # - Ação: (?)
-        # - Rota: "{base}/es{path:.*}"
-        # - Parâmetros: URI, form
-        {'attr': 'delete_interface', 'request_method': 'DELETE'}
-    ])
+    add_custom_routes(
+        '_txt_idx_post', 
+        '_txt_idx', 
+        TxtIdxContextFactory, 
+        TxtIdxCustomView, 
+        [
+            {
+                'attr':'create_member', 
+                'request_method':'POST', 
+                'permission': 'create'
+            }
+        ]
+    )
+
+    # NOTE: Index error routes! By John Doe
+    self.add_restful_routes(
+        '_index_error', 
+        IndexErrorContextFactory, 
+        view=IndexErrorCustomView
+    )
+
+    add_custom_routes(
+        'index_error', 
+        '_index_error', 
+        IndexErrorContextFactory, 
+        IndexErrorCustomView, 
+        [
+            {
+                'attr': 'delete_collection', 
+                'request_method': 'DELETE'
+            }
+        ]
+    )
+
+    # NOTE: Command routes! By John Doe
+    self.add_route('command', '_command/{command}')
+
+    self.add_view(
+        view=CommandCustomView, 
+        route_name='command', 
+        **{
+            'attr': 'execute', 
+            'request_method': 'POST'
+        }
+    )
+
+    # NOTE: ES routes! By John Doe
+    add_custom_routes(
+        'elasticsearch', 
+        '{base}/es{path:.*}', 
+        ESContextFactory, 
+        ESCustomView, 
+        [
+            {
+                'attr': 'get_interface', 
+                'request_method': 'GET'
+            }, 
+            {
+                'attr': 'post_interface', 
+                'request_method': 'POST'
+            }, 
+            {
+                'attr': 'delete_interface', 
+                'request_method': 'DELETE'
+            }
+        ]
+    )
 
     # NOTE: ES routes (lbes - simplified)! By John Doe
     from ..views.lbes import LBSearch
 
-    self.add_route('lbes', '{base}/lbes{path:.*}', request_method='POST')
-    self.add_view(view=LBSearch, route_name='lbes', request_method='POST',
-        header='Content-Type:application/json', renderer='json')
-
+    self.add_route(
+        'lbes', 
+        '{base}/lbes{path:.*}', 
+        request_method='POST'
+    )
+    self.add_view(
+        view=LBSearch, 
+        route_name='lbes', 
+        request_method='POST', 
+        header='Content-Type:application/json', 
+        renderer='json'
+    )
     self.add_directive('add_restful_base_routes', add_restful_base_routes)
     self.add_static_view('static', 'static', cache_max_age=3600)
 
     # NOTE: Documentation routes! By John Doe
-    add_custom_routes('api_docs', 'api-docs', DocsContextFactory, DocsCustomView, [
-        # * "GET"
-        # - Ação: (?)
-        # - Rota: "api-docs"
-        # - Parâmetros: URI
-        {'attr': 'api_docs', 'request_method': 'GET', 'renderer': 'json'},
-    ])
+    add_custom_routes(
+        'api_docs', 
+        'api-docs', 
+        DocsContextFactory, 
+        DocsCustomView, 
+        [
+            {
+                'attr': 'api_docs', 
+                'request_method': 'GET', 
+                'renderer': 'json'
+            }
+        ]
+    )
 
-    add_custom_routes('base_docs', 'api-docs/{x:.*}', DocsContextFactory, DocsCustomView, [
-        # * "GET"
-        # - Ação: (?)
-        # - Rota: "api-docs/{x:.*}"
-        # - Parâmetros: URI
-        {'attr': 'api_docs', 'request_method': 'GET', 'renderer': 'json'},
-    ])
+    add_custom_routes(
+        'base_docs', 
+        'api-docs/{x:.*}', 
+        DocsContextFactory, 
+        DocsCustomView, 
+        [
+            {
+                'attr': 'api_docs', 
+                'request_method': 'GET', 
+                'renderer': 'json'
+            }
+        ]
+    )
 
-    #----------------#
-    # Authentication # 
-    #----------------#
+    # NOTE: Authentication! By John Doe
 
-    add_custom_routes('authentication', 'user/login', UserContextFactory, UserView, [
-        # * "POST"
-        # - Ação: (?)
-        # - Rota: "user/login"
-        # - Parâmetros: URI, form
-        {'attr': 'authenticate', 'request_method': 'POST'},
-    ])
-
-    add_custom_routes('unauthentication', 'user/logout', UserContextFactory, UserView, [
-        # * "POST"
-        # - Ação: (?)
-        # - Rota: "user/logout"
-        # - Parâmetros: URI, form
-        {'attr': 'unauthenticate', 'request_method': 'POST'},
-    ])
-
-    # * "GET" (?)
-    # - Ação: (?)
-    # - Rota: "user"
-    # - Parâmetros: URI (?)
+    add_custom_routes(
+        'authentication', 
+        'user/login', 
+        UserContextFactory, 
+        UserView, 
+        [
+            {
+                'attr': 'authenticate', 
+                'request_method': 'POST'
+            }
+        ]
+    )
+    add_custom_routes(
+        'unauthentication', 
+        'user/logout', 
+        UserContextFactory, 
+        UserView, 
+        [
+            {
+                'attr': 'unauthenticate', 
+                'request_method': 'POST'
+            }
+        ]
+    )
     self.add_restful_routes('user', UserContextFactory, view=UserView)
 
-    #-----------------#
-    # Document Routes # 
-    #-----------------#
+    # NOTE: Document Routes! John Doe
 
     # NOTE: Route for full document (with document text)! John Doe
-    add_custom_routes('full_document', '{base}/doc/{id:\d+}/full', DocumentContextFactory, DocumentCustomView, [
-        # * "GET"
-        # - Ação: (?)
-        # - Rota: "{base}/doc/{id:\d+}/full"
-        # - Parâmetros: URI
-        {'attr': 'full_document', 'request_method':'GET', 'permission': 'view'}
-    ])
+    add_custom_routes(
+        'full_document', 
+        '{base}/doc/{id:\d+}/full', 
+        DocumentContextFactory, 
+        DocumentCustomView, 
+        [
+            {
+                'attr': 'full_document', 
+                'request_method': 'GET', 
+                'permission': 'view'
+            }
+        ]
+    )
 
-    # Restful routes for document path
-    add_custom_routes('path', '{base}/doc/{id:\d+}/{path:.*}', DocumentContextFactory, DocumentCustomView, [
-        # * "GET"
-        # - Ação: (?)
-        # - Rota: "{base}/doc/{id:\d+}/{path:.*}"
-        # - Parâmetros: URI
-        {'attr':'get_path', 'request_method':'GET', 'permission': 'view'},
-        # * "POST"
-        # - Ação: (?)
-        # - Rota: "{base}/doc/{id:\d+}/{path:.*}"
-        # - Parâmetros: URI, form
-        {'attr':'set_path', 'request_method':'POST', 'permission': 'create'},
-        # * "PUT"
-        # - Ação: (?)
-        # - Rota: "{base}/doc/{id:\d+}/{path:.*}"
-        # - Parâmetros: URI, form
-        {'attr':'put_path', 'request_method':'PUT', 'permission': 'edit'},
-        # * "PATCH"
-        # - Ação: (?)
-        # - Rota: "{base}/doc/{id:\d+}/{path:.*}"
-        # - Parâmetros: URI, form
-        {'attr':'patch_path', 'request_method':'PATCH', 'permission': 'edit'},
-        # * "DELETE"
-        # - Ação: (?)
-        # - Rota: "{base}/doc/{id:\d+}/{path:.*}"
-        # - Parâmetros: URI, form
-        {'attr':'delete_path', 'request_method':'DELETE', 'permission': 'delete'}
-    ])
+    # NOTE: Restful routes for document path! By John Doe
+    add_custom_routes(
+        'path', 
+        '{base}/doc/{id:\d+}/{path:.*}', 
+        DocumentContextFactory, 
+        DocumentCustomView, 
+        [
+            {
+                'attr': 'get_path', 
+                'request_method': 'GET', 
+                'permission': 'view'
+            }, 
+            {
+                'attr': 'set_path', 
+                'request_method': 'POST', 
+                'permission': 'create'
+            }, 
+            {
+                'attr': 'put_path', 
+                'request_method': 'PUT', 
+                'permission': 'edit'
+            }, 
+            {
+                'attr': 'patch_path', 
+                'request_method': 'PATCH', 
+                'permission': 'edit'
+            }, 
+            {
+                'attr': 'delete_path', 
+                'request_method': 'DELETE', 
+                'permission': 'delete'
+            }
+        ]
+    )
 
-    #-----------------#
-    # Document Routes #
-    #-----------------#
+    # NOTE: Document Routes! By John Doe
 
-    # Obter texto do registro do "tipo file".
-    # * "GET" (?)
-    # - Ação: (?)
-    # - Rota: "{base}/file/{id}/text"
-    # - Parâmetros: URI (?)
+    # NOTE: Obter texto do registro do "tipo file"! By John Doe
     self.add_route('text', '{base}/file/{id}/text')
 
     # NOTE: Obter itens de grupos (monovalorados/multivalorados) de registro
     # do "tipo doc"! By John Doe
-    add_custom_routes('get_doc_column', '{base}/file/{id}/{path:.*}',
-        FileContextFactory, FileCustomView, [
-        # * "GET"
-        # - Ação: (?)
-        # - Rota: "{base}/file/{id}/{path:.*}"
-        # - Parâmetros: URI
-        {'attr':'get_path', 'request_method':'GET', 'permission': 'view'},
-        # * "POST"
-        # - Ação: (?)
-        # - Rota: "{base}/file/{id}/{path:.*}"
-        # - Parâmetros: URI, form
-        {'attr':'create_path', 'request_method':'POST','permission':'create'},
-        # * "PUT"
-        # - Ação: (?)
-        # - Rota: "{base}/file/{id}/{path:.*}"
-        # - Parâmetros: URI, form
-        {'attr':'update_path', 'request_method':'PUT', 'permission': 'edit'},
-        # * "DELETE"
-        # - Ação: (?)
-        # - Rota: "{base}/file/{id}/{path:.*}"
-        # - Parâmetros: URI, form
-        {'attr':'delete_path', 'request_method':'DELETE', 'permission': 'delete'}
-    ])
+    add_custom_routes(
+        'get_doc_column', 
+        '{base}/file/{id}/{path:.*}', 
+        FileContextFactory, 
+        FileCustomView, 
+        [
+            {
+                'attr': 'get_path', 
+                'request_method': 'GET', 
+                'permission': 'view'
+            }, 
+            {
+                'attr': 'create_path', 
+                'request_method': 'POST', 
+                'permission': 'create'
+            }, 
+            {
+                'attr': 'update_path', 
+                'request_method': 'PUT', 
+                'permission': 'edit'
+            }, 
+            {
+                'attr': 'delete_path', 
+                'request_method': 'DELETE', 
+                'permission': 'delete'
+            }
+        ]
+    )
 
-    #-------------#
-    # Base Routes # 
-    #-------------#
+    # NOTE: Base Routes! By John Doe
 
-    # Restful routes for bases.
+    # NOTE: Restful routes for bases! By John Doe
     self.add_restful_base_routes()
 
-    # Restful routes for base documents.
-    # * "GET" (?)
-    # - Ação: (?)
-    # - Rota: "{base}/doc"
-    # - Parâmetros: URI (?)
-    self.add_restful_routes('{base}/doc', DocumentContextFactory, view=DocumentCustomView)
+    # NOTE: Restful routes for base documents! By John Doe
+    self.add_restful_routes(
+        '{base}/doc', 
+        DocumentContextFactory, 
+        view=DocumentCustomView
+    )
 
-    # PATCH route for documents
-    add_custom_routes('patch_doc', '{base}/doc/{id}', DocumentContextFactory, DocumentCustomView, [
-        # * "PATCH"
-        # - Ação: (?)
-        # - Rota: "{base}/doc"
-        # - Parâmetros: form
-        {'attr': 'patch_member', 'request_method': 'PATCH', 'permission': 'edit'}
-    ])
+    # NOTE: PATCH route for documents! By John Doe
+    add_custom_routes(
+        'patch_doc', 
+        '{base}/doc/{id}', 
+        DocumentContextFactory, 
+        DocumentCustomView, 
+        [
+            {
+                'attr': 'patch_member', 
+                'request_method': 'PATCH', 
+                'permission': 'edit'
+            }
+        ]
+    )
 
-    # Restful routes for documents collection
-    add_custom_routes('document_collection', '{base}/doc', DocumentContextFactory, DocumentCustomView, [
-        # * "PUT"
-        # - Ação: (?)
-        # - Rota: "{base}/doc"
-        # - Parâmetros: form
-        {'attr':'update_collection', 'request_method': 'PUT', 'permission': 'edit'},
-        # * "PATCH"
-        # - Ação: (?)
-        # - Rota: "{base}/doc"
-        # - Parâmetros: form
-        {'attr':'patch_collection', 'request_method': 'PATCH', 'permission': 'edit'},
-        # * "DELETE"
-        # - Ação: (?)
-        # - Rota: "{base}/doc"
-        # - Parâmetros: form
-        {'attr':'delete_collection', 'request_method': 'DELETE', 'permission': 'delete'}
-    ])
+    # NOTE: Restful routes for documents collection! By John Doe
+    add_custom_routes(
+        'document_collection', 
+        '{base}/doc', 
+        DocumentContextFactory, 
+        DocumentCustomView, 
+        [
+            {
+                'attr': 'update_collection', 
+                'request_method': 'PUT', 
+                'permission': 'edit'
+            }, 
+            {
+                'attr': 'patch_collection', 
+                'request_method': 'PATCH', 
+                'permission': 'edit'
+            }, 
+            {
+                'attr': 'delete_collection', 
+                'request_method': 'DELETE', 
+                'permission': 'delete'
+            }
+        ]
+    )
 
-    # Restful routes for base files.
-    # * "GET" (?)
-    # - Ação: (?)
-    # - Rota: "{base}/file"
-    # - Parâmetros: URI (?)
-    self.add_restful_routes('{base}/file', FileContextFactory, view=FileCustomView)
+    # NOTE: Restful routes for base files! By John Doe
+    self.add_restful_routes(
+        '{base}/file', 
+        FileContextFactory, 
+        view=FileCustomView
+    )
 
-    # Restful routes for files collection.
-    add_custom_routes('file_collection', '{base}/file', FileContextFactory, FileCustomView, [
-        # * "PUT"
-        # - Ação: (?)
-        # - Rota: "{base}/file"
-        # - Parâmetros: form
-        {'attr':'update_collection', 'request_method': 'PUT', 'permission': 'edit'},
-        # * "DELETE"
-        # - Ação: (?)
-        # - Rota: "{base}/file"
-        # - Parâmetros: form
-        {'attr':'delete_collection', 'request_method': 'DELETE', 'permission': 'delete'}
-    ])
+    # NOTE: Restful routes for files collection! By John Doe
+    add_custom_routes(
+        'file_collection', 
+        '{base}/file', 
+        FileContextFactory, 
+        FileCustomView, 
+        [
+            {
+                'attr': 'update_collection', 
+                'request_method': 'PUT', 
+                'permission': 'edit'
+            }, 
+            {
+                'attr': 'delete_collection', 
+                'request_method': 'DELETE', 
+                'permission': 'delete'
+            }
+        ]
+    )
 
-    # Get specific column route.
-    add_custom_routes('get_base_column', '{base}/{column:.*}', BaseContextFactory, BaseCustomView, [
-        # * "GET"
-        # - Ação: (?)
-        # - Rota: "{base}/{column:.*}"
-        # - Parâmetros: URI
-        {'attr':'get_column', 'request_method':'GET', 'permission': 'view'},
-        #{'attr':'set_base_column', 'request_method':'POST', 'permission':'create'},
-        {'attr':'put_column', 'request_method':'PUT', 'permission': 'edit'},
-        #{'attr':'delete_path', 'request_method':'DELETE', 'permission': 'delete'},
-    ])
+    # NOTE: Get specific column route! By John Doe
+    add_custom_routes(
+        'get_base_column', 
+        '{base}/{column:.*}', 
+        BaseContextFactory, 
+        BaseCustomView, 
+        [
+            {
+                'attr': 'get_column', 
+                'request_method': 'GET', 
+                'permission': 'view'
+            }, 
+            {
+                'attr': 'put_column', 
+                'request_method': 'PUT', 
+                'permission': 'edit'
+            }
+        ]
+    )
 
-    #-------------#
-    # RAD routes  #
-    #-------------#
+    # NOTE: RAD routes! By John Doe
 
     from ..views.lbrad import dispatch_msg
+
     self.add_route('lbrad', '/lbrad', request_method='POST')
-    self.add_view(view=dispatch_msg, route_name='lbrad', request_method='POST', renderer='json')
+    self.add_view(
+        view=dispatch_msg, 
+        route_name='lbrad', 
+        request_method='POST', 
+        renderer='json'
+    )
 
     from ..views.lbrad import dispatch_msg_multipart
-    self.add_view(view=dispatch_msg_multipart, route_name='lbrad', 
-        request_method='POST', header='Content-Type:multipart/form-data', renderer='json')
 
-    #-------------#
-    # SQL routes  #
-    #-------------#
+    self.add_view(
+        view=dispatch_msg_multipart, 
+        route_name='lbrad', 
+        request_method='POST', 
+        header='Content-Type:multipart/form-data', 
+        renderer='json'
+    )
+
+    # NOTE: SQL routes! By John Doe
 
     from ..views.sql import execute_sql
     from ..model.context import CustomContextFactory
-    self.add_route('sql', '/sql', request_method='POST')
-    self.add_view(view=execute_sql, route_name='sql', request_method='POST', 
-        header='Content-Type:application/json', renderer='json')
 
-# self <- <pyramid.self.Configurator object>
+    self.add_route('sql', '/sql', request_method='POST')
+    self.add_view(
+        view=execute_sql, 
+        route_name='sql', 
+        request_method='POST', 
+        header='Content-Type:application/json', 
+        renderer='json'
+    )
+
 def add_restful_base_routes(self, name='base'):
 
     from ..views.base import BaseCustomView
     from ..model.context.base import BaseContextFactory
 
-    view = BaseCustomView
-    factory = BaseContextFactory
-
-    route_kw = None
-    view_kw = None
-
-    route_kw = {} if route_kw is None else route_kw
-    view_kw = {} if view_kw is None else view_kw
+    view=BaseCustomView
+    factory=BaseContextFactory
+    route_kw=None
+    view_kw=None
+    route_kw={} if route_kw is None else route_kw
+    view_kw={} if view_kw is None else view_kw
     view_kw.setdefault('http_cache', 0)
-
-    subs = dict(
-        name=name,
-        slug=name.replace('_', '-'),
-        base='{base}',
-        renderer='{renderer}')
+    subs=dict(
+        name=name, 
+        slug=name.replace('_', '-'), 
+        base='{base}', 
+        renderer='{renderer}'
+    )
 
     def add_route(name, pattern, attr, method, **view_kw):
-        name = name.format(**subs)
-        pattern = pattern.format(**subs)
+        name=name.format(**subs)
+        pattern=pattern.format(**subs)
         self.add_route(
-            name, pattern, factory=factory,
-            request_method=method, **route_kw)
+            name, 
+            pattern, 
+            factory=factory, 
+            request_method=method, 
+            **route_kw
+        )
         self.add_view(
-            view=view, attr=attr, route_name=name,
-            request_method=method, **view_kw)
+            view=view, 
+            attr=attr, 
+            route_name=name, 
+            request_method=method, 
+            **view_kw
+        )
 
-    # Get collection
-    # * "GET"
-    # - Ação: (?)
-    # - Rota: "/"
-    # - Parâmetros: URI
+    # NOTE: Get collection! By John Doe
     add_route(
-        'get_{name}_collection', '/', 'get_collection', 'GET', permission='view')
+        'get_{name}_collection', 
+        '/', 
+        'get_collection', 
+        'GET', 
+        permission='view'
+    )
 
-    # Get member
-    # * "GET"
-    # - Ação: (?)
-    # - Rota: "/{base}.{renderer}"
-    # - Parâmetros: URI
+    # NOTE: Get member! By John Doe
     add_route(
-        'get_{name}_rendered', '/{base}.{renderer}', 'get_member', 'GET', permission='view')
+        'get_{name}_rendered', 
+        '/{base}.{renderer}', 
+        'get_member', 
+        'GET', 
+        permission='view'
+    )
 
-    # * "GET"
-    # - Ação: (?)
-    # - Rota: "/{base}"
-    # - Parâmetros: URI
-    add_route('get_{name}', '/{base}', 'get_member', 'GET', permission='view')
+    add_route(
+        'get_{name}', 
+        '/{base}', 
+        'get_member', 
+        'GET', 
+        permission='view'
+    )
 
-    # Create member
-    # * "POST"
-    # - Ação: (?)
-    # - Rota: "/"
-    # - Parâmetros: URI, form
-    add_route('create_{name}', '/', 'create_member', 'POST', permission='create')
+    # NOTE: Create member! By John Doe
+    add_route(
+        'create_{name}', 
+        '/', 
+        'create_member', 
+        'POST', 
+        permission='create'
+    )
 
-    # Update member
-    # * "PUT"
-    # - Ação: (?)
-    # - Rota: "/{base}"
-    # - Parâmetros: URI, form
-    add_route('update_{name}', '/{base}', 'update_member', 'PUT', permission='edit')
+    # NOTE: Update member! By John Doe
+    add_route(
+        'update_{name}', 
+        '/{base}', 
+        'update_member', 
+        'PUT', 
+        permission='edit'
+    )
 
-    # Delete member
-    # * "DELETE"
-    # - Ação: (?)
-    # - Rota: "/{base}"
-    # - Parâmetros: URI, form
-    add_route('delete_{name}', '/{base}', 'delete_member', 'DELETE', permission='delete')
+    # NOTE: Delete member! By John Doe
+    add_route(
+        'delete_{name}', 
+        '/{base}', 
+        'delete_member', 
+        'DELETE', 
+        permission='delete'
+    )
 
-# Esse método faz chamadas p/ o método "add_route()". O objetivo é
-# permitir adicionar rotas de forma dinâmica! Também serve para
-# "concentrar" a criação de várias rotas de forma simples!
-# self <- <pyramid.config.Configurator object>
-def add_restful_routes(self, name, factory, view=RESTfulView,
-                       route_kw=None, view_kw=None):
-    """Add a set of RESTful routes for an entity.
+# NOTE: Esse método faz chamadas p/ o método "add_route()". O objetivo é
+# permitir adicionar rotas de forma dinâmica! Também serve para "concentrar" a
+# criação de várias rotas de forma simples! By John Doe
+def add_restful_routes(
+        self, 
+        name, 
+        factory, 
+        view=RESTfulView, 
+        route_kw=None, 
+        view_kw=None
+    ):
+    """ Add a set of RESTful routes for an entity.
 
     URL patterns for an entity are mapped to a set of views encapsulated in
     a view class. The view class interacts with the model through a context
@@ -484,111 +578,114 @@ def add_restful_routes(self, name, factory, view=RESTfulView,
     all `add_route` and `add_view` calls. Pass ``route_kw`` and/or ``view_kw``
     as dictionaries to do so."""
 
-    route_kw = {} if route_kw is None else route_kw
-    view_kw = {} if view_kw is None else view_kw
+    route_kw={} if route_kw is None else route_kw
+    view_kw={} if view_kw is None else view_kw
     view_kw.setdefault('http_cache', 0)
-
-    subs = dict(
-        name=name,
-        #slug=name.replace('_', '-'),
-        slug=name,
-        #id='{id:\d+}',
-        id='{id}',
-        renderer='{renderer}')
-
-    perms = {
-        'GET': 'view',
-        'POST': 'create',
-        'PUT': 'edit',
+    subs=dict(
+        name=name, 
+        slug=name, 
+        id='{id}', 
+        renderer='{renderer}'
+    )
+    perms={
+        'GET': 'view', 
+        'POST': 'create', 
+        'PUT': 'edit', 
         'DELETE': 'delete'
     }
 
     def add_route(name, pattern, attr, method):
-        name = name.format(**subs)
-        pattern = pattern.format(**subs)
-
+        name=name.format(**subs)
+        pattern=pattern.format(**subs)
         self.add_route(
-            name, pattern, factory=factory,
-            request_method=method, **route_kw)
+            name, 
+            pattern, 
+            factory=factory, 
+            request_method=method, 
+            **route_kw
+        )
         if name == 'create_user':
-            permission = None
+            permission=None
         else:
-            permission = perms[method]
+            permission=perms[method]
+
         self.add_view(
-            view=view, attr=attr, route_name=name,
-            #request_method=method, **view_kw)
-            request_method=method, permission=permission)
+            view=view, 
+            attr=attr, 
+            route_name=name, 
+            request_method=method, 
+            permission=permission
+        )
 
-    # Get collection
-    # * "GET"
-    # - Ação: (?)
-    # - Rota: "/{slug}.{renderer}"
-    # - Parâmetros: URI
+    # NOTE: Get collection! By John Doe
     add_route(
-        'get_{name}_collection_rendered', '/{slug}.{renderer}',
-        'get_collection', 'GET')
+        'get_{name}_collection_rendered', 
+        '/{slug}.{renderer}', 
+        'get_collection', 
+        'GET'
+    )
 
-    # Cached routes
-    # * "GET"
-    # - Ação: (?)
-    # - Rota: "/cached/{slug}"
-    # - Parâmetros: URI
+    # NOTE: Cached routes! By John Doe
     add_route(
-        'get_{name}_collection_cached', '/cached/{slug}', 'get_collection_cached', 'GET')
+        'get_{name}_collection_cached', 
+        '/cached/{slug}', 
+        'get_collection_cached', 
+        'GET'
+    )
 
-    # * "GET"
-    # - Ação: (?)
-    # - Rota: "/cached/{slug}/{id}"
-    # - Parâmetros: URI
-    add_route('get_{name}_cached', '/cached/{slug}/{id}', 'get_member_cached', 'GET')
-
-    # Regular routes
-    # * "GET"
-    # - Ação: (?)
-    # - Rota: "/{slug}"
-    # - Parâmetros: URI
     add_route(
-        'get_{name}_collection', '/{slug}', 'get_collection', 'GET')
+        'get_{name}_cached', 
+        '/cached/{slug}/{id}', 
+        'get_member_cached', 
+        'GET'
+    )
 
-    # Get member
-    # * "GET"
-    # - Ação: (?)
-    # - Rota: "/{slug}/{id}.{renderer}"
-    # - Parâmetros: URI
+    # NOTE: Regular routes! By John Doe
     add_route(
-        'get_{name}_rendered', '/{slug}/{id}.{renderer}', 'get_member', 'GET')
+        'get_{name}_collection', 
+        '/{slug}', 
+        'get_collection', 
+        'GET'
+    )
 
-    # * "GET"
-    # - Ação: (?)
-    # - Rota: "/{slug}/{id}"
-    # - Parâmetros: URI
-    add_route('get_{name}', '/{slug}/{id}', 'get_member', 'GET')
+    # NOTE: Get member! By John Doe
+    add_route(
+        'get_{name}_rendered', 
+        '/{slug}/{id}.{renderer}', 
+        'get_member', 
+        'GET'
+    )
 
-    # Create member
-    # * "POST"
-    # - Ação: (?)
-    # - Rota: "/{slug}"
-    # - Parâmetros: URI, form
-    add_route('create_{name}', '/{slug}', 'create_member', 'POST')
+    add_route(
+        'get_{name}', 
+        '/{slug}/{id}', 
+        'get_member', 
+        'GET'
+    )
 
-    # Update member
-    # * "PUT"
-    # - Ação: (?)
-    # - Rota: "/{slug}/{id}"
-    # - Parâmetros: URI, form
-    add_route('update_{name}', '/{slug}/{id}', 'update_member', 'PUT')
+    # NOTE: Create member! By John Doe
+    add_route(
+        'create_{name}', 
+        '/{slug}', 
+        'create_member', 
+        'POST'
+    )
 
-    # {slug} e {name} recebem o que vai no parâmetro "name" da chamada
-    # do método! Ex.: Se name recebe "{base}/doc"...
-    # str(name) -> delete_{name}
-    # str(pattern) -> /{slug}/{id}
-    # str(name.format(**subs)) -> delete_{base}/doc
-    # str(pattern.format(**subs)) -> /{base}/doc/{id}
+    # NOTE: Update member! By John Doe
+    add_route(
+        'update_{name}', 
+        '/{slug}/{id}', 
+        'update_member', 
+        'PUT'
+    )
 
-    # Delete member
-    # * "DELETE"
-    # - Ação: Deletar um item usando passando a sua ID!
-    # - Rota: "/{slug}/{id}"
-    # - Parâmetros: URI, form
-    add_route('delete_{name}', '/{slug}/{id}', 'delete_member', 'DELETE')
+    # NOTE I: {slug} e {name} recebem o que vai no parâmetro "name" da chamada!
+    # By John Doe
 
+    # NOTE II: Delete member! By John Doe
+    add_route(
+        'delete_{name}', 
+        '/{slug}/{id}', 
+        'delete_member', 
+        'DELETE'
+    )

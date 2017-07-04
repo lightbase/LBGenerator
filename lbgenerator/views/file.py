@@ -54,9 +54,11 @@ class FileCustomView(CustomView):
         except:
             pass
 
-        return Response(filemask,
-                        content_type='application/json',
-                        status=201)
+        return Response(
+            filemask, 
+            content_type='application/json', 
+            status=201
+        )
 
     def update_member(self):
 
@@ -140,10 +142,19 @@ class FileCustomView(CustomView):
     ]
 
     def get_path(self):
-
         id_file = self.request.matchdict['id']
         path = self.request.matchdict['path']
         if path not in self.__paths__:
+
+            # NOTE: Tentar fechar a conexão de qualquer forma!
+            # -> Na criação da conexão "coautocommit=True"!
+            # By Questor
+            try:
+                if self.context.session.is_active:
+                    self.context.session.close()
+            except:
+                pass
+
             raise Exception('Not a valid path')
 
         if path == 'download':
@@ -161,8 +172,9 @@ class FileCustomView(CustomView):
 
         # NOTE: Get raw mapped entity object! By John Doe
         column = self.context.entity.__table__.c.get(path)
-        member = self.context.session.query(column).filter(self.context.entity \
-                                                           .id_file == id_file).first()
+        member = self.context.session.query(column).filter(
+            self.context.entity.id_file == id_file
+        ).first()
 
         # NOTE: Tentar fechar a conexão de qualquer forma!
         # -> Na criação da conexão "coautocommit=True"!
@@ -217,7 +229,7 @@ class FileCustomView(CustomView):
         except:
             pass
 
-        raise NotImplementedError('Create file path operation is not possible')
+        raise NotImplementedError('NOT IMPLEMENTED!')
 
     def update_path(self):
 
@@ -230,7 +242,7 @@ class FileCustomView(CustomView):
         except:
             pass
 
-        raise NotImplementedError('NOT IMPLEMENTED')
+        raise NotImplementedError('NOT IMPLEMENTED!')
 
     def delete_path(self, close_session=True):
         if close_session:
@@ -244,5 +256,4 @@ class FileCustomView(CustomView):
             except:
                 pass
 
-        raise NotImplementedError('Delete file path operation is not possible')
-
+        raise NotImplementedError('NOT IMPLEMENTED!')
