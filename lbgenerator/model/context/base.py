@@ -53,12 +53,16 @@ class BaseContextFactory(CustomContextFactory):
         self.single_member=True
         member=self.session.query(self.entity)\
             .filter_by(name=base).first()
+
+ 
+
         if get_base:
             try:
                 if member.idx_exp:
                     if not member.idx_exp_url and config.ES_DEF_URL:
+                        member.idx_exp=True
                         member.idx_exp_url=config.ES_DEF_URL + "/" + member.\
-                                name + "/" + member.name
+                            name + "/" + member.name
 
                         # NOTE: A meu ver esse processo de converter de "json"
                         # para "object" e depois no sentido inverso tá tosco no
@@ -69,6 +73,7 @@ class BaseContextFactory(CustomContextFactory):
                         # essa! By Questor
 
                         json_in_base=json2base(member.struct)
+                        json_in_base.metadata.idx_exp=member.idx_exp
                         json_in_base.metadata.idx_exp_url=member.idx_exp_url
                         member.struct=base2json(json_in_base)
             except:
