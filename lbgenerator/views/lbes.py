@@ -10,6 +10,7 @@ from pyramid.httpexceptions import HTTPServiceUnavailable
 
 from ..model.context.es import ESContextFactory
 
+from .. import config
 
 class LBSearch:
     valid_fields = ['query', 'search_fields', 'return_fields', 'highlight',
@@ -96,6 +97,18 @@ class LBSearch:
             self._build_bool_query(dict_es_query, dict_request)
 
         base_url = self.context.get_base().metadata.idx_exp_url
+
+
+        try:
+            if self.context.get_base().metadata.idx_exp:
+                if not self.context.get_base().metadata.idx_exp_url and config.ES_DEF_URL:
+                    self.is_indexable = True
+                    base_url = config.ES_DEF_URL + "/" + self.context.get_base().metadata.name \
+                            + "/" + self.context.get_base().metadata.name
+
+        except:
+            pass
+
         if not base_url:
             return HTTPServiceUnavailable(body='This base is not indexed yet.')
 
