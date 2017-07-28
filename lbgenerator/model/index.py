@@ -44,14 +44,12 @@ class Index(TxtIdxContextFactory):
 
         self.is_indexable = self.base.metadata.idx_exp
         self.INDEX_URL = self.base.metadata.idx_exp_url
-
         try:
             if self.base.metadata.idx_exp:
                 if not self.base.metadata.idx_exp_url and config.ES_DEF_URL:
                     self.is_indexable = True
                     self.INDEX_URL = config.ES_DEF_URL + "/" + self.base.metadata.name \
                             + "/" + self.base.metadata.name
-
         except:
             pass
 

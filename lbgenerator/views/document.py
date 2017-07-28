@@ -354,8 +354,12 @@ class DocumentCustomView(CustomView):
         # NOTE: Update member! By John Doe
         alter_files = self.request.params.get('alter_files', True)
 
-        member = self.context.update_member(member, data, index=index,
-                                            alter_files=alter_files)
+        member = self.context.update_member(
+            member, 
+            data, 
+            index=index, 
+            alter_files=alter_files
+        )
 
         # NOTE: Now commits and closes session here instead of in the context - DCarv
         if close_session:

@@ -60,7 +60,6 @@ class DocsContextFactory():
             "method": "GET",
             "summary": "Recuperar estrutura da base.",
             "notes": "Retorna a estrutura da base.",
-            #"type": "Pet",
             "authorizations": {},
             "parameters": [
                 {

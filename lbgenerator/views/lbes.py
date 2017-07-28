@@ -103,7 +103,6 @@ class LBSearch:
                     self.is_indexable = True
                     base_url = config.ES_DEF_URL + "/" + self.context.get_base().metadata.name \
                             + "/" + self.context.get_base().metadata.name
-
         except:
             pass
 
