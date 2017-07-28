@@ -117,7 +117,6 @@ master=true
 # Spawn the specified number of workers/processes.
 # The RECOMMENDED value is 4 times the number of cores.
 # [int]
-# processes=8
 processes=<UWSGI_PROCESSES>
 
 # Run each worker in prethreaded mode with the specified number of threads. For
