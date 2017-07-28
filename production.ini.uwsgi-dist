@@ -1,16 +1,62 @@
+
+# -------------------------------
+# REFERENCE:
+# [bool] - Use boolean
+# [str] -- Use string
+# [int] -- Use integer
+# [MB] --- Representing Megabytes
+# [B] ---- Representing Bytes
+# [s] ---- Representing seconds
+# -------------------------------
+
 [app:lbgenerator]
 use=egg:LBGenerator
 
 ###
 # Persistence access configuration.
 ###
-sqlalchemy.url=<SQLALCHEMY_URL>
 
-sqlalchemy.max_overflow=<SQLA_POOL_SIZE>
+# URL to connect to the database via SQLAlchemy.
+# [str]
+sqlalchemy.url=<SQLA_URL>
+
+# The maximum overflow size of the pool. When the number of checked-out
+# connections reaches the size set in pool_size, additional connections will be
+# returned up to this limit.
+# RECOMMENDED to use at most 48% of the number of PostgreSQL connections.
+# [int]
+sqlalchemy.max_overflow=<SQLA_POOL_SIZE_MAX_OVERFLOW>
+
+# The size of the pool to be maintained, defaults to 5. This is the largest
+# number of connections that will be kept persistently in the pool.
+# RECOMMENDED to use at most 48% of the number of PostgreSQL connections.
+# [int]
 sqlalchemy.pool_size=<SQLA_POOL_SIZE>
+
 storage.tmp_dir=/tmp
-requests.timeout=1600
-lbindex_url=http://127.0.0.1:6543/
+
+# The HTTP request timed out.
+# RECOMMENDED to use a numeric value equivalent at most 44% of your server RAM in MB.
+# [int][s]
+requests.timeout=<REQ_TIMEOUT>
+
+# URL to connect to the LBI - LBIndex to inform changes in the structure of a
+# base.
+# [str]
+lbindex_url=<LBI_LBINDEX_URL>
+
+# URL to connect to the LBR - LBRelacional to inform changes in the data
+# structure.
+# [str]
+lbrelacional.url=http://127.0.0.1:8000/sqlapi
+
+# Base URL to ES - ElasticSearch. Will be used if "idx_exp" is true and
+# "idx_exp_url" is empty in a base "metadata". In this case "idx_exp_url" will
+# be returned with folowing model: "http://<es_def_url>/<base_name>/<base_name>".
+# "<base_name>" will be the ES index and the mapping respectively! Do not use
+# "/" at the end!
+# [str]
+es_def_url=<ES_ESDEF_URL>
 
 pyramid.reload_templates=true
 pyramid.debug_authorization=true
@@ -18,7 +64,6 @@ pyramid.debug_notfound=true
 pyramid.debug_routematch=true
 pyramid.default_locale_name=en
 mako.directories=lbgenerator:templates
-
 auth.enabled=0
 auth.include_ip=1
 auth.admin_user=admin
@@ -29,10 +74,24 @@ auth.admin_passwd=admin
 ###
 # Persistence access configuration.
 ###
-sqlalchemy.url=<SQLALCHEMY_URL>
 
-sqlalchemy.max_overflow=<SQLA_POOL_SIZE>
+# URL to connect to the database via SQLAlchemy.
+# [str]
+sqlalchemy.url=<SQLA_URL>
+
+# The maximum overflow size of the pool. When the number of checked-out
+# connections reaches the size set in pool_size, additional connections will be
+# returned up to this limit.
+# RECOMMENDED to use at most 48% of the number of PostgreSQL connections.
+# [int]
+sqlalchemy.max_overflow=<SQLA_POOL_SIZE_MAX_OVERFLOW>
+
+# The size of the pool to be maintained, defaults to 5. This is the largest
+# number of connections that will be kept persistently in the pool.
+# RECOMMENDED to use at most 48% of the number of PostgreSQL connections.
+# [int]
 sqlalchemy.pool_size=<SQLA_POOL_SIZE>
+
 script_location=db_versions
 
 ###
@@ -42,39 +101,138 @@ script_location=db_versions
 ###
 
 [uwsgi]
+
 # Bind to the specified UNIX/TCP socket using default protocol.
+# [str]
 socket=/tmp/lbg.sock
+
 # Allows the use of a paste deploy in emperor mode!
+# [str]
 paste=config:%p
+
 # Enable master process.
+# [bool]
 master=true
+
 # Spawn the specified number of workers/processes.
-processes=<PROCESSES_QTT>
-# Run each worker in prethreaded mode with the specified number of threads.
-threads=<THREADS_QTT>
+# The RECOMMENDED value is 4 times the number of cores.
+# [int]
+# processes=8
+processes=<UWSGI_PROCESSES>
+
+# Run each worker in prethreaded mode with the specified number of threads. For
+# now we do not recommend using threads with python applications.
+# [int]
+threads=1
+
 # PYTHONHOME/virtualenv.
-home=<VE32_PATH>
+# [str]
+home=/usr/local/lb/ve32
+
 # PYTHONHOME/virtualenv.
-virtualenv=<VE32_PATH>/
+# [str]
+virtualenv=/usr/local/lb/ve32/
+
 # Directory pythonpath.
-pythonpath=<VE32_PATH>/bin
+# [str]
+pythonpath=/usr/local/lb/ve32/bin
+
 # Log file name and path.
+# [str]
 logto=/var/log/lbg.log
+
 # Set logfile name after rotation.
+# [str]
 log-backupname=/var/log/lbg.log.old
+
 # Log requests with a 4xx response.
+# [bool]
 log-4xx=true
+
 # Log requests with a 5xx response.
+# [bool]
 log-5xx=true
+
 # Reopen log after reload.
+# [bool]
 log-reopen=true
-# 50MB.
+
+# Set maximum logfile size.
+# [int][B]
 log-maxsize=50000000
+
 # Prefix log entries with timestamp.
+# [bool]
 log-date=true
-# Avoids the error "502 bad gateway error" when we make big requests 
-# (set internal buffer size)!
+
+# Recommended range 16384~65535!
+# [int][B]
 buffer-size=65535
+
+# Load apps in each worker instead of the master. It does not load all
+# processes at the same time. Prevents race condition for configuration files.
+# [bool]
+lazy-apps=true
+
+# When a worker reaches this number it will get recycled.
+# [int]
+max-requests=150
+
+# Automatically remove unix socket and pidfiles on server exit. This is only
+# here for safety.
+# [bool]
+vacuum=true
+
+# It does not load all processes at the same time.
+# Details:
+# http://uwsgi-docs.readthedocs.io/en/latest/articles/SerializingAccept.html
+# [bool]
+thunder-lock=true
+
+# Every request that will take longer than the seconds specified in the
+# harakiri timeout will be dropped and the corresponding worker recycled.
+# RECOMMENDED to use a numeric value equivalent at most 44% of your server RAM
+# in MB.
+# [int][s]
+harakiri=<REQ_TIMEOUT>
+
+# Set the maximum amount of seconds to wait for a worker death during a
+# graceful reload.
+# [int][s]
+reload-mercy=8
+
+# Set the maximum time (in seconds) a worker can take to reload/shutdown.
+# [int][s]
+worker-reload-mercy=8
+
+# uWSGI will save to disk all HTTP body bigger than the limit specified.
+# RECOMMENDED to use 150% of total RAM.
+# [int][MB]
+post-buffering=<UWSGI_POST_BUFFERING>
+
+# Recycle a workers when its address space usage is over the limit specified.
+# RECOMMENDED to use 70% of total RAM.
+# [int][MB]
+reload-on-as=<UWSGI_RELOAD_ON_AS>
+
+# Works as reload-on-as but it control the physical unshared memory.
+# RECOMMENDED to use 65% of total RAM.
+# [int][MB]
+reload-on-rss=<UWSGI_RELOAD_ON_RSS>
+
+# Force the master to reload a worker if its address space is higher than
+# specified megabytes.
+# RECOMMENDED to use 85% of total RAM.
+# [int][MB]
+evil-reload-on-as=<UWSGI_EVIL_RELOAD_ON_AS>
+
+# Force the master to reload a worker if its rss memory is higher than
+# specified megabytes.
+# RECOMMENDED to use 75% of total RAM.
+# [int][MB]
+evil-reload-on-rss=<UWSGI_EVIL_RELOAD_ON_RSS>
+
+# TODO: uWSGI running as root, you can use --uid/--gid/--chroot options!
 
 ###
 # Pipeline Configuration
@@ -82,7 +240,7 @@ buffer-size=65535
 
 [filter:paste_prefix]
 use=egg:PasteDeploy#prefix
-prefix=/<APP_ROOT_F>
+prefix=/lbg
 
 [pipeline:main]
 pipeline=

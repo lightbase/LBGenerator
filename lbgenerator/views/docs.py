@@ -26,6 +26,16 @@ class DocsCustomView():
         response = Response(utils.object2json(documentation))
         response.headerlist.append(('Access-Control-Allow-Origin',
             'http://petstore.swagger.wordnik.com'))
+
+        # NOTE: Tentar fechar a conexão de qualquer forma!
+        # -> Na criação da conexão "coautocommit=True"!
+        # By Questor
+        try:
+            if self.context.session.is_active:
+                self.context.session.close()
+        except:
+            pass
+
         return response
 
     @property

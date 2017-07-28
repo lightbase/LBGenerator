@@ -19,6 +19,9 @@ auth.include_ip = 1
 auth.admin_user = admin
 auth.admin_passwd = admin
 
+# lbrelacional
+lbrelacional.url = http://127.0.0.1:8000/sqlapi
+
 # Beaker cache
 cache.regions = default_term, second, short_term, long_term
 cache.type = memory

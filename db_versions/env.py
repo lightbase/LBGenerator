@@ -28,6 +28,9 @@ def run_migrations_offline():
     context.configure(url=url, target_metadata=target_metadata)
 
     with context.begin_transaction():
+
+        # TODO: Não encontramos "run_migrations()" em nenhum local do código!
+        # By Questor
         context.run_migrations()
 
 def run_migrations_online():
@@ -42,7 +45,12 @@ def run_migrations_online():
 
     trans = connection.begin()
     try:
+
+        # TODO: Não encontramos "run_migrations()" em nenhum local do código!
+        # By Questor
         context.run_migrations()
+
+        trans.flush()
         trans.commit()
     except:
         trans.rollback()

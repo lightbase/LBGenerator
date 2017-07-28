@@ -345,3 +345,4 @@ class Lb_Txt_Idx(Base):
 # Table factory are the default columns used when query object by API.
 Lb_Txt_Idx.__table__.__factory__ = [Lb_Txt_Idx.__table__.c.id_idx,
                                 Lb_Txt_Idx.__table__.c.cfg_idx]
+

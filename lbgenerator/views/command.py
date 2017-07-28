@@ -1,13 +1,16 @@
 import os
-import socket
 import fcntl
+import socket
 import struct
-from ..model import BASES
+
 from .. import config
+from sqlalchemy import create_engine
 from pyramid.response import Response
 from liblightbase.lbutils import object2json
-from sqlalchemy import create_engine
+
+from ..model import BASES
 from ..model.context.file import FileContextFactory
+
 
 class CommandCustomView():
 
@@ -16,14 +19,26 @@ class CommandCustomView():
         self.request = request
 
     def execute(self):
-
         command = self.request.matchdict['command']
+
+        # NOTE: Tentar fechar a conexão de qualquer forma!
+        # -> Na criação da conexão "coautocommit=True"!
+        # By Questor
+        try:
+            if self.context.session.is_active:
+                self.context.session.close()
+        except:
+            pass
+
         return getattr(self, command)()
 
     def reset(self):
             BASES.bases = dict()
-            #comando mata toas as conexões com o banco de dados
+
+            # NOTE: Comando que mata todas as conexões com o banco de dados!
+            # By John Doe
             config.ENGINE.dispose()
+
             return Response('OK')
 
     def base_mem(self):
@@ -51,9 +66,8 @@ class CommandCustomView():
 def get_ip_address(ifname):
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     return socket.inet_ntoa(fcntl.ioctl(
-        s.fileno(),
-        0x8915,  # SIOCGIFADDR
+        s.fileno(), 
+        0x8915, # SIOCGIFADDR
         struct.pack('256s', ifname[:15])
     )[20:24])
-
 

@@ -2,17 +2,17 @@ import logging
 from threading import Thread
 from collections import Iterable
 
-from sqlalchemy.util import KeyedTuple
 from sqlalchemy import and_
 from sqlalchemy import insert
 from sqlalchemy import update
 from sqlalchemy import delete
+from sqlalchemy.util import KeyedTuple
 from sqlalchemy.orm.state import InstanceState
-
 from liblightbase.lbdoc.doctree import DocumentTree
+
 from ...lib import cache
-from . import CustomContextFactory
 from .. import file_entity
+from . import CustomContextFactory
 
 
 class FileContextFactory(CustomContextFactory):
@@ -25,20 +25,26 @@ class FileContextFactory(CustomContextFactory):
 
     def get_member(self, id):
         self.single_member = True
-        # We don't want to query hole file when searching ..
-        # So the bytes column will not be in query list this time.
+
+        # NOTE I: We don't want to query hole file when searching! By John Doe
+
+        # NOTE II: So the bytes column will not be in query list this time! By John Doe
         cols = self.entity.__table__.__factory__
+
         q = self.session.query(*cols).filter(self.entity\
             .__table__.c.id_file==id).all()
         return q or None
 
     def create_member(self, data):
-        # Create new coming files
+        # NOTE: Create new coming files! By John Doe
+
         member = self.entity(**data)
         self.session.add(member)
-        # Now commits and closes session in the view instead of here
+
+        # NOTE: Now commits and closes session in the view instead of here
         # flush() pushes operations to DB's buffer - DCarv
         self.session.flush()
+        self.session.commit()
 
         return member
 
@@ -94,19 +100,23 @@ class FileContextFactory(CustomContextFactory):
         so we've used this method to delete them.
         """
         if isinstance(id, int):
-            # Quando a operação DELETE envolve id_doc!
+            # NOTE: Quando a operação DELETE envolve id_doc! By John Doe
+
             stmt = delete(self.entity.__table__).where(
                 self.entity.__table__.c.id_doc == id)
         else:
-            # Quando a operação DELETE envolve id_file!
+            # NOTE: Quando a operação DELETE envolve id_file! By John Doe
+
             stmt = delete(self.entity.__table__).where(
                 self.entity.__table__.c.id_file == id)
 
         self.session.execute(stmt)
-        # Now commits and closes session in the view instead of here
+
+        # NOTE: Now commits and closes session in the view instead of here
         # flush() pushes operations to DB's buffer - DCarv
         self.session.flush()
 
-        # Clear cache
+        # NOTE: Clear cache! By John Doe
         cache.clear_collection_cache(self.base_name)
         return True
+

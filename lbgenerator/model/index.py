@@ -43,9 +43,19 @@ class Index(TxtIdxContextFactory):
         self.get_full_document = get_full_document
 
         self.is_indexable = self.base.metadata.idx_exp
-
         self.INDEX_URL = self.base.metadata.idx_exp_url
-        if self.is_indexable:
+
+        try:
+            if self.base.metadata.idx_exp:
+                if not self.base.metadata.idx_exp_url and config.ES_DEF_URL:
+                    self.is_indexable = True
+                    self.INDEX_URL = config.ES_DEF_URL + "/" + self.base.metadata.name \
+                            + "/" + self.base.metadata.name
+
+        except:
+            pass
+
+        if self.is_indexable and self.INDEX_URL:
             self._host = self.INDEX_URL.split('/')[2]
             self._index = self.INDEX_URL.split('/')[3]
             self._type = self.INDEX_URL.split('/')[4]

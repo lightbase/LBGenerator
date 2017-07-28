@@ -1,16 +1,55 @@
+
+# -------------------------------
+# REFERENCE:
+# [bool] - Use boolean
+# [str] -- Use string
+# [int] -- Use integer
+# [MB] --- Representing Megabytes
+# [B] ---- Representing Bytes
+# [s] ---- Representing seconds
+# -------------------------------
+
 [app:lbgenerator]
 use=egg:LBGenerator
 
 ###
 # Persistence access configuration.
 ###
-sqlalchemy.url=<SQLALCHEMY_URL>
+sqlalchemy.url=<SQLA_URL>
 
+# The maximum overflow size of the pool. When the number of checked-out
+# connections reaches the size set in pool_size, additional connections will be
+# returned up to this limit.
+# RECOMMENDED to use at most 48% of the number of PostgreSQL connections.
+# [int]
 sqlalchemy.max_overflow=<SQLA_POOL_SIZE>
-sqlalchemy.pool_size=<SQLA_POOL_SIZE>
+
+# The size of the pool to be maintained, defaults to 5. This is the largest
+# number of connections that will be kept persistently in the pool.
+# RECOMMENDED to use at most 48% of the number of PostgreSQL connections.
+# [int]
+sqlalchemy.pool_size=<SQLA_POOL_SIZE_MAX_OVERFLOW>
+
 storage.tmp_dir=/tmp
-requests.timeout=1600
-lbindex_url=http://127.0.0.1:6543/
+requests.timeout=300
+
+# URL to connect to the LBI - LBIndex to inform changes in the structure of a
+# base.
+# [str]
+lbindex_url=<LBI_LBINDEX_URL>
+
+# URL to connect to the LBR - LBRelacional to inform changes in the data
+# structure.
+# [str]
+lbrelacional.url=http://127.0.0.1:8000/sqlapi
+
+# Base URL to ES - ElasticSearch. Will be used if "idx_exp" is true and
+# "idx_exp_url" is empty in a base "metadata". In this case "idx_exp_url" will
+# be returned with folowing model: "http://<es_def_url>/<base_name>/<base_name>".
+# "<base_name>" will be the ES index and the mapping respectively! Do not use
+# "/" at the end!
+# [str]
+es_def_url=<ES_ESDEF_URL>
 
 pyramid.reload_templates=true
 pyramid.debug_authorization=true
@@ -29,10 +68,21 @@ auth.admin_passwd=admin
 ###
 # Persistence access configuration.
 ###
-sqlalchemy.url=<SQLALCHEMY_URL>
+sqlalchemy.url=<SQLA_URL>
 
+# The maximum overflow size of the pool. When the number of checked-out
+# connections reaches the size set in pool_size, additional connections will be
+# returned up to this limit.
+# RECOMMENDED to use at most 48% of the number of PostgreSQL connections.
+# [int]
 sqlalchemy.max_overflow=<SQLA_POOL_SIZE>
-sqlalchemy.pool_size=<SQLA_POOL_SIZE>
+
+# The size of the pool to be maintained, defaults to 5. This is the largest
+# number of connections that will be kept persistently in the pool.
+# RECOMMENDED to use at most 48% of the number of PostgreSQL connections.
+# [int]
+sqlalchemy.pool_size=<SQLA_POOL_SIZE_MAX_OVERFLOW>
+
 script_location=db_versions
 
 [server:main]
