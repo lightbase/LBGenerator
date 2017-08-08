@@ -1,3 +1,3 @@
 from pyramid.paster import get_app
 application = get_app(
-  '<VE32_PATH>/src/LBGenerator/production.ini', 'main')
+  '<LBG_VE32_PATH>/src/LBGenerator/production.ini', 'main')

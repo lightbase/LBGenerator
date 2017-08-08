@@ -130,7 +130,7 @@ def set_globals(**settings):
 
     METADATA = MetaData(ENGINE)
 
-    LOG_FILE = '/var/log/lbgenerator.log'
+    LOG_FILE = '/var/log/lbg.log'
     LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 
     AUTH_ENABLED = os.environ.get('AUTH_ENABLED', None)

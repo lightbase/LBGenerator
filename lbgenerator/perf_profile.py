@@ -197,4 +197,4 @@ class PerfProfile():
 
         return op
 
-pprofile=PerfProfile(no_log=False, overw_log=True, log_path="/usr/local/lb/ve32/src/LBGenerator", allowed_groups=[], reverse_allow=False)
+pprofile=PerfProfile(no_log=False, overw_log=True, log_path="/usr/local/lb/lbg_ve32/src/LBGenerator", allowed_groups=[], reverse_allow=False)

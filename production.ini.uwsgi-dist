@@ -126,15 +126,15 @@ threads=1
 
 # PYTHONHOME/virtualenv.
 # [str]
-home=/usr/local/lb/ve32
+home=<LBG_VE32_PATH>
 
 # PYTHONHOME/virtualenv.
 # [str]
-virtualenv=/usr/local/lb/ve32/
+virtualenv=<LBG_VE32_PATH>/
 
 # Directory pythonpath.
 # [str]
-pythonpath=/usr/local/lb/ve32/bin
+pythonpath=<LBG_VE32_PATH>/bin
 
 # Log file name and path.
 # [str]
