@@ -2,6 +2,7 @@ import json
 import datetime
 
 from .. import utils
+from ..lb_exception import LbException
 
 
 def validate_txt_idx_data(self, request):
