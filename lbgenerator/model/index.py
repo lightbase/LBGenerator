@@ -102,7 +102,6 @@ class Index(TxtIdxContextFactory):
     def create_mapping(self):
         """ Cria o mapping indicado p/ a base se não houver.
         """
-
         if self.txt_mapping is None or self.txt_mapping == "":
             return False
 
@@ -116,17 +115,17 @@ class Index(TxtIdxContextFactory):
             response_0_json = response_0.json()
         except requests.exceptions.HTTPError as e:
             # NOTE: Normalmente entrará nesse bloco de código 
-            # quando o índice não existe! By Questor
+            # quando o índice não existe! By Questorprint("self.txt_mapping: ")
             return False
         except requests.exceptions.RequestException as e:
             raise Exception("Problem in the mapping provider! " + str(e))
         except Exception as e:
             raise Exception("Mapping operation. Program error! " + str(e))
-
+        
         if response_0.status_code == 200 and not bool(response_0_json):
             response_1 = None
             try:
-                response_1 = requests.post(index_url, 
+                response_1 = requests.post(index_url + "/_mapping", 
                     data=self.txt_mapping, 
                     timeout=self.TIMEOUT)
                 response_1.raise_for_status()
@@ -136,9 +135,11 @@ class Index(TxtIdxContextFactory):
             except Exception as e:
                 raise Exception("Mapping operation. Program error! " + str(e))
 
+            print("response_1_json")
+            print(str(response_1_json))
             if (response_1_json is None or
-                    response_1_json.get("created", None) is None or
-                    response_1_json.get("created", None) != True):
+                    response_1_json.get("acknowledged", None) is None or
+                    response_1_json.get("acknowledged", None) != True):
                 raise Exception("Mapping not created!")
 
         return True
