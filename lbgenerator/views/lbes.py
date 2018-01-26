@@ -146,8 +146,8 @@ class LBSearch:
         return Response(response_text, content_type='application/json')
 
     def _build_query_string(self, dict_es_query, dict_request):
-        query = re.escape(dict_request['query'])
-        query = query.replace('\\ ', ' ')
+        #query = re.escape(dict_request['query'])
+        #query = query.replace('\\ ', ' ')
 
         # NOTE: Default fields! By John Doe
         search_fields = ['_all']
@@ -160,7 +160,8 @@ class LBSearch:
         dict_es_query['query'] = {
             'query_string': {
                 'default_operator': "AND",
-                'query': query,
+                #'query': query,
+                'query': dict_request['query'],
                 'fields': search_fields
             }
         }
