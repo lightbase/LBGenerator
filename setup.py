@@ -2,28 +2,29 @@ import os
 
 from setuptools import setup, find_packages
 
+
+
 here = os.path.abspath(os.path.dirname(__file__))
-README = open(os.path.join(here, 'README.md')).read()
-CHANGES = open(os.path.join(here, 'CHANGES.md')).read()
+README = ''
+CHANGES = ''
 
 requires = [
-    'liblightbase',
     'alembic == 0.6.7',
-    'Beaker == 1.7.0',
-    'Mako == 1.0.1',
-    'PasteDeploy == 1.5.2',
-    'psycopg2 == 2.5.3',
+    'Beaker == 1.11.0',
+    'Mako == 1.1.3',
+    'PasteDeploy == 2.1.1',
+    'psycopg2 == 2.8.6',
     'pyramid == 1.5.1',
     'pyramid-beaker == 0.8',
     'pyramid-restler == 0.1a4',
-    'repoze.lru == 0.6',
-    'requests == 2.3.0',
+    'repoze.lru == 0.7',
+    'requests == 2.24.0',
     'SQLAlchemy == 0.9.4',
-    'translationstring == 1.1',
-    'venusian == 1.0a8',
-    'voluptuous == 0.8.7',
-    'waitress == 0.8.9',
-    'WebOb == 1.4',
+    'translationstring == 1.4',
+    'venusian == 3.0.0',
+    'voluptuous == 0.12.0',
+    'waitress == 1.4.4',
+    'WebOb == 1.6.3',
     'zope.deprecation == 4.1.1',
     'zope.interface == 4.1.1',
     'repoze.profile==2.2',

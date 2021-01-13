@@ -50,7 +50,7 @@ def run_migrations_online():
         # By Questor
         context.run_migrations()
 
-        trans.flush()
+        #trans.flush()
         trans.commit()
     except:
         trans.rollback()
