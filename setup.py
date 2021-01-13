@@ -19,7 +19,7 @@ requires = [
     'pyramid-restler == 0.1a4',
     'repoze.lru == 0.7',
     'requests == 2.24.0',
-    'SQLAlchemy == 0.9.4',
+    'SQLAlchemy == 1.3.0',
     'translationstring == 1.4',
     'venusian == 3.0.0',
     'voluptuous == 0.12.0',
