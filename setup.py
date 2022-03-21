@@ -23,7 +23,7 @@ requires = [
     'translationstring == 1.4',
     'venusian == 3.0.0',
     'voluptuous == 0.12.0',
-    'waitress == 1.4.4',
+    'waitress == 2.1.1',
     'WebOb == 1.6.3',
     'zope.deprecation == 4.1.1',
     'zope.interface == 4.1.1',
