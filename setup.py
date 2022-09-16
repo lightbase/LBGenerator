@@ -11,7 +11,7 @@ CHANGES = ''
 requires = [
     'alembic == 0.6.7',
     'Beaker == 1.11.0',
-    'Mako == 1.1.3',
+    'Mako == 1.2.2',
     'PasteDeploy == 2.1.1',
     'psycopg2 == 2.8.6',
     'pyramid == 1.5.1',
